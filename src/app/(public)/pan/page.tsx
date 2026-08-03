@@ -1,42 +1,4 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-
-import { EditorialGrid, EditorialProductCard } from "@/components/public/editorial";
-import { PageIntro } from "@/components/public/page-intro";
-import { Badge, Button, Container, EmptyState, Section, Select } from "@/components/ui";
-import { createPageMetadata } from "@/lib/seo";
-
-export const metadata: Metadata = createPageMetadata({
-  title: "El pan que horneamos",
-  description: "Panes de masa madre con harinas locales y fermentación lenta. La estructura del catálogo de FUERZA, a la espera de los productos aprobados.",
-  path: "/pan",
-  ogTitle: "El pan de FUERZA",
-  ogDescription: "Masa madre, harina local y fermentación lenta. Reserva y recoge en Asturias.",
-});
-
-export default function PanPage() {
-  return (
-    <main id="main-content">
-      <Section><Container size="wide">
-        <PageIntro title="El pan" eyebrow="Catálogo editorial" description="Esto será todo lo que hacemos. No todo se horneará todos los días: la disponibilidad real llegará con el catálogo y el calendario." />
-        <div className="catalog-toolbar" aria-label="Filtros todavía no disponibles">
-          <Select id="catalog-family" label="Familias" disabled><option>Todas las familias</option></Select>
-          <Select id="catalog-day" label="Día de recogida" disabled><option>Fechas disponibles al publicar</option></Select>
-          <p><Badge variant="warning">Filtros inactivos</Badge> Se activarán cuando existan productos y fechas reales.</p>
-        </div>
-      </Container></Section>
-
-      <Section tone="sunken"><Container size="wide">
-        <h2 className="catalog-heading">Estructura del catálogo</h2>
-        <EditorialGrid>{[1, 2, 3].map((index) => <EditorialProductCard index={index} key={index} />)}</EditorialGrid>
-        <div className="catalog-empty-preview">
-          <EmptyState title="Todavía no hay productos publicados." description="El catálogo se completará con productos, familias, ingredientes y alérgenos aprobados por el obrador." />
-        </div>
-        <p className="catalog-note">Estos bloques no representan panes, precios ni disponibilidad reales.</p>
-        <Button disabled>Reservar</Button>
-        <p className="form-status">La reserva se activará cuando el catálogo y la disponibilidad sean reales.</p>
-        <Link className="text-link" href="/reserva-y-recoge">Entender cómo funcionará la reserva</Link>
-      </Container></Section>
-    </main>
-  );
-}
+import type { Metadata } from "next";import Image from "next/image";import Link from "next/link";
+import { PageIntro } from "@/components/public/page-intro";import { Badge, Card, Container, EmptyState, Section } from "@/components/ui";import { formatPrice, getPublicCatalog } from "@/lib/catalog";import { createPageMetadata } from "@/lib/seo";
+export const metadata:Metadata=createPageMetadata({title:"El pan que horneamos",description:"Catálogo de panes de masa madre publicados por FUERZA.",path:"/pan"});
+export default async function PanPage({searchParams}:{searchParams:Promise<{familia?:string}>}){const catalog=await getPublicCatalog(),family=(await searchParams).familia;const visible=family?catalog.filter(p=>p.family?.slug===family):catalog;const families=[...new Map(catalog.flatMap(p=>p.family?[p.family]:[]).map(f=>[f.id,f])).values()];return <main id="main-content"><PageIntro title="El pan" eyebrow="Catálogo" description="Lo que está publicado por el obrador. La disponibilidad por fecha llegará en la siguiente fase."/><Section><Container size="wide"><nav className="catalog-filters" aria-label="Filtrar por familia"><Link href="/pan" aria-current={!family?"page":undefined}>Todos</Link>{families.map(f=><Link key={f.id} href={`/pan?familia=${f.slug}`} aria-current={family===f.slug?"page":undefined}>{f.name}</Link>)}</nav>{visible.length?<div className="catalog-grid">{visible.map(p=>{const image=p.images.find(i=>i.is_primary)??p.images[0],prices=p.variants.flatMap(v=>v.price_cents===null?[]:[v.price_cents]);return <Card key={p.id} className="catalog-product-card">{image?<Image src={`/api/product-images/${image.storage_path}`} alt={image.alt_text??""} width={640} height={480}/>:<div className="catalog-image-empty" aria-hidden="true"/>}<div><p className="eyebrow">{p.family?.name}</p><h2>{p.name}</h2>{p.status==="seasonal"?<Badge variant="information">De temporada</Badge>:null}<p>{p.short_description}</p>{p.flour_type?<p>Harina: {p.flour_type}</p>:null}{p.fermentation_hours?<p>Fermentación: {p.fermentation_hours} h</p>:null}{prices.length?<p><strong>Desde {formatPrice(Math.min(...prices))}</strong><br/><small>IVA incluido</small></p>:null}<Link className="text-link" href={`/pan/${p.slug}`}>Ver este pan</Link></div></Card>})}</div>:<EmptyState title="Todavía no hay panes publicados" description="El catálogo aparecerá aquí cuando el obrador dé de alta sus primeros productos reales."/>}</Container></Section></main>}

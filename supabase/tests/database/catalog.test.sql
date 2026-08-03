@@ -1,0 +1,34 @@
+begin;
+select plan(13);
+insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
+('00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner-catalog@example.test','',now(),'{}','{}',now(),now()),
+('00000000-0000-0000-0000-000000000202','00000000-0000-0000-0000-000000000000','authenticated','authenticated','customer-catalog@example.test','',now(),'{}','{}',now(),now()),
+('00000000-0000-0000-0000-000000000203','00000000-0000-0000-0000-000000000000','authenticated','authenticated','operator-catalog@example.test','',now(),'{}','{}',now(),now());
+insert into public.user_roles(user_id,role) values('00000000-0000-0000-0000-000000000201','owner'),('00000000-0000-0000-0000-000000000203','operator');
+set local role authenticated;select set_config('request.jwt.claim.role','authenticated',true);select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000201',true);
+insert into public.product_families(id,name,slug,status) values('10000000-0000-0000-0000-000000000001','Familia de prueba','familia-prueba','active');
+select ok(exists(select 1 from public.product_families where slug='familia-prueba'),'owner creates family');
+insert into public.products(id,family_id,name,slug,short_description,status) values('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','Producto de prueba','producto-prueba','Solo para pruebas','draft');
+select ok(exists(select 1 from public.products where slug='producto-prueba'),'owner creates draft');
+select throws_ok($$insert into public.products(family_id,name,slug,status) values('10000000-0000-0000-0000-000000000001','Incompleto','incompleto','active')$$,'23514','incomplete_product','incomplete publication blocked');
+select throws_ok($$insert into public.products(family_id,name,slug,status) values('10000000-0000-0000-0000-000000000001','Duplicado','producto-prueba','draft')$$,'23505',null,'duplicate slug blocked');
+insert into public.product_variants(id,product_id,name,price_cents,vat_rate,status) values('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Única',450,4.00,'active');
+select is((select price_cents from public.product_variants where id='30000000-0000-0000-0000-000000000001'),450,'price stored as integer cents');
+update public.products set status='active' where id='20000000-0000-0000-0000-000000000001';
+select is((select status::text from public.products where id='20000000-0000-0000-0000-000000000001'),'active','complete product published');
+insert into public.product_images(product_id,storage_path,alt_text,is_primary) values('20000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001.jpg','Imagen de prueba',true);
+select throws_ok($$insert into public.product_images(product_id,storage_path,alt_text,is_primary) values('20000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000002.jpg','Otra',true)$$,'23505',null,'one primary image enforced');
+select ok(exists(select 1 from public.audit_logs where entity_type='products'),'catalog changes audited');
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000202',true);
+select throws_ok($$insert into public.product_families(name,slug) values('No','no')$$,'42501',null,'customer cannot write catalog');
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000203',true);
+update public.product_variants set price_cents=999 where id='30000000-0000-0000-0000-000000000001';
+select is((select price_cents from public.product_variants where id='30000000-0000-0000-0000-000000000001'),450,'operator cannot alter price');
+update public.products set status='seasonal' where id='20000000-0000-0000-0000-000000000001';
+select is((select status::text from public.products where id='20000000-0000-0000-0000-000000000001'),'active','operator cannot publish');
+reset role;set local role anon;
+select is((select count(*)::integer from public.products),1,'public sees published product');
+reset role;set local role authenticated;select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000201',true);
+update public.products set status='draft' where id='20000000-0000-0000-0000-000000000001';reset role;set local role anon;
+select is((select count(*)::integer from public.products),0,'public cannot see drafts');
+select * from finish();rollback;

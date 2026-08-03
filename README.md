@@ -98,6 +98,14 @@ Não guardes o email real no repositório. Depois do primeiro proprietário exis
 
 A autenticação é opcional para clientes. O futuro modelo de encomendas deverá aceitar email e telefone de convidado, oferecer uma ligação assinada de consulta e permitir associação posterior somente após verificação do email. Esta fase não cria tabelas de encomendas nem obriga a criar conta.
 
+### Catálogo e imagens de produto
+
+A migração `20260803190000_product_catalog.sql` cria famílias, produtos, variantes, ingredientes, alergénios, imagens, dias habituais de produção e a associação preparada para pontos de recolha. Preços são guardados em cêntimos inteiros; o catálogo público só lê produtos publicados através de RLS.
+
+O bucket privado `product-images` aceita JPEG, PNG, WebP e AVIF até 8 MB. Owner e admin fazem upload pelo painel e a aplicação entrega apenas imagens associadas a produtos publicados. O seed de produção permanece sem produtos fictícios.
+
+Após ligar explicitamente o projeto remoto, aplica migrações com `npx supabase db push`. Nunca uses `db reset` num projeto remoto e confirma primeiro o destino com `npx supabase projects list`.
+
 ### Limitações atuais
 
 - Não existe projeto Supabase remoto configurado neste repositório.

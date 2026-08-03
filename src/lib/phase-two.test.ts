@@ -41,6 +41,7 @@ describe("public route architecture", () => {
       ...publicRoutes,
       ...accountRoutes,
       "/admin",
+      "/admin/productos/nuevo",
       "/design-system",
       ...adminNavigation.map(({ slug }) => `/admin/${slug}`),
     ]);
@@ -79,14 +80,14 @@ describe("public content safeguards", () => {
     expect(legalPage).not.toMatch(/CIF|NIF|domicilio fiscal/i);
   });
 
-  it("does not turn editorial previews into commerce", () => {
+  it("keeps the homepage editorial and the catalogue free of reservation controls", () => {
     const home = readFileSync(resolve(projectRoot, "src/app/(public)/page.tsx"), "utf8");
     const pan = readFileSync(resolve(projectRoot, "src/app/(public)/pan/page.tsx"), "utf8");
     const editorial = readFileSync(resolve(projectRoot, "src/components/public/editorial.tsx"), "utf8");
     expect(home.match(/<h1[ >]/g)).toHaveLength(1);
     expect(editorial).toContain("Sin precio ni disponibilidad");
-    expect(pan).toContain("<Button disabled>");
-    expect(`${home}\n${pan}`).not.toMatch(/€|EUR/);
+    expect(pan).toContain("IVA incluido");
+    expect(pan).not.toMatch(/Añadir al carrito|Comprar ahora|Reservar ahora/);
   });
 });
 
