@@ -1,72 +1,34 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Container, Section } from "@/components/ui/layout";
 import { PageIntro } from "@/components/public/page-intro";
+import { Card, Container, EmptyState, Section } from "@/components/ui";
 import { createPageMetadata } from "@/lib/seo";
+import { createClient } from "@/lib/supabase/server";
 
-export const metadata = createPageMetadata({
+export const revalidate = 60;
+export const metadata: Metadata = createPageMetadata({
   title: "Plan de Pan",
-  description:
-    "Conoce la futura suscripción de pan de masa madre de FUERZA en Asturias.",
+  description: "Suscripción recurrente de pan FUERZA con capacidad reservada.",
   path: "/plan-de-pan",
 });
 
-const benefits = [
-  ["Tu pan, previsto", "La producción podrá reservarse con antelación para quienes quieran una rutina estable."],
-  ["Control en tus manos", "Podrás pausar, retomar o cancelar desde tu cuenta cuando el servicio esté disponible."],
-  ["Menos desperdicio", "Planificar la producción ayuda a hornear lo necesario y a trabajar con más cuidado."],
-] as const;
+export default async function Plans() {
+  const db: any = await createClient();
+  const { data: plans } = await db
+    .from("subscription_plans")
+    .select("id,name,slug,description,billing_interval,billing_interval_count,price_cents,currency,subscription_plan_items(quantity,product_variants(name,products(name)))")
+    .eq("status", "active")
+    .eq("is_public", true)
+    .order("display_order");
 
-export default function PlanDePanPage() {
-  return (
-    <main id="main-content">
-      <PageIntro
-        eyebrow="Próximamente"
-        title="Plan de Pan"
-        description="Una forma sencilla de tener tu pan previsto, sin tener que empezar de cero cada semana."
-      />
-      <Section>
-        <Container>
-          <div className="institutional-grid">
-            <div className="prose-block">
-              <Badge variant="warning">Próximamente</Badge>
-              <h2>Una suscripción pensada para la vida real</h2>
-              <p>
-                El Plan de Pan estará dirigido a quienes recogen pan con regularidad y quieren contar con una parte de la producción reservada.
-              </p>
-              <p>
-                Funcionará mediante pago recurrente. Antes de abrirlo explicaremos con claridad la frecuencia, las condiciones y cada cobro.
-              </p>
-            </div>
-            <div className="editorial-grid editorial-grid--three">
-              {benefits.map(([title, description]) => (
-                <Card key={title} className="editorial-card">
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </Container>
-      </Section>
-      <Section tone="inverse">
-        <Container className="split-callout">
-          <div>
-            <p className="eyebrow">Cuando esté listo</p>
-            <h2>Primero, un servicio estable</h2>
-          </div>
-          <div className="prose-block">
-            <p>
-              La suscripción llegará después de validar el sistema de reserva y recogida. No hay planes, precios ni frecuencias definitivas publicados todavía.
-            </p>
-            <Link className="text-link" href="/contacto">
-              Conoce las formas de contacto
-            </Link>
-          </div>
-        </Container>
-      </Section>
-    </main>
-  );
+  return <main id="main-content"><Section><Container>
+    <PageIntro title="Plan de Pan" eyebrow="Una plaza reservada" description="Tu pan previsto y pagado de forma recurrente. Cada plaza se abre únicamente cuando podemos reservar producción y recogida." />
+    {plans?.length ? <div className="editorial-grid">{plans.map((plan: any) => <Card key={plan.id}>
+      <h2>{plan.name}</h2><p>{plan.description}</p>
+      <p>{plan.billing_interval === "weekly" ? "Semanal" : plan.billing_interval === "biweekly" ? "Quincenal" : "Mensual"} · {(plan.price_cents / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}</p>
+      <ul>{plan.subscription_plan_items?.map((item: any) => <li key={item.product_variants?.name}>{item.quantity} × {item.product_variants?.products?.name} · {item.product_variants?.name}</li>)}</ul>
+      <Link className="button button--primary" href={`/plan-de-pan/${plan.slug}`}>Elegir este plan</Link>
+    </Card>)}</div> : <EmptyState title="Todavía no hay planes disponibles" description="Abriremos el Plan de Pan cuando existan opciones reales y capacidad reservada." />}
+  </Container></Section></main>;
 }

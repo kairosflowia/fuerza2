@@ -36,6 +36,10 @@ export async function GET(request: NextRequest) {
   summary.expired_reservations = expireError ? null : expiredCount;
   if (expireError) summary.expire_error = expireError.message;
 
+  const { data: subscriptionJobs, error: subscriptionError } = await (db as never as { rpc(name:string):Promise<{data:unknown;error:{message:string}|null}> }).rpc("run_subscription_jobs");
+  summary.subscription_jobs = subscriptionError ? null : subscriptionJobs;
+  if (subscriptionError) summary.subscription_error = subscriptionError.message;
+
   // Reconciliación mínima: pedidos confirmados sin ninguna línea, que nunca
   // deberían existir si convert_reservation_to_order es la única vía de
   // creación, pero se detectan aquí en vez de asumirlo silenciosamente.
