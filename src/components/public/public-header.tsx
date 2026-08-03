@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
@@ -19,8 +20,8 @@ export function PublicHeader() {
   return (
     <header className="public-header">
       <div className="container container--wide public-header__inner">
-        <Link className="wordmark" href="/" aria-label="FUERZA, inicio">
-          FUERZA
+        <Link className="site-logo" href="/" aria-label="FUERZA, inicio">
+          <Image src="/logo_fuerza_principal.png" alt="FUERZA, obrador de masa madre" width={496} height={438} priority />
         </Link>
 
         <nav className="public-nav" aria-label="Navegación principal">

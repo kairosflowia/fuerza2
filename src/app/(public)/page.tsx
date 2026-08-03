@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import { BreadAnatomy } from "@/components/public/bread-anatomy";
 import { EditorialGrid, EditorialProductCard, SectionHeading, TextLink, ValueCard } from "@/components/public/editorial";
+import { HeroCarousel } from "@/components/public/hero-carousel";
 import { Newsletter } from "@/components/public/newsletter";
 import { Badge, Container, Section } from "@/components/ui";
 import { createPageMetadata } from "@/lib/seo";
@@ -26,23 +28,14 @@ const processSteps = [
 export default function Home() {
   return (
     <main id="main-content">
-      <section className="home-hero">
-        <Container size="wide" className="home-hero__grid">
-          <div className="home-hero__copy">
-            <p className="eyebrow">El pan no se levanta solo</p>
-            <h1>Pan de masa madre, hecho entre dos manos y el tiempo.</h1>
-            <p className="home-hero__lead">Somos un obrador pequeño en Asturias. Harina de aquí, fermentación lenta y la cantidad que podemos hacer bien.</p>
-            <div className="hero-actions">
-              <Link className="button button--primary" href="/reserva-y-recoge">Reserva y recoge</Link>
-              <Link className="button button--secondary" href="/obrador">Conoce el obrador</Link>
-            </div>
-            <p className="hero-note">Reservas, lo horneamos y lo recoges. Pagas al reservar.</p>
-          </div>
-          <figure className="home-hero__visual">
-            <Image src="/fuerza.jpeg" alt="Dos personas levantan juntas una hogaza de pan más grande que ellas." width={1254} height={1254} priority sizes="(max-width: 767px) 100vw, 48vw" />
-          </figure>
+      <HeroCarousel />
+
+      <Section>
+        <Container size="wide">
+          <SectionHeading eyebrow="Por dentro" title="Anatomía de nuestra hogaza" description="Pasa el cursor o toca cada punto para saber qué hace que este pan sea distinto." />
+          <BreadAnatomy />
         </Container>
-      </section>
+      </Section>
 
       <Section>
         <Container size="wide">
@@ -68,10 +61,10 @@ export default function Home() {
         <Container size="wide">
           <SectionHeading eyebrow="Lo que nos mueve" title="Cuatro cosas que no negociamos" />
           <EditorialGrid columns={4}>
-            <ValueCard title="Tradición que se siente" tone="terracotta">Hacemos pan como se hacía antes de que hubiera prisa. No por nostalgia: porque sale mejor.</ValueCard>
-            <ValueCard title="Ingredientes que cuentan" tone="yellow">Harina, agua, sal y masa madre. Si un ingrediente no hace falta, no está.</ValueCard>
-            <ValueCard title="Tiempo que transforma" tone="green">La fermentación lenta no se puede acelerar. Es la parte del trabajo que hace el reloj.</ValueCard>
-            <ValueCard title="Comunidad que nos inspira" tone="blue">Un obrador pequeño vive de la gente que vuelve y de quienes trabajan cerca.</ValueCard>
+            <ValueCard icon="tradicion" title="Tradición que se siente" tone="terracotta">Hacemos pan como se hacía antes de que hubiera prisa. No por nostalgia: porque sale mejor.</ValueCard>
+            <ValueCard icon="ingredientes" title="Ingredientes que cuentan" tone="yellow">Harina, agua, sal y masa madre. Si un ingrediente no hace falta, no está.</ValueCard>
+            <ValueCard icon="tiempo" title="Tiempo que transforma" tone="green">La fermentación lenta no se puede acelerar. Es la parte del trabajo que hace el reloj.</ValueCard>
+            <ValueCard icon="comunidad" title="Comunidad que nos inspira" tone="blue">Un obrador pequeño vive de la gente que vuelve y de quienes trabajan cerca.</ValueCard>
           </EditorialGrid>
         </Container>
       </Section>
@@ -83,7 +76,7 @@ export default function Home() {
         </Container>
       </Section>
 
-      <Section>
+      <Section className="pattern-backdrop">
         <Container size="wide" className="plan-preview">
           <div>
             <Badge variant="information">Próximamente</Badge>
@@ -96,7 +89,7 @@ export default function Home() {
         </Container>
       </Section>
 
-      <Section tone="sunken">
+      <Section tone="sunken" className="pattern-backdrop">
         <Container size="wide">
           <SectionHeading eyebrow="Reserva y recoge" title="Tres pasos y ya está" />
           <EditorialGrid>
@@ -116,7 +109,7 @@ export default function Home() {
             <p>Detrás de cada hogaza hay manos concretas. Añadiremos nombres, retratos y tareas cuando ese contenido esté aprobado.</p>
             <TextLink href="/nosotros">Conocer quiénes somos</TextLink>
           </div>
-          <Image src="/fuerza_info.jpeg" alt="Hoja de identidad visual de FUERZA con ilustraciones del obrador." width={1183} height={1330} sizes="(max-width: 767px) 100vw, 42vw" />
+          <Image src="/ilustraciones-strip.png" alt="Ilustraciones de FUERZA: espiga, hogaza y las personas del obrador." width={284} height={100} sizes="(max-width: 767px) 100vw, 42vw" />
         </Container>
       </Section>
 

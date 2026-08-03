@@ -85,9 +85,10 @@ describe("public content safeguards", () => {
 
   it("keeps the homepage editorial and the catalogue free of reservation controls", () => {
     const home = readFileSync(resolve(projectRoot, "src/app/(public)/page.tsx"), "utf8");
+    const heroCarousel = readFileSync(resolve(projectRoot, "src/components/public/hero-carousel.tsx"), "utf8");
     const pan = readFileSync(resolve(projectRoot, "src/app/(public)/pan/page.tsx"), "utf8");
     const editorial = readFileSync(resolve(projectRoot, "src/components/public/editorial.tsx"), "utf8");
-    expect(home.match(/<h1[ >]/g)).toHaveLength(1);
+    expect((home + heroCarousel).match(/<h1[ >]/g)).toHaveLength(1);
     expect(editorial).toContain("Sin precio ni disponibilidad");
     expect(pan).toContain("IVA incluido");
     expect(pan).not.toMatch(/Añadir al carrito|Comprar ahora|Reservar ahora/);

@@ -22,7 +22,7 @@ export default function NosotrosPage() {
         <PageIntro title="Nosotros" eyebrow="Las personas" description="Somos un obrador pequeño de masa madre en Avilés, Asturias." />
         <div className="people-section people-section--intro">
           <div><h2>Quién lo hace</h2><p>Cada hogaza pasa por unas manos concretas. Añadiremos nombres, tareas, fotografías y la historia del obrador cuando ese material esté aprobado.</p><p>No vamos a completar esos huecos con personajes inventados.</p></div>
-          <Image src="/fuerza_info.jpeg" alt="Ilustraciones de personas, panes y espigas que forman la identidad de FUERZA." width={1183} height={1330} priority sizes="(max-width: 767px) 100vw, 42vw" />
+          <Image src="/ilustraciones-strip.png" alt="Ilustraciones de personas, panes y espigas que forman la identidad de FUERZA." width={284} height={100} priority sizes="(max-width: 767px) 100vw, 42vw" />
         </div>
       </Container></Section>
       <Section tone="sunken"><Container size="wide" className="split-section">

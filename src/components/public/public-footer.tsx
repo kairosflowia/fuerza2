@@ -10,7 +10,8 @@ export function PublicFooter() {
       <Container size="wide" className="public-footer__grid">
         <div>
           <p className="wordmark wordmark--inverse">FUERZA</p>
-          <p>Obrador de masa madre<br />Asturias · España</p>
+          <p className="footer-manifesto">Pan artesanal de masa madre elaborado con harinas locales y tiempo real. Transformamos lo simple en algo que alimenta de verdad.</p>
+          <p>Obrador de masa madre · Asturias · España</p>
         </div>
         <nav aria-label="Navegación del pie">
           <p className="footer-heading">Explora</p>

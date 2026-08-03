@@ -10,10 +10,13 @@ export function EditorialGrid({ children, columns = 3 }: { children: ReactNode; 
   return <div className={cn("editorial-grid", `editorial-grid--${columns}`)}>{children}</div>;
 }
 
-export function ValueCard({ number, title, children, tone = "plain" }: { number?: string; title: string; children: ReactNode; tone?: "plain" | "yellow" | "green" | "blue" | "terracotta" }) {
+export type PillarIcon = "tradicion" | "ingredientes" | "tiempo" | "comunidad";
+
+export function ValueCard({ number, icon, title, children, tone = "plain" }: { number?: string; icon?: PillarIcon; title: string; children: ReactNode; tone?: "plain" | "yellow" | "green" | "blue" | "terracotta" }) {
   return (
     <article className={cn("value-card", `value-card--${tone}`)}>
       {number ? <span className="value-card__number" aria-hidden="true">{number}</span> : null}
+      {icon ? <span className={cn("value-card__icon", `value-card__icon--${icon}`)} aria-hidden="true" /> : null}
       <h3>{title}</h3>
       <p>{children}</p>
     </article>
