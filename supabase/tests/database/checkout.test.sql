@@ -1,0 +1,15 @@
+begin;select plan(12);
+select has_function('public','create_checkout_order',array['jsonb','uuid','date','text','uuid','text','text','text','text','text','boolean','text'],'transactional checkout exists');
+select has_function('public','process_payment_event',array['text','text','text','integer','text','text'],'idempotent webhook processor exists');
+select has_table('public','order_status_history','status history exists');
+select has_table('public','payment_events','payment ledger exists');
+select col_type_is('public','orders','payment_status','public.payment_status','financial state separated');
+select col_type_is('public','orders','total_cents','integer','total uses integer cents');
+select col_is_unique('public','payment_events','stripe_event_id','stripe event id unique');
+select col_is_unique('public','orders','stripe_payment_intent_id','one intent per order');
+select ok((select relrowsecurity from pg_class where oid='public.orders'::regclass),'orders RLS enabled');
+select ok((select relrowsecurity from pg_class where oid='public.payment_events'::regclass),'payment events RLS enabled');
+set local role authenticated;select set_config('request.jwt.claim.role','authenticated',true);
+select throws_ok($$select * from public.process_payment_event('evt_x','payment_intent.succeeded','pi_x',100,'eur','hash')$$,'42501',null,'webhook processor rejects clients');reset role;
+select ok(position('client_secret' in pg_get_functiondef('public.process_payment_event(text,text,text,integer,text,text)'::regprocedure))=0,'processor never handles client secrets');
+select * from finish();rollback;

@@ -1,0 +1,3 @@
+export type MoneyLine={unitPriceCents:number;quantity:number;vatRate:number};
+export function includedTax(lineTotalCents:number,vatRate:number){if(!Number.isInteger(lineTotalCents)||lineTotalCents<0||vatRate<0)throw new Error("invalid_money");return Math.round(lineTotalCents*vatRate/(100+vatRate));}
+export function calculateTotals(lines:MoneyLine[]){return lines.reduce((sum,line)=>{if(!Number.isInteger(line.unitPriceCents)||!Number.isInteger(line.quantity)||line.quantity<=0)throw new Error("invalid_line");const total=line.unitPriceCents*line.quantity,tax=includedTax(total,line.vatRate);return{subtotalCents:sum.subtotalCents+total-tax,taxCents:sum.taxCents+tax,totalCents:sum.totalCents+total}}, {subtotalCents:0,taxCents:0,totalCents:0});}

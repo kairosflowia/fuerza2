@@ -1,0 +1,1 @@
+import {CheckoutClient} from "@/components/checkout/checkout-client";import {Container,Section} from "@/components/ui";export const dynamic="force-dynamic";export const metadata={title:"Pago | FUERZA"};export default function CheckoutPage(){return <main id="main-content"><Section><Container><h1>Pago anticipado</h1><CheckoutClient/></Container></Section></main>}

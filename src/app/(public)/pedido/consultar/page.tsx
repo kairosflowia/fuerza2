@@ -1,0 +1,1 @@
+import {Container,Section} from "@/components/ui";export default function ConsultOrder(){return <main id="main-content"><Section><Container><h1>Consultar un pedido</h1><p>Por seguridad, utiliza el enlace privado entregado al finalizar el pago. El código público por sí solo no permite acceder a una encomienda.</p></Container></Section></main>}

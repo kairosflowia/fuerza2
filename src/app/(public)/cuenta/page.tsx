@@ -18,6 +18,7 @@ export default async function AccountPage() {
   if (!identity) redirect("/cuenta/acceder?next=/cuenta");
   const supabase = await createClient();
   const { data: consents } = await supabase.from("customer_consents").select("consent_type, granted, version, created_at").eq("customer_id", identity.user.id).order("created_at", { ascending: false });
+  const { data: orders } = await supabase.from("orders").select("id,public_code,status,payment_status,collection_date,total_cents,currency").eq("customer_id",identity.user.id).order("created_at",{ascending:false}).limit(10);
 
   return (
     <main id="main-content">
@@ -38,7 +39,7 @@ export default async function AccountPage() {
           <h2>Consentimientos</h2>
           {consents?.length ? <ul>{consents.map((consent) => <li key={`${consent.consent_type}-${consent.created_at}`}>{consent.consent_type}: {consent.granted ? "concedido" : "retirado"} · versión {consent.version}</li>)}</ul> : <EmptyState title="Sin consentimientos registrados" description="Los consentimientos aparecerán aquí cuando utilices una función que los requiera." />}
         </Card>
-        <Card className="account-card"><EmptyState title="Todavía no hay pedidos" description="Tus pedidos aparecerán aquí cuando activemos las reservas." /></Card>
+        <Card className="account-card"><h2>Pedidos recientes</h2>{orders?.length?<ul>{orders.map(order=><li key={order.id}><strong>{order.public_code}</strong> · {order.collection_date} · {order.status} · {(order.total_cents/100).toLocaleString("es-ES",{style:"currency",currency:order.currency})}</li>)}</ul>:<EmptyState title="Todavía no hay pedidos" description="Tus pedidos confirmados aparecerán aquí." />}</Card>
         <Card className="account-card"><EmptyState title="Plan de Pan todavía no disponible" description="Las futuras suscripciones aparecerán aquí cuando el servicio esté estable." /></Card>
       </Container></Section>
     </main>

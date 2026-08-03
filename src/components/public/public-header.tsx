@@ -9,6 +9,7 @@ import { publicNavigation } from "@/lib/navigation";
 import { Button } from "../ui/button";
 import { Drawer } from "../ui/dialog";
 import { MenuIcon } from "../ui/icons";
+import { CartLink } from "../cart/cart-link";
 
 export function PublicHeader() {
   const pathname = usePathname();
@@ -35,6 +36,7 @@ export function PublicHeader() {
         </nav>
 
         <div className="public-header__actions">
+          <CartLink />
           <Link className="button button--primary header-cta" href="/reserva-y-recoge">
             Reserva y recoge
           </Link>

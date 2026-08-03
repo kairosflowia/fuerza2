@@ -21,7 +21,7 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
-    if (url.pathname === "/admin" || url.pathname.startsWith("/admin/") || url.pathname === "/cuenta" || url.pathname.startsWith("/cuenta/")) {
+    if (url.pathname === "/admin" || url.pathname.startsWith("/admin/") || url.pathname === "/cuenta" || url.pathname.startsWith("/cuenta/") || url.pathname === "/checkout" || url.pathname.startsWith("/checkout/") || url.pathname.startsWith("/pedido/")) {
       event.respondWith(fetch(request));
       return;
     }

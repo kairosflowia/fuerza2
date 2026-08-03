@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import { checkAvailabilityAction, type AvailabilityCheckState } from "@/app/(public)/pan/actions";
 import { Alert, Button, Select } from "@/components/ui";
 import { Input } from "@/components/ui/fields";
+import { useCart } from "@/components/cart/cart-provider";
+import { useState } from "react";
 
 const initial: AvailabilityCheckState = { checked: false };
 
@@ -13,11 +15,13 @@ type Point = { id: string; name: string };
 export function AvailabilityChecker({ variants, points }: { variants: Variant[]; points: Point[] }) {
   const [state, action, pending] = useActionState(checkAvailabilityAction, initial);
   const today = new Date().toISOString().slice(0, 10);
+  const [variantId,setVariantId]=useState(variants[0]?.id??"");
+  const {add}=useCart();
 
   return (
     <form action={action} className="admin-form" aria-label="Consultar disponibilidad">
       {variants.length > 1 ? (
-        <Select id="availability-variant" name="variant_id" label="Variante" defaultValue={variants[0]?.id}>
+        <Select id="availability-variant" name="variant_id" label="Variante" value={variantId} onChange={(event)=>setVariantId(event.target.value)}>
           {variants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
         </Select>
       ) : (
@@ -40,6 +44,7 @@ export function AvailabilityChecker({ variants, points }: { variants: Variant[];
           ) : null}
         </Alert>
       ) : null}
+      {state.checked && state.status!=="sold_out"?<Button type="button" onClick={()=>{const variant=variants.find(item=>item.id===variantId)??variants[0];add({variantId:variant.id,variantName:variant.name,productName:"Pan FUERZA",quantity:1})}}>Añadir al carrito</Button>:null}
     </form>
   );
 }
