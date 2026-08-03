@@ -43,4 +43,24 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
-// Push events will be added only after consent, permissions and server delivery exist.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
+  const url = typeof data.url === "string" && data.url.startsWith("/") && !data.url.startsWith("//") ? data.url : "/cuenta";
+  event.waitUntil(self.registration.showNotification(data.title || "FUERZA", {
+    body: data.body || "Tienes una actualización.", icon: data.icon || "/icon", badge: data.badge || "/icon",
+    tag: data.tag || "fuerza-update", data: { url }, renotify: false,
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const raw = event.notification.data?.url;
+  const path = typeof raw === "string" && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/cuenta";
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
+    for (const client of windows) {
+      if (new URL(client.url).origin === self.location.origin) { await client.focus(); if ("navigate" in client) await client.navigate(path); return; }
+    }
+    return self.clients.openWindow(path);
+  }));
+});

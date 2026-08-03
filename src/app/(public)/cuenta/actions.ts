@@ -134,3 +134,19 @@ export async function updateNotificationPreferences(formData: FormData) {
   }
   redirect("/cuenta");
 }
+
+export async function updatePushPreferences(formData: FormData) {
+  const supabase: any = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/cuenta/acceder");
+  for (const category of ["subscription", "reminder"] as const) {
+    await supabase.from("notification_preferences").upsert({
+      customer_id: user.id,
+      channel: "push",
+      category,
+      enabled: formData.get(`push_${category}`) === "on",
+      consent_version: "2026-08",
+    }, { onConflict: "customer_id,channel,category" });
+  }
+  redirect("/cuenta");
+}
