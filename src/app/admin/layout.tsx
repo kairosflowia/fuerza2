@@ -1,0 +1,21 @@
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+
+import { AdminShell } from "@/components/admin/admin-shell";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Administración",
+    template: "%s · Administración · FUERZA",
+  },
+  robots: { index: false, follow: false },
+};
+
+export default function AdminLayout({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <a className="skip-link" href="#main-content">Saltar al contenido</a>
+      <AdminShell>{children}</AdminShell>
+    </>
+  );
+}
