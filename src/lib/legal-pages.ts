@@ -19,6 +19,9 @@ export const legalPages = {
     description: "Estructura provisional de las condiciones de compra de FUERZA.",
     sections: ["Proceso de compra", "Pago y confirmación", "Recogida", "Cambios, cancelaciones y reembolsos"],
   },
+  "politica-de-cancelacion": { title:"Política de cancelación",description:"Borrador estructural pendiente de validación jurídica.",sections:["Solicitud de cancelación","Pedidos ya pagados","Plazos pendientes de decisión","Reembolsos"] },
+  "politica-de-suscripcion": { title:"Política de suscripción",description:"Borrador estructural del Plan de Pan pendiente de validación.",sections:["Cobro recurrente","Pausa y reanudación","Cambios de plan","Cancelación"] },
+  "informacion-alergenos": { title:"Información sobre alérgenos",description:"Información estructural que debe completarse con los datos reales de cada producto.",sections:["Declaración de alérgenos","Contaminación cruzada","Información por producto","Consultas antes de comprar"] },
 } as const;
 
 export type LegalSlug = keyof typeof legalPages;

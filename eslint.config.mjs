@@ -6,7 +6,7 @@ export default defineConfig([
   ...nextVitals,
   ...nextTypeScript,
   {
-    files: ["src/app/api/{checkout,orders,stripe,subscriptions,admin,cron,resend,push}/**/*.{ts,tsx}", "src/app/admin/{pedidos,suscripciones,produccion,comunicaciones,contenido}/**/*.{ts,tsx}", "src/app/(public)/**/{plan-de-pan,cuenta}/**/*.{ts,tsx}", "src/components/{cart,checkout,subscriptions,account}/**/*.tsx", "src/lib/{notifications,order-emails}.{ts,tsx}", "src/lib/notifications/**/*.{ts,tsx}"],
+    files: ["src/app/api/{checkout,orders,stripe,subscriptions,admin,cron,resend,push}/**/*.{ts,tsx}", "src/app/admin/{pedidos,suscripciones,produccion,comunicaciones,contenido,configuracion}/**/*.{ts,tsx}", "src/app/(public)/**/{plan-de-pan,cuenta}/**/*.{ts,tsx}", "src/components/{cart,checkout,subscriptions,account,privacy}/**/*.tsx", "src/lib/{notifications,order-emails}.{ts,tsx}", "src/lib/notifications/**/*.{ts,tsx}", "src/lib/security/**/*.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "react-hooks/set-state-in-effect": "off",

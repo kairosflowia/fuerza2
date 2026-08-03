@@ -3,9 +3,15 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
+    const origin = request.headers.get("origin");
+    if (!origin || origin !== new URL(request.url).origin) {
+      return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
+    }
+    const rate=await enforceRateLimit("checkout.create",6,900);if(!rate.allowed)return NextResponse.json({error:"too_many_requests"},{status:429,headers:{"retry-after":String(rate.retryAfter)}});
     const body = await request.json();
     if (!body.terms || !body.privacy || !Array.isArray(body.items) || !body.items.length) return NextResponse.json({ error: "invalid_consents" }, { status: 400 });
     const user = (await (await createClient()).auth.getUser()).data.user;

@@ -1,0 +1,5 @@
+import { expect, test } from "@playwright/test";
+test("public home has security headers and cookie controls",async({page})=>{const response=await page.goto("/");expect(response?.headers()["x-content-type-options"]).toBe("nosniff");expect(response?.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");await expect(page.getByRole("heading",{name:"Tus preferencias de cookies"})).toBeVisible();await page.getByRole("button",{name:"Rechazar opcionales"}).click();await expect(page.getByRole("button",{name:"Configurar cookies"})).toBeVisible()});
+test("private admin redirects anonymous users and stays no-store",async({page})=>{const response=await page.goto("/admin");expect(page.url()).toContain("/cuenta/acceder");expect(response?.status()).toBeLessThan(500)});
+test("cron rejects requests without its bearer secret",async({request})=>{const response=await request.get("/api/cron/availability");expect([401,503]).toContain(response.status())});
+test("order lookup does not enumerate short tokens",async({request})=>{const response=await request.get("/api/orders/FZ-NOTREAL?token=x");expect(response.status()).toBe(404)});

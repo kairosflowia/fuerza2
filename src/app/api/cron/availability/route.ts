@@ -18,12 +18,9 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const authHeader = request.headers.get("authorization");
-    if (authHeader !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-  }
+  if (!secret) return NextResponse.json({ error: "cron_not_configured" }, { status: 503 });
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${secret}`) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ ok: false, reason: "supabase_not_configured" }, { status: 503 });
@@ -43,6 +40,8 @@ export async function GET(request: NextRequest) {
   const { data: productionJobs, error: productionError } = await (db as never as { rpc(name:string):Promise<{data:unknown;error:{message:string}|null}> }).rpc("run_production_jobs");
   summary.production_jobs = productionError ? null : productionJobs;
   if (productionError) summary.production_error = productionError.message;
+  const { data: integrityAudit, error: integrityError } = await (db as never as { rpc(name:string):Promise<{data:unknown;error:{message:string}|null}> }).rpc("run_integrity_audit");
+  summary.integrity_audit = integrityError ? null : integrityAudit;
 
   // Reconciliación mínima: pedidos confirmados sin ninguna línea, que nunca
   // deberían existir si convert_reservation_to_order es la única vía de

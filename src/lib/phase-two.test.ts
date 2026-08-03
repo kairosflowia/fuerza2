@@ -32,6 +32,9 @@ describe("public route architecture", () => {
       "/privacidad",
       "/cookies",
       "/condiciones-de-compra",
+      "/politica-de-cancelacion",
+      "/politica-de-suscripcion",
+      "/informacion-alergenos",
       "/offline",
     ]);
   });
@@ -48,6 +51,8 @@ describe("public route architecture", () => {
       "/carrito",
       "/admin/puntos-de-recogida/nuevo",
       "/admin/configuracion/calendario",
+      "/admin/configuracion/legal",
+      "/admin/configuracion/sistema",
       "/admin/analitica/clientes",
       "/admin/analitica/suscripciones",
       "/admin/analitica/puntos",
@@ -83,6 +88,9 @@ describe("public content safeguards", () => {
       "privacidad",
       "cookies",
       "condiciones-de-compra",
+      "politica-de-cancelacion",
+      "politica-de-suscripcion",
+      "informacion-alergenos",
     ]);
     const legalPage = readFileSync(resolve(projectRoot, "src/app/(public)/[legal]/page.tsx"), "utf8");
     expect(legalPage).toContain("Documento no definitivo");

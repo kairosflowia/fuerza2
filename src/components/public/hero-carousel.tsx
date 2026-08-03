@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 const SLIDES = [
-  { src: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1920&q=80", alt: "" },
-  { src: "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?auto=format&fit=crop&w=1920&q=80", alt: "" },
+  { src: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1280&q=72", alt: "" },
+  { src: "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?auto=format&fit=crop&w=1280&q=72", alt: "" },
 ];
 
 const DWELL_MS = 7000;
@@ -28,7 +28,7 @@ export function HeroCarousel() {
     <section className="hero-carousel" aria-label="FUERZA, obrador de masa madre en Asturias">
       {SLIDES.map((slide, index) => (
         <div key={slide.src} className="hero-carousel__slide" data-active={index === active} aria-hidden="true">
-          <Image src={slide.src} alt={slide.alt} fill priority={index === 0} sizes="100vw" style={{ objectFit: "cover" }} />
+          <Image src={slide.src} alt={slide.alt} fill priority={index === 0} unoptimized sizes="100vw" style={{ objectFit: "cover" }} />
         </div>
       ))}
       <div className="hero-carousel__overlay" aria-hidden="true" />

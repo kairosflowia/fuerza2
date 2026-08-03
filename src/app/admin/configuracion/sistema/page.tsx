@@ -1,0 +1,12 @@
+import { redirect } from "next/navigation";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { Alert, Card } from "@/components/ui";
+import { getCurrentIdentity } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+export const dynamic="force-dynamic";
+export default async function SystemHealth(){
+  const identity=await getCurrentIdentity();if(!identity?.roles.some(role=>role==="owner"||role==="admin"))redirect("/cuenta/acceso-denegado");
+  const db:any=await createClient();const[{error:supabase},{count:queued},{count:failed},{count:alerts},{data:webhooks}]=await Promise.all([db.from("app_settings").select("key").limit(1),db.from("notification_events").select("id",{count:"exact",head:true}).in("status",["pending","processing"]),db.from("notification_events").select("id",{count:"exact",head:true}).eq("status","failed"),db.from("system_integrity_alerts").select("id",{count:"exact",head:true}).eq("status","open"),db.from("payment_events").select("event_type,processing_status,created_at").order("created_at",{ascending:false}).limit(5)]);
+  const checks=[{name:"Supabase",ok:!supabase,detail:supabase?"No disponible":"Conectado"},{name:"Stripe",ok:Boolean(process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_WEBHOOK_SECRET),detail:"Configuración del servidor"},{name:"Resend",ok:process.env.EMAIL_PROVIDER==="resend"&&Boolean(process.env.RESEND_API_KEY),detail:process.env.EMAIL_PROVIDER??"sin provider"},{name:"Push",ok:process.env.PUSH_PROVIDER==="webpush"&&Boolean(process.env.VAPID_PRIVATE_KEY),detail:process.env.PUSH_PROVIDER??"sin provider"},{name:"Cron",ok:Boolean(process.env.CRON_SECRET),detail:"Protección interna"}];
+  return <><AdminPageHeader title="Salud del sistema" description="Configuración y señales operativas sin exponer secretos."/><div className="admin-dashboard-grid">{checks.map(check=><Card key={check.name}><h2>{check.name}</h2><Alert variant={check.ok?"success":"warning"} title={check.ok?"Operativo":"Requiere configuración"}>{check.detail}</Alert></Card>)}</div><Card><h2>Operación</h2><p>Cola pendiente: {queued??0} · fallos: {failed??0} · alertas de integridad: {alerts??0}</p><p>Versión: {process.env.VERCEL_GIT_COMMIT_SHA?.slice(0,7)??"desarrollo"} · última migración: 20260803290000</p></Card><Card><h2>Webhooks recientes</h2>{webhooks?.length?<ul>{webhooks.map((event:any)=><li key={`${event.event_type}-${event.created_at}`}>{event.event_type} · {event.processing_status} · {event.created_at}</li>)}</ul>:<p>No hay eventos recientes.</p>}</Card></>;
+}

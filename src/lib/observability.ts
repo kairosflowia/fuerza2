@@ -1,0 +1,5 @@
+import { randomUUID } from "node:crypto";
+const secretPattern = /password|secret|token|authorization|client_secret|p256dh|\bauth\b/i;
+export function maskEmail(value:string){const[a,d]=value.split("@");return d?`${a.slice(0,2)}***@${d}`:"***"}
+export function sanitizeLog(data:Record<string,unknown>={}){return Object.fromEntries(Object.entries(data).map(([key,value])=>[key,secretPattern.test(key)?"[redacted]":typeof value==="string"&&value.includes("@")?maskEmail(value):value]));}
+export function logEvent(input:{level?:"info"|"warn"|"error";source:string;event:string;entity?:string;result:string;correlationId?:string;data?:Record<string,unknown>}){const record={timestamp:new Date().toISOString(),correlation_id:input.correlationId??randomUUID(),level:input.level??"info",source:input.source,event:input.event,entity:input.entity,result:input.result,...sanitizeLog(input.data)};if(input.level==="error")console.error(JSON.stringify(record));else console.info(JSON.stringify(record));return record.correlation_id;}

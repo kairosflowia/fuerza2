@@ -2,7 +2,7 @@ import type { AppRole } from "@/lib/supabase/database.types";
 
 export const adminPermissions = {
   owner: ["*"],
-  admin: ["produccion", "pedidos", "productos", "disponibilidad", "puntos-de-recogida", "clientes", "pagos", "suscripciones", "contenido", "comunicaciones", "analitica/productos", "auditoria"],
+  admin: ["produccion", "pedidos", "productos", "disponibilidad", "puntos-de-recogida", "clientes", "pagos", "suscripciones", "contenido", "comunicaciones", "analitica/productos", "configuracion", "auditoria"],
   operator: ["produccion", "pedidos", "puntos-de-recogida", "disponibilidad"],
   pickup_manager: [],
   customer: [],

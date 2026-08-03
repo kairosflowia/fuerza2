@@ -20,6 +20,9 @@ export const publicRoutes = [
   "/privacidad",
   "/cookies",
   "/condiciones-de-compra",
+  "/politica-de-cancelacion",
+  "/politica-de-suscripcion",
+  "/informacion-alergenos",
   "/offline",
 ] as const;
 

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { safeReturnPath } from "@/lib/auth/redirects";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 
 export interface AuthActionState {
   status: "idle" | "error" | "success";
@@ -36,6 +37,7 @@ async function callbackUrl(next: string) {
 }
 
 export async function signInAction(_state: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  if (!(await enforceRateLimit("auth.login", 8, 900)).allowed) return { status:"error",message:"Demasiados intentos. Espera unos minutos." };
   if (!isSupabaseConfigured()) return unavailable();
   const email = value(formData, "email");
   const password = value(formData, "password");
@@ -60,6 +62,7 @@ export async function signInAction(_state: AuthActionState, formData: FormData):
 }
 
 export async function signUpAction(_state: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  if (!(await enforceRateLimit("auth.signup", 5, 3600)).allowed) return { status:"error",message:"Demasiadas solicitudes. Inténtalo más tarde." };
   if (!isSupabaseConfigured()) return unavailable();
   const fullName = value(formData, "full_name");
   const email = value(formData, "email");
@@ -80,6 +83,7 @@ export async function signUpAction(_state: AuthActionState, formData: FormData):
 }
 
 export async function requestPasswordResetAction(_state: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  if (!(await enforceRateLimit("auth.recovery", 5, 3600)).allowed) return { status:"success",message:"Si existe una cuenta con ese correo, recibirás instrucciones para continuar." };
   if (!isSupabaseConfigured()) return unavailable();
   const email = value(formData, "email");
   if (validEmail(email)) {
