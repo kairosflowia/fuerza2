@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
+import Image from "next/image";
 import Link from "next/link";
+
+import { formatPrice } from "@/lib/catalog-domain";
 
 import { cn } from "@/lib/cn";
 
@@ -34,6 +37,23 @@ export function EditorialProductCard({ index }: { index: number }) {
       <p>Este espacio recibirá nombre, ingredientes y fotografía cuando el catálogo esté aprobado.</p>
       <span className="editorial-product__pending">Sin precio ni disponibilidad</span>
     </article>
+  );
+}
+
+export function EditorialProductPreview({ slug, name, description, imagePath, imageAlt, priceCents }: { slug: string; name: string; description: string | null; imagePath: string | null; imageAlt: string; priceCents: number | null }) {
+  return (
+    <Link href={`/pan/${slug}`} className="editorial-product">
+      {imagePath ? (
+        <span className="editorial-product__image">
+          <Image src={`/api/product-images/${imagePath}`} alt={imageAlt} width={480} height={360} />
+        </span>
+      ) : (
+        <div className="editorial-product__placeholder" aria-hidden="true"><span>?</span></div>
+      )}
+      <h3>{name}</h3>
+      {description ? <p>{description}</p> : null}
+      {priceCents !== null ? <span className="editorial-product__price">Desde {formatPrice(priceCents)}</span> : null}
+    </Link>
   );
 }
 

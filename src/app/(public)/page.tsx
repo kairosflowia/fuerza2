@@ -3,10 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { BreadAnatomy } from "@/components/public/bread-anatomy";
-import { EditorialGrid, EditorialProductCard, SectionHeading, TextLink, ValueCard } from "@/components/public/editorial";
+import { EditorialGrid, EditorialProductPreview, SectionHeading, TextLink, ValueCard } from "@/components/public/editorial";
 import { HeroCarousel } from "@/components/public/hero-carousel";
 import { Newsletter } from "@/components/public/newsletter";
 import { Badge, Container, Section } from "@/components/ui";
+import { getPublicCatalog } from "@/lib/catalog";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -25,7 +26,10 @@ const processSteps = [
   ["05", "Recogida", "Sale del horno y va al punto donde lo hayas reservado."],
 ] as const;
 
-export default function Home() {
+export default async function Home() {
+  const catalog = await getPublicCatalog();
+  const rusticBreads = catalog.filter((p) => p.family?.slug === "hogazas-artesanas").slice(0, 3);
+
   return (
     <main id="main-content">
       <HeroCarousel />
@@ -39,8 +43,24 @@ export default function Home() {
 
       <Section>
         <Container size="wide">
-          <SectionHeading eyebrow="Lo que sale del horno" title="El catálogo empieza aquí" description="Cada día haremos una cantidad limitada. Hasta que los productos estén aprobados, estos bloques solo validan la composición editorial." />
-          <EditorialGrid>{[1, 2, 3].map((index) => <EditorialProductCard index={index} key={index} />)}</EditorialGrid>
+          <SectionHeading eyebrow="Lo que sale del horno" title="El catálogo empieza aquí" description="Pan rústico de fermentación lenta, horneado en cantidad limitada cada día." />
+          <EditorialGrid>
+            {rusticBreads.map((product) => {
+              const image = product.images.find((i) => i.is_primary) ?? product.images[0];
+              const prices = product.variants.flatMap((v) => (v.price_cents === null ? [] : [v.price_cents]));
+              return (
+                <EditorialProductPreview
+                  key={product.id}
+                  slug={product.slug}
+                  name={product.name}
+                  description={product.short_description}
+                  imagePath={image?.storage_path ?? null}
+                  imageAlt={image?.alt_text ?? ""}
+                  priceCents={prices.length ? Math.min(...prices) : null}
+                />
+              );
+            })}
+          </EditorialGrid>
           <TextLink href="/pan">Ver la estructura del pan</TextLink>
         </Container>
       </Section>
