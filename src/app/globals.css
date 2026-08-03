@@ -362,6 +362,17 @@ p { max-width: 68ch; }
 .admin-dashboard-grid { display: grid; gap: var(--space-4); }
 .admin-dashboard-grid .card { background: var(--background); }
 .admin-dashboard-grid .state { min-height: 13rem; }
+.analytics-tabs { display:flex; gap:var(--space-2); overflow-x:auto; margin-block:var(--space-4); padding-bottom:var(--space-2); }
+.analytics-tabs a { flex:0 0 auto; min-height:2.75rem; align-content:center; padding:var(--space-2) var(--space-3); border:1px solid var(--border-strong); text-decoration:none; }
+.analytics-filters { display:grid; gap:var(--space-3); margin-block:var(--space-5); padding:var(--space-4); border:1px solid var(--border-strong); background:var(--background); }
+.analytics-filters label { display:grid; gap:var(--space-1); font-weight:700; }
+.analytics-filters input,.analytics-filters select { min-height:2.75rem; border:1px solid var(--border-strong); background:var(--background); padding:var(--space-2); color:var(--foreground); }
+.analytics-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-3); margin-block:var(--space-5); }
+.analytics-metric { display:grid; gap:var(--space-1); min-width:0; background:var(--background); }
+.analytics-metric p,.analytics-metric strong,.analytics-metric small { margin:0; }
+.analytics-metric p { color:var(--muted-foreground); font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+.analytics-metric strong { font-family:var(--font-fraunces),serif; font-size:clamp(1.5rem,5vw,2.5rem); line-height:1; overflow-wrap:anywhere; }
+.analytics-table { margin-block:var(--space-7); }
 .admin-quick-links { margin-top: var(--space-7); padding-top: var(--space-5); border-top: 3px double var(--border-strong); }
 .admin-quick-links > div { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
 .admin-nav { display: grid; }
@@ -401,6 +412,8 @@ p { max-width: 68ch; }
   .public-footer__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .install-prompt { right: calc(var(--space-5) + env(safe-area-inset-right)); left: auto; max-width: 30rem; }
   .admin-dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analytics-filters { grid-template-columns:repeat(3,minmax(0,1fr)); align-items:end; }
+  .analytics-metrics { grid-template-columns:repeat(4,minmax(0,1fr)); }
   .bread-anatomy__popover { max-width: 20rem; }
   .editorial-grid--3, .editorial-grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .editorial-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -1,0 +1,18 @@
+begin;select plan(14);
+select has_function('public','get_business_analytics',array['date','date','uuid','uuid','text'],'analytics aggregate exists');
+select function_lang_is('public','get_business_analytics',array['date','date','uuid','uuid','text'],'plpgsql','server aggregation');
+select function_returns('public','get_business_analytics',array['date','date','uuid','uuid','text'],'jsonb','returns aggregate json');
+select ok(position('Europe/Madrid' in pg_get_functiondef('public.get_business_analytics(date,date,uuid,uuid,text)'::regprocedure))>0,'Madrid timezone explicit');
+select ok(position('payment_status=''paid''' in pg_get_functiondef('public.get_business_analytics(date,date,uuid,uuid,text)'::regprocedure))>0,'paid revenue explicit');
+select ok(position('p_end - p_start > 366' in pg_get_functiondef('public.get_business_analytics(date,date,uuid,uuid,text)'::regprocedure))>0,'period bounded');
+select has_index('public','orders','orders_analytics_created_idx','orders analytics index');
+select has_index('public','order_items','order_items_analytics_product_idx','product analytics index');
+select is((select count(*)::integer from information_schema.tables where table_schema='public' and table_name like '%analytics_snapshot%'),0,'no duplicated snapshots');
+set local role authenticated;select set_config('request.jwt.claim.role','authenticated',true);select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000901',true);
+select throws_ok($$select public.get_business_analytics(current_date,current_date,null,null,null)$$,'42501',null,'customer denied');
+select throws_ok($$select public.get_business_analytics(current_date,current_date-1,null,null,null)$$,'42501',null,'authorization precedes invalid period');
+reset role;
+select ok(position('customer_email' in pg_get_functiondef('public.get_business_analytics(date,date,uuid,uuid,text)'::regprocedure))=0,'no customer email');
+select ok(position('customer_phone' in pg_get_functiondef('public.get_business_analytics(date,date,uuid,uuid,text)'::regprocedure))=0,'no customer phone');
+select ok(position('stripe_' in pg_get_functiondef('public.get_business_analytics(date,date,uuid,uuid,text)'::regprocedure))=0,'no Stripe identifiers');
+select * from finish();rollback;
