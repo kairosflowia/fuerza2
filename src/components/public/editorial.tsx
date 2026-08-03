@@ -1,0 +1,49 @@
+import type { ReactNode } from "react";
+
+import Link from "next/link";
+
+import { cn } from "@/lib/cn";
+
+import { Badge } from "../ui/badge";
+
+export function EditorialGrid({ children, columns = 3 }: { children: ReactNode; columns?: 2 | 3 | 4 }) {
+  return <div className={cn("editorial-grid", `editorial-grid--${columns}`)}>{children}</div>;
+}
+
+export function ValueCard({ number, title, children, tone = "plain" }: { number?: string; title: string; children: ReactNode; tone?: "plain" | "yellow" | "green" | "blue" | "terracotta" }) {
+  return (
+    <article className={cn("value-card", `value-card--${tone}`)}>
+      {number ? <span className="value-card__number" aria-hidden="true">{number}</span> : null}
+      <h3>{title}</h3>
+      <p>{children}</p>
+    </article>
+  );
+}
+
+export function EditorialProductCard({ index }: { index: number }) {
+  return (
+    <article className="editorial-product">
+      <div className="editorial-product__placeholder" aria-hidden="true">
+        <span>{String(index).padStart(2, "0")}</span>
+      </div>
+      <Badge variant="information">Contenido provisional</Badge>
+      <h3>Producto pendiente de alta</h3>
+      <p>Este espacio recibirá nombre, ingredientes y fotografía cuando el catálogo esté aprobado.</p>
+      <span className="editorial-product__pending">Sin precio ni disponibilidad</span>
+    </article>
+  );
+}
+
+export function SectionHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description?: string }) {
+  return (
+    <header className="section-heading">
+      <p className="eyebrow">{eyebrow}</p>
+      <h2>{title}</h2>
+      {description ? <p>{description}</p> : null}
+    </header>
+  );
+}
+
+export function TextLink({ href, children }: { href: string; children: ReactNode }) {
+  return <Link className="text-link" href={href}>{children}</Link>;
+}

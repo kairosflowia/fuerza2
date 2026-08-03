@@ -39,7 +39,7 @@ describe("design system foundations", () => {
 describe("navigation contracts", () => {
   it("defines the approved public navigation", () => {
     expect(publicNavigation.map(({ label }) => label)).toEqual([
-      "Pan", "Obrador", "Nosotros", "Plan de Pan", "Dónde estamos",
+      "Pan", "Obrador", "Nosotros", "Plan de Pan", "Dónde estamos", "Reserva y recoge",
     ]);
   });
 

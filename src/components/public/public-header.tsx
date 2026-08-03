@@ -23,11 +23,11 @@ export function PublicHeader() {
         </Link>
 
         <nav className="public-nav" aria-label="Navegación principal">
-          {publicNavigation.map((item) => (
+          {publicNavigation.slice(0, -1).map((item) => (
             <Link
               href={item.href}
               key={item.href}
-              aria-current={pathname === item.href ? "page" : undefined}
+              aria-current={pathname === item.href || pathname.startsWith(`${item.href}/`) ? "page" : undefined}
             >
               {item.label}
             </Link>
@@ -35,7 +35,7 @@ export function PublicHeader() {
         </nav>
 
         <div className="public-header__actions">
-          <Link className="button button--primary header-cta" href="/reserva">
+          <Link className="button button--primary header-cta" href="/reserva-y-recoge">
             Reserva y recoge
           </Link>
           <Button
@@ -64,7 +64,7 @@ export function PublicHeader() {
             <Link
               href={item.href}
               key={item.href}
-              aria-current={pathname === item.href ? "page" : undefined}
+              aria-current={pathname === item.href || pathname.startsWith(`${item.href}/`) ? "page" : undefined}
               onClick={() => setOpen(false)}
             >
               {item.label}

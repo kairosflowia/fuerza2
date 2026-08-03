@@ -2,8 +2,25 @@ export const publicNavigation = [
   { label: "Pan", href: "/pan" },
   { label: "Obrador", href: "/obrador" },
   { label: "Nosotros", href: "/nosotros" },
-  { label: "Plan de Pan", href: "/suscripciones" },
+  { label: "Plan de Pan", href: "/plan-de-pan" },
   { label: "Dónde estamos", href: "/donde-estamos" },
+  { label: "Reserva y recoge", href: "/reserva-y-recoge" },
+] as const;
+
+export const publicRoutes = [
+  "/",
+  "/pan",
+  "/obrador",
+  "/nosotros",
+  "/plan-de-pan",
+  "/donde-estamos",
+  "/reserva-y-recoge",
+  "/contacto",
+  "/aviso-legal",
+  "/privacidad",
+  "/cookies",
+  "/condiciones-de-compra",
+  "/offline",
 ] as const;
 
 export const adminNavigation = [

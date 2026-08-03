@@ -32,8 +32,15 @@ function useNativeDialog(
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    if (open && !dialog.open) dialog.showModal();
+    if (open && !dialog.open) {
+      dialog.showModal();
+      document.documentElement.style.overflow = "hidden";
+    }
     if (!open && dialog.open) dialog.close();
+
+    return () => {
+      document.documentElement.style.overflow = "";
+    };
   }, [open]);
 
   useEffect(() => {
