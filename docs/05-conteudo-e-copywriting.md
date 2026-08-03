@@ -10,7 +10,7 @@ Estado: proposta para validação — sem código, sem páginas
 [Doc 03 — Sistema de Design](03-sistema-de-design.md) ·
 [Doc 04 — Arquitetura Técnica](04-arquitetura-tecnica-e-modelo-de-dados.md)
 
----
+----
 
 ## Nota de leitura
 
