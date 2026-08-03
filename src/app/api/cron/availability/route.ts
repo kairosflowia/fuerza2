@@ -40,6 +40,10 @@ export async function GET(request: NextRequest) {
   summary.subscription_jobs = subscriptionError ? null : subscriptionJobs;
   if (subscriptionError) summary.subscription_error = subscriptionError.message;
 
+  const { data: productionJobs, error: productionError } = await (db as never as { rpc(name:string):Promise<{data:unknown;error:{message:string}|null}> }).rpc("run_production_jobs");
+  summary.production_jobs = productionError ? null : productionJobs;
+  if (productionError) summary.production_error = productionError.message;
+
   // Reconciliación mínima: pedidos confirmados sin ninguna línea, que nunca
   // deberían existir si convert_reservation_to_order es la única vía de
   // creación, pero se detectan aquí en vez de asumirlo silenciosamente.
