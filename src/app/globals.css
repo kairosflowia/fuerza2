@@ -279,6 +279,13 @@ p { max-width: 68ch; }
 .admin-table-wrap { overflow-x:auto; border:1px solid var(--border-strong); }
 .admin-table { width:100%; border-collapse:collapse; background:var(--surface); }
 .admin-table th,.admin-table td { padding:var(--space-3); border-bottom:1px solid var(--border); text-align:left; }
+.admin-table__actions { display:flex; flex-wrap:wrap; gap:var(--space-2); align-items:center; }
+.admin-exception-list { display:grid; gap:var(--space-3); list-style:none; margin:0; padding:0; }
+.admin-exception-list li { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--space-3); padding:var(--space-3); border:1px solid var(--border); }
+.admin-calendar td { vertical-align:top; height:6rem; width:14.28%; }
+.admin-calendar__day { padding:var(--space-2); }
+.admin-calendar__day--closed { background:var(--surface-sunken, var(--surface)); }
+.admin-calendar__day .badge { display:block; margin-top:var(--space-1); font-size:0.7rem; }
 .catalog-filters { display:flex; flex-wrap:wrap; gap:var(--space-2); margin-bottom:var(--space-6); }
 .catalog-filters a { min-height:2.75rem; align-content:center; padding-inline:var(--space-4); border:1px solid var(--border-strong); text-decoration:none; }
 .catalog-filters a[aria-current="page"] { background:var(--negro); color:var(--crema); }

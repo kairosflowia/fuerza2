@@ -26,3 +26,14 @@ export function visibleAdminSections<T extends { slug: string }>(roles: readonly
 export function canManageRole(actorRoles: readonly AppRole[], targetRole: AppRole) {
   return actorRoles.includes("owner") && targetRole !== "customer";
 }
+
+/**
+ * Gestión estructural (puntos de recogida, horarios, ventanas, capacidad,
+ * excepciones, cierres, productos aceptados): solo owner/admin. El operador
+ * tiene acceso a la sección "puntos-de-recogida" para consulta (producción y
+ * distribución), pero nunca para escritura estructural — RLS aplica la misma
+ * restricción como defensa en profundidad.
+ */
+export function canManagePickupOperations(roles: readonly AppRole[]) {
+  return roles.includes("owner") || roles.includes("admin");
+}

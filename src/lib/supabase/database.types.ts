@@ -1,6 +1,9 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type AppRole = "customer" | "owner" | "admin" | "operator" | "pickup_manager";
+export type PickupPointType = "bakery" | "external";
+export type PickupPointStatus = "draft" | "active" | "temporarily_unavailable" | "coming_soon" | "inactive";
+export type PickupExceptionType = "closed" | "extraordinary_opening" | "schedule_override" | "capacity_override";
 
 export interface Database {
   public: {
@@ -44,10 +47,21 @@ export interface Database {
       product_allergens: { Row:{product_id:string;allergen_id:string;presence_type:"contains"|"may_contain";notes:string|null}; Insert:{product_id:string;allergen_id:string;presence_type:"contains"|"may_contain";notes?:string|null}; Update:{notes?:string|null}; Relationships:[] };
       product_images: { Row:{id:string;product_id:string;storage_path:string;alt_text:string|null;display_order:number;is_primary:boolean;created_at:string}; Insert:{id?:string;product_id:string;storage_path:string;alt_text?:string|null;display_order?:number;is_primary?:boolean}; Update:{alt_text?:string|null;display_order?:number;is_primary?:boolean}; Relationships:[] };
       product_production_weekdays: { Row:{product_id:string;weekday:number;is_active:boolean}; Insert:{product_id:string;weekday:number;is_active?:boolean}; Update:{is_active?:boolean}; Relationships:[] };
-      pickup_points: { Row:{id:string;name:string;slug:string;status:"active"|"hidden";created_at:string;updated_at:string}; Insert:{id?:string;name:string;slug:string;status?:"active"|"hidden"}; Update:{name?:string;slug?:string;status?:"active"|"hidden"}; Relationships:[] };
-      product_pickup_points: { Row:{product_id:string;pickup_point_id:string;is_available:boolean}; Insert:{product_id:string;pickup_point_id:string;is_available?:boolean}; Update:{is_available?:boolean}; Relationships:[] };
+      pickup_points: { Row:{id:string;name:string;slug:string;type:PickupPointType;status:PickupPointStatus;is_main_bakery:boolean;accepts_all_products:boolean;address_line_1:string|null;address_line_2:string|null;postal_code:string|null;city:string|null;province:string|null;country_code:string;latitude:number|null;longitude:number|null;public_instructions:string|null;internal_notes:string|null;contact_name:string|null;contact_phone:string|null;contact_email:string|null;display_order:number;is_public:boolean;created_at:string;updated_at:string}; Insert:{id?:string;name:string;slug:string;type?:PickupPointType;status?:PickupPointStatus;is_main_bakery?:boolean;accepts_all_products?:boolean;address_line_1?:string|null;address_line_2?:string|null;postal_code?:string|null;city?:string|null;province?:string|null;country_code?:string;latitude?:number|null;longitude?:number|null;public_instructions?:string|null;internal_notes?:string|null;contact_name?:string|null;contact_phone?:string|null;contact_email?:string|null;display_order?:number;is_public?:boolean}; Update: Partial<Database["public"]["Tables"]["pickup_points"]["Insert"]>; Relationships: [] };
+      pickup_point_opening_hours: { Row:{id:string;pickup_point_id:string;weekday:number;opens_at:string|null;closes_at:string|null;is_closed:boolean;created_at:string;updated_at:string}; Insert:{id?:string;pickup_point_id:string;weekday:number;opens_at?:string|null;closes_at?:string|null;is_closed?:boolean}; Update: Partial<Database["public"]["Tables"]["pickup_point_opening_hours"]["Insert"]>; Relationships: [] };
+      pickup_point_collection_windows: { Row:{id:string;pickup_point_id:string;weekday:number;starts_at:string;ends_at:string;is_active:boolean;created_at:string;updated_at:string}; Insert:{id?:string;pickup_point_id:string;weekday:number;starts_at:string;ends_at:string;is_active?:boolean}; Update: Partial<Database["public"]["Tables"]["pickup_point_collection_windows"]["Insert"]>; Relationships: [] };
+      pickup_point_capacity_defaults: { Row:{id:string;pickup_point_id:string;weekday:number;max_units:number;created_at:string;updated_at:string}; Insert:{id?:string;pickup_point_id:string;weekday:number;max_units:number}; Update:{max_units?:number}; Relationships: [] };
+      pickup_point_exceptions: { Row:{id:string;pickup_point_id:string;exception_date:string;type:PickupExceptionType;collection_starts_at:string|null;collection_ends_at:string|null;capacity_override:number|null;public_message:string|null;internal_reason:string|null;created_by:string|null;created_at:string;updated_at:string}; Insert:{id?:string;pickup_point_id:string;exception_date:string;type:PickupExceptionType;collection_starts_at?:string|null;collection_ends_at?:string|null;capacity_override?:number|null;public_message?:string|null;internal_reason?:string|null;created_by?:string|null}; Update: Partial<Database["public"]["Tables"]["pickup_point_exceptions"]["Insert"]>; Relationships: [] };
+      global_closures: { Row:{id:string;starts_on:string;ends_on:string;public_message:string|null;internal_reason:string|null;created_by:string|null;created_at:string;updated_at:string}; Insert:{id?:string;starts_on:string;ends_on:string;public_message?:string|null;internal_reason?:string|null;created_by?:string|null}; Update: Partial<Database["public"]["Tables"]["global_closures"]["Insert"]>; Relationships: [] };
+      product_pickup_points: { Row:{product_id:string;pickup_point_id:string;is_available:boolean;created_at:string;updated_at:string}; Insert:{product_id:string;pickup_point_id:string;is_available?:boolean}; Update:{is_available?:boolean}; Relationships:[] };
     };
-    Views: Record<string, never>;
+    Views: {
+      pickup_points_public: { Row:{id:string;name:string;slug:string;type:PickupPointType;status:PickupPointStatus;is_main_bakery:boolean;address_line_1:string|null;address_line_2:string|null;postal_code:string|null;city:string|null;province:string|null;country_code:string;latitude:number|null;longitude:number|null;public_instructions:string|null;display_order:number}; Relationships: [] };
+      pickup_point_opening_hours_public: { Row:{id:string;pickup_point_id:string;weekday:number;opens_at:string|null;closes_at:string|null;is_closed:boolean}; Relationships: [] };
+      pickup_point_collection_windows_public: { Row:{id:string;pickup_point_id:string;weekday:number;starts_at:string;ends_at:string}; Relationships: [] };
+      pickup_point_exceptions_public: { Row:{id:string;pickup_point_id:string;exception_date:string;type:PickupExceptionType;collection_starts_at:string|null;collection_ends_at:string|null;public_message:string|null}; Relationships: [] };
+      global_closures_public: { Row:{id:string;starts_on:string;ends_on:string;public_message:string|null}; Relationships: [] };
+    };
     Functions: {
       assign_user_role: { Args: { target_user_id: string; target_role: AppRole }; Returns: undefined };
       remove_user_role: { Args: { target_user_id: string; target_role: AppRole }; Returns: undefined };

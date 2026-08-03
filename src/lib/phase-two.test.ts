@@ -42,6 +42,8 @@ describe("public route architecture", () => {
       ...accountRoutes,
       "/admin",
       "/admin/productos/nuevo",
+      "/admin/puntos-de-recogida/nuevo",
+      "/admin/configuracion/calendario",
       "/design-system",
       ...adminNavigation.map(({ slug }) => `/admin/${slug}`),
     ]);
