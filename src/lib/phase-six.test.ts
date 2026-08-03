@@ -180,7 +180,7 @@ describe("cache and offline behavior", () => {
 describe("scheduled task", () => {
   it("is wired through Vercel Cron pointing at the availability route", () => {
     const config = JSON.parse(vercelConfig);
-    expect(config.crons).toContainEqual({ path: "/api/cron/availability", schedule: "*/5 * * * *" });
+    expect(config.crons).toContainEqual({ path: "/api/cron/availability", schedule: "0 3 * * *" });
   });
 
   it("does not treat the cron as the source of correctness: the reservation function self-heals independently", () => {
