@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(17);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
 ('00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner-catalog@example.test','',now(),'{}','{}',now(),now()),
 ('00000000-0000-0000-0000-000000000202','00000000-0000-0000-0000-000000000000','authenticated','authenticated','customer-catalog@example.test','',now(),'{}','{}',now(),now()),
@@ -19,6 +19,23 @@ select is((select status::text from public.products where id='20000000-0000-0000
 insert into public.product_images(product_id,storage_path,alt_text,is_primary) values('20000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001.jpg','Imagen de prueba',true);
 select throws_ok($$insert into public.product_images(product_id,storage_path,alt_text,is_primary) values('20000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000002.jpg','Otra',true)$$,'23505',null,'one primary image enforced');
 select ok(exists(select 1 from public.audit_logs where entity_type='products'),'catalog changes audited');
+insert into public.allergens(id,code,name,display_order) values('50000000-0000-0000-0000-000000000001','test-allergen','Alérgeno de prueba',99) on conflict (id) do nothing;
+insert into public.product_allergens(product_id,allergen_id,presence_type) values('20000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','contains');
+insert into public.ingredients(id,name) values('60000000-0000-0000-0000-000000000001','Ingrediente de prueba') on conflict (id) do nothing;
+insert into public.product_ingredients(product_id,ingredient_id) values('20000000-0000-0000-0000-000000000001','60000000-0000-0000-0000-000000000001');
+reset role;set local role anon;
+select ok(exists(select 1 from public.allergens where id='50000000-0000-0000-0000-000000000001'),'anon can read the name of an allergen linked to a published product (regression: must compare against allergens.id, not products.id)');
+select ok(exists(select 1 from public.ingredients where id='60000000-0000-0000-0000-000000000001'),'anon can read the name of an ingredient linked to a published product (regression: must compare against ingredients.id, not products.id)');
+reset role;set local role authenticated;select set_config('request.jwt.claim.role','authenticated',true);select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000201',true);
+insert into storage.objects(bucket_id,name) values('product-images','20000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001.jpg');
+reset role;set local role anon;
+select ok(exists(select 1 from storage.objects where bucket_id='product-images' and name='20000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001.jpg'),'anon can read image of a published product (regression: foldername() must read storage.objects.name, not products.name)');
+reset role;set local role authenticated;select set_config('request.jwt.claim.role','authenticated',true);select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000201',true);
+update public.products set status='draft' where id='20000000-0000-0000-0000-000000000001';
+reset role;set local role anon;
+select is((select count(*)::integer from storage.objects where bucket_id='product-images' and name='20000000-0000-0000-0000-000000000001/40000000-0000-0000-0000-000000000001.jpg'),0,'anon cannot read image of a draft product');
+reset role;set local role authenticated;select set_config('request.jwt.claim.role','authenticated',true);select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000201',true);
+update public.products set status='active' where id='20000000-0000-0000-0000-000000000001';
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000202',true);
 select throws_ok($$insert into public.product_families(name,slug) values('No','no')$$,'42501',null,'customer cannot write catalog');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000203',true);

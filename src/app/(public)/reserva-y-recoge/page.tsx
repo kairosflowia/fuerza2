@@ -1,23 +1,19 @@
+import Image from "next/image";
+import Link from "next/link";
+
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Container, Section } from "@/components/ui/layout";
 import { Faq } from "@/components/public/faq";
 import { PageIntro } from "@/components/public/page-intro";
+import { getPublicCatalog } from "@/lib/catalog";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Reserva y recoge",
-  description:
-    "Descubre cómo funcionará la reserva anticipada de pan FUERZA y su recogida en Asturias.",
+  description: "Elige una categoría, después el producto y añádelo a tu pedido para recoger en el obrador.",
   path: "/reserva-y-recoge",
 });
-
-const steps = [
-  ["01", "Elige tu pan.", "Consulta lo que está disponible para una fecha concreta."],
-  ["02", "Elige cuándo y dónde recogerlo.", "Selecciona una opción compatible con la producción y la capacidad del punto."],
-  ["03", "Paga y recógelo.", "La reserva queda confirmada únicamente después del pago."],
-] as const;
 
 const questions = [
   {
@@ -34,38 +30,56 @@ const questions = [
   },
 ] as const;
 
-export default function ReservaYRecogePage() {
+export default async function ReservaYRecogePage() {
+  const catalog = await getPublicCatalog();
+  const families = [...new Map(catalog.flatMap((p) => (p.family ? [[p.family.id, p.family]] as const : []))).values()]
+    .map((family) => ({ family, count: catalog.filter((p) => p.family?.id === family.id).length }))
+    .filter(({ count }) => count > 0)
+    .sort((a, b) => a.family.display_order - b.family.display_order);
+
   return (
     <main id="main-content">
       <PageIntro
-        eyebrow="Servicio en preparación"
-        title="Reserva y recoge"
-        description="Tu pan estará ligado a una fecha y a un punto de recogida reales. Sin promesas de stock que no podamos cumplir."
+        eyebrow="Reserva y recoge"
+        title="Elige qué quieres reservar"
+        description="Selecciona una categoría para ver sus productos. Podrás elegir cantidad y añadirlos a tu pedido."
       />
       <Section>
         <Container>
-          <div className="process-list" aria-label="Cómo funcionará la reserva">
-            {steps.map(([number, title, description]) => (
-              <Card className="process-step" key={number}>
-                <span aria-hidden="true">{number}</span>
-                <h2>{title}</h2>
-                <p>{description}</p>
-              </Card>
-            ))}
-          </div>
-          <Alert variant="information" title="Reservas todavía no disponibles">
-            Esta página explica el servicio. Todavía no hay catálogo, disponibilidad, carrito ni pago activos.
-          </Alert>
+          {families.length ? (
+            <div className="category-grid">
+              {families.map(({ family, count }) => {
+                const sample = catalog.find((p) => p.family?.id === family.id);
+                const image = sample?.images.find((i) => i.is_primary) ?? sample?.images[0];
+                return (
+                  <Link key={family.id} href={`/reserva-y-recoge/${family.slug}`} className="category-card">
+                    <span className="category-card__image">
+                      {image ? (
+                        <Image src={`/api/product-images/${image.storage_path}`} alt="" width={200} height={200} />
+                      ) : null}
+                    </span>
+                    <span className="category-card__body">
+                      <span className="category-card__name">{family.name}</span>
+                      <span className="category-card__count">({count} producto{count === 1 ? "" : "s"})</span>
+                    </span>
+                    <span className="category-card__chevron" aria-hidden="true">›</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <Alert variant="information" title="Todavía no hay categorías publicadas">
+              El catálogo aparecerá aquí en cuanto el obrador dé de alta sus primeros productos.
+            </Alert>
+          )}
         </Container>
       </Section>
       <Section tone="sunken">
         <Container className="institutional-grid">
           <div className="prose-block">
-            <Badge variant="warning">Próximamente</Badge>
-            <h2>Disponibilidad real</h2>
-            <p>
-              Cuando abramos las reservas, cada opción dependerá de la producción disponible, la fecha y la capacidad del punto elegido.
-            </p>
+            <Badge variant="warning">Cómo funciona</Badge>
+            <h2>Reserva, paga y recoge</h2>
+            <p>Eliges tus productos, indicas cuándo y dónde recogerlos, y pagas por adelantado desde el carrito.</p>
             <p>No aceptaremos más reservas de las que podamos preparar y entregar.</p>
           </div>
           <div>

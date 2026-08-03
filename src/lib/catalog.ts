@@ -29,4 +29,4 @@ async function loadCatalog(): Promise<CatalogProduct[]> {
 
 export const getPublicCatalog = unstable_cache(loadCatalog, ["public-catalog"], { revalidate: 60, tags: ["catalog"] });
 export async function getPublicProduct(slug: string) { return (await getPublicCatalog()).find((product) => product.slug === slug) ?? null; }
-export function formatPrice(cents: number) { return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100); }
+export { formatPrice } from "./catalog-domain";
