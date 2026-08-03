@@ -1,34 +1,35 @@
 import type { ReactNode } from "react";
 
-import { Alert } from "../ui/alert";
+import { signOutAction } from "@/app/(public)/cuenta/actions";
+import type { AppRole } from "@/lib/supabase/database.types";
+
+import { Button } from "../ui/button";
 import { AdminMobileNavigation, AdminSidebar } from "./admin-navigation";
 
-export function AdminHeader() {
+export function AdminHeader({ email }: { email: string }) {
   return (
     <header className="admin-header">
       <div>
         <span className="admin-header__mark">FUERZA</span>
         <span className="admin-header__context">Administración</span>
       </div>
-      <span className="badge badge--neutral">Estructura inicial</span>
+      <div className="admin-user">
+        <span>{email}</span>
+        <form action={signOutAction}><Button variant="text" type="submit">Cerrar sesión</Button></form>
+      </div>
     </header>
   );
 }
 
-export function AdminShell({ children }: { children: ReactNode }) {
+export function AdminShell({ children, email, roles }: { children: ReactNode; email: string; roles: readonly AppRole[] }) {
   return (
     <div className="admin-shell">
-      <AdminSidebar />
+      <AdminSidebar roles={roles} />
       <div className="admin-workspace">
-        <AdminHeader />
-        {process.env.NODE_ENV === "development" ? (
-          <Alert variant="warning" title="Acceso todavía sin proteger" className="admin-dev-alert">
-            La autenticación y los permisos se implementarán en su fase correspondiente. No uses esta estructura con datos reales.
-          </Alert>
-        ) : null}
+        <AdminHeader email={email} />
         <main id="main-content" className="admin-main">{children}</main>
       </div>
-      <AdminMobileNavigation />
+      <AdminMobileNavigation roles={roles} />
     </div>
   );
 }

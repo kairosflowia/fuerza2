@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { legalPages } from "@/lib/legal-pages";
-import { adminNavigation, publicRoutes } from "@/lib/navigation";
+import { accountRoutes, adminNavigation, publicRoutes } from "@/lib/navigation";
 import { createPageMetadata } from "@/lib/seo";
 
 const projectRoot = process.cwd();
@@ -39,6 +39,7 @@ describe("public route architecture", () => {
   it("keeps internal static links inside a known route", () => {
     const knownRoutes = new Set([
       ...publicRoutes,
+      ...accountRoutes,
       "/admin",
       "/design-system",
       ...adminNavigation.map(({ slug }) => `/admin/${slug}`),
@@ -101,6 +102,6 @@ describe("SEO publication contracts", () => {
     expect(urls).toContain("/reserva-y-recoge");
     expect(urls).toContain("/condiciones-de-compra");
     expect(urls).not.toContain("/offline");
-    expect(robots().rules).toMatchObject({ disallow: ["/admin/", "/design-system", "/offline"] });
+    expect(robots().rules).toMatchObject({ disallow: ["/admin/", "/cuenta/", "/auth/", "/design-system", "/offline"] });
   });
 });

@@ -234,9 +234,10 @@ p { max-width: 68ch; }
 .newsletter { display: grid; gap: var(--space-5); }
 .newsletter__form { display: grid; gap: var(--space-4); }
 .breadcrumbs { margin-bottom: var(--space-6); font-size: 0.8rem; }
-.breadcrumbs ol { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.breadcrumbs li { display: flex; gap: var(--space-2); }
+.breadcrumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.breadcrumbs li { display: flex; align-items: center; gap: var(--space-2); }
 .breadcrumbs a { min-height: 2.75rem; align-content: center; }
+.breadcrumbs li:not(:first-child) a { min-height: auto; }
 .institutional-hero { max-width: 87.5rem; margin-inline: auto; padding: clamp(var(--space-7), 9vw, var(--space-10)) var(--page-gutter) var(--space-7); border-bottom: 3px double var(--border-strong); }
 .institutional-hero h1 { max-width: 18ch; }
 .institutional-hero__lead { max-width: 52rem; margin: var(--space-5) 0 0; font-size: clamp(1.1rem, 2vw, 1.35rem); }
@@ -259,6 +260,15 @@ p { max-width: 68ch; }
 .legal-section p { margin: 0; }
 .status-page { display: grid; min-height: 70dvh; align-items: center; padding-block: var(--space-9); }
 .status-page p { margin-block: var(--space-4); }
+.auth-layout { display: grid; max-width: 40rem; }
+.auth-form { display: grid; gap: var(--space-5); }
+.auth-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-5); }
+.auth-links a { min-height: 2.75rem; align-content: center; text-underline-offset: 0.2em; }
+.account-grid { display: grid; gap: var(--space-4); }
+.account-card { display: grid; align-content: start; gap: var(--space-4); }
+.account-card h2, .account-card p { margin: 0; }
+.admin-user { display: flex; align-items: center; gap: var(--space-2); }
+.admin-user > span { display: none; color: var(--muted-foreground); font-size: 0.8rem; }
 
 .showcase-section { padding-block: var(--space-7); border-top: 3px double var(--border-strong); }
 .showcase-section > h2 { margin-bottom: var(--space-5); }
@@ -329,6 +339,8 @@ p { max-width: 68ch; }
   .catalog-toolbar p { grid-column: 1 / -1; }
   .contact-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .contact-form .field:nth-of-type(n + 4), .contact-form .choice, .contact-form .button { grid-column: 1 / -1; }
+  .account-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-user > span { display: inline; }
 }
 
 @media (min-width: 64rem) {

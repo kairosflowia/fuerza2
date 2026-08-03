@@ -5,16 +5,19 @@ import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { adminNavigation } from "@/lib/navigation";
+import { visibleAdminSections } from "@/lib/auth/permissions";
+import type { AppRole } from "@/lib/supabase/database.types";
 
 import { Button } from "../ui/button";
 import { Drawer } from "../ui/dialog";
 
-function AdminLinks({ onNavigate }: { onNavigate?: () => void }) {
+function AdminLinks({ roles, onNavigate }: { roles: readonly AppRole[]; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const sections = visibleAdminSections(roles, adminNavigation);
 
   return (
     <nav className="admin-nav" aria-label="Administración">
-      {adminNavigation.map((item) => {
+      {sections.map((item) => {
         const href = `/admin/${item.slug}`;
         return (
           <Link
@@ -31,21 +34,21 @@ function AdminLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AdminSidebar() {
+export function AdminSidebar({ roles }: { roles: readonly AppRole[] }) {
   return (
     <aside className="admin-sidebar">
       <Link className="admin-brand" href="/admin">FUERZA <span>obrador</span></Link>
-      <AdminLinks />
+      <AdminLinks roles={roles} />
       <Link className="admin-back-link" href="/">Volver al portal</Link>
     </aside>
   );
 }
 
-export function AdminMobileNavigation() {
+export function AdminMobileNavigation({ roles }: { roles: readonly AppRole[] }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const primaryItems = adminNavigation.slice(0, 3);
+  const primaryItems = visibleAdminSections(roles, adminNavigation).slice(0, 3);
 
   return (
     <>
@@ -75,7 +78,7 @@ export function AdminMobileNavigation() {
         returnFocusRef={triggerRef}
         className="admin-mobile-drawer"
       >
-        <AdminLinks onNavigate={() => setOpen(false)} />
+        <AdminLinks roles={roles} onNavigate={() => setOpen(false)} />
       </Drawer>
     </>
   );

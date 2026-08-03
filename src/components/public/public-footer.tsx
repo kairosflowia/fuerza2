@@ -26,6 +26,7 @@ export function PublicFooter() {
         <nav aria-label="Información legal">
           <p className="footer-heading">Información</p>
           <Link href="/contacto">Contacto</Link>
+          <Link href="/cuenta/acceder">Mi cuenta</Link>
           <Link href="/aviso-legal">Aviso legal</Link>
           <Link href="/privacidad">Privacidad</Link>
           <Link href="/cookies">Cookies</Link>

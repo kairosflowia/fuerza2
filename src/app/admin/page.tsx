@@ -3,6 +3,9 @@ import Link from "next/link";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/states";
+import { visibleAdminSections } from "@/lib/auth/permissions";
+import { getCurrentIdentity } from "@/lib/auth/session";
+import { adminNavigation } from "@/lib/navigation";
 
 const dashboardAreas = [
   {
@@ -23,7 +26,9 @@ const dashboardAreas = [
   },
 ] as const;
 
-export default function AdminHomePage() {
+export default async function AdminHomePage() {
+  const identity = await getCurrentIdentity();
+  const quickLinks = visibleAdminSections(identity?.roles ?? [], adminNavigation).slice(0, 4);
   return (
     <>
       <AdminPageHeader
@@ -40,10 +45,7 @@ export default function AdminHomePage() {
       <section className="admin-quick-links" aria-labelledby="quick-links-title">
         <h2 id="quick-links-title">Accesos rápidos</h2>
         <div>
-          <Link className="button button--secondary" href="/admin/produccion">Producción</Link>
-          <Link className="button button--secondary" href="/admin/pedidos">Pedidos</Link>
-          <Link className="button button--secondary" href="/admin/productos">Productos</Link>
-          <Link className="button button--secondary" href="/admin/disponibilidad">Disponibilidad</Link>
+          {quickLinks.map((item) => <Link className="button button--secondary" href={`/admin/${item.slug}`} key={item.slug}>{item.label}</Link>)}
         </div>
       </section>
     </>

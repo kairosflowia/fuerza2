@@ -1,0 +1,2 @@
+-- Seed intencionalmente vacío: no se crean personas, credenciales ni datos comerciales ficticios.
+-- Para promover el primer propietario, crea una cuenta real y sigue el procedimiento del README.

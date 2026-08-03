@@ -23,6 +23,16 @@ export const publicRoutes = [
   "/offline",
 ] as const;
 
+export const accountRoutes = [
+  "/cuenta",
+  "/cuenta/acceder",
+  "/cuenta/crear",
+  "/cuenta/recuperar",
+  "/cuenta/restablecer",
+  "/cuenta/acceso-denegado",
+  "/auth/callback",
+] as const;
+
 export const adminNavigation = [
   { slug: "produccion", label: "Producción", shortLabel: "Producción", description: "Organiza el trabajo del obrador por fecha y punto." },
   { slug: "pedidos", label: "Pedidos", shortLabel: "Pedidos", description: "Consulta y prepara los pedidos confirmados." },

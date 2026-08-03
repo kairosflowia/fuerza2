@@ -1,4 +1,4 @@
-const CACHE_NAME = "fuerza-static-v1";
+const CACHE_NAME = "fuerza-static-v2";
 const OFFLINE_URL = "/offline";
 const PRECACHE = [OFFLINE_URL, "/fuerza.jpeg", "/manifest.webmanifest", "/icon", "/apple-icon"];
 
@@ -21,6 +21,10 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
+    if (url.pathname === "/admin" || url.pathname.startsWith("/admin/") || url.pathname === "/cuenta" || url.pathname.startsWith("/cuenta/")) {
+      event.respondWith(fetch(request));
+      return;
+    }
     event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
     return;
   }
