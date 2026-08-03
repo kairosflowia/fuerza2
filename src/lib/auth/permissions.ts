@@ -3,7 +3,7 @@ import type { AppRole } from "@/lib/supabase/database.types";
 export const adminPermissions = {
   owner: ["*"],
   admin: ["produccion", "pedidos", "productos", "disponibilidad", "puntos-de-recogida", "clientes", "pagos", "suscripciones", "contenido", "auditoria"],
-  operator: ["produccion", "pedidos", "puntos-de-recogida"],
+  operator: ["produccion", "pedidos", "puntos-de-recogida", "disponibilidad"],
   pickup_manager: [],
   customer: [],
 } as const satisfies Record<AppRole, readonly string[]>;
@@ -35,5 +35,16 @@ export function canManageRole(actorRoles: readonly AppRole[], targetRole: AppRol
  * restricción como defensa en profundidad.
  */
 export function canManagePickupOperations(roles: readonly AppRole[]) {
+  return roles.includes("owner") || roles.includes("admin");
+}
+
+/**
+ * Gestión estructural de disponibilidad (capacidad, apertura/cierre,
+ * reserva para suscripciones, overrides): solo owner/admin. El operador
+ * puede consultar todo y, mediante set_production_date_status, abrir o
+ * cerrar una fecha ya creada — nunca cancelarla ni tocar capacidad. RLS
+ * aplica la misma restricción como defensa en profundidad.
+ */
+export function canManageAvailability(roles: readonly AppRole[]) {
   return roles.includes("owner") || roles.includes("admin");
 }

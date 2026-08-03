@@ -4,6 +4,9 @@ export type AppRole = "customer" | "owner" | "admin" | "operator" | "pickup_mana
 export type PickupPointType = "bakery" | "external";
 export type PickupPointStatus = "draft" | "active" | "temporarily_unavailable" | "coming_soon" | "inactive";
 export type PickupExceptionType = "closed" | "extraordinary_opening" | "schedule_override" | "capacity_override";
+export type ProductionDateStatus = "draft" | "open" | "closed" | "cancelled";
+export type StockReservationStatus = "active" | "expired" | "released" | "converted";
+export type OrderStatus = "pending_payment" | "confirmed" | "cancelled" | "refunded";
 
 export interface Database {
   public: {
@@ -54,6 +57,12 @@ export interface Database {
       pickup_point_exceptions: { Row:{id:string;pickup_point_id:string;exception_date:string;type:PickupExceptionType;collection_starts_at:string|null;collection_ends_at:string|null;capacity_override:number|null;public_message:string|null;internal_reason:string|null;created_by:string|null;created_at:string;updated_at:string}; Insert:{id?:string;pickup_point_id:string;exception_date:string;type:PickupExceptionType;collection_starts_at?:string|null;collection_ends_at?:string|null;capacity_override?:number|null;public_message?:string|null;internal_reason?:string|null;created_by?:string|null}; Update: Partial<Database["public"]["Tables"]["pickup_point_exceptions"]["Insert"]>; Relationships: [] };
       global_closures: { Row:{id:string;starts_on:string;ends_on:string;public_message:string|null;internal_reason:string|null;created_by:string|null;created_at:string;updated_at:string}; Insert:{id?:string;starts_on:string;ends_on:string;public_message?:string|null;internal_reason?:string|null;created_by?:string|null}; Update: Partial<Database["public"]["Tables"]["global_closures"]["Insert"]>; Relationships: [] };
       product_pickup_points: { Row:{product_id:string;pickup_point_id:string;is_available:boolean;created_at:string;updated_at:string}; Insert:{product_id:string;pickup_point_id:string;is_available?:boolean}; Update:{is_available?:boolean}; Relationships:[] };
+      production_dates: { Row:{id:string;product_variant_id:string;production_date:string;total_capacity:number;reserved_for_subscriptions:number;status:ProductionDateStatus;notes:string|null;created_by:string|null;created_at:string;updated_at:string}; Insert:{id?:string;product_variant_id:string;production_date:string;total_capacity:number;reserved_for_subscriptions?:number;status?:ProductionDateStatus;notes?:string|null;created_by?:string|null}; Update: Partial<Database["public"]["Tables"]["production_dates"]["Insert"]>; Relationships: [] };
+      availability_overrides: { Row:{id:string;product_variant_id:string;pickup_point_id:string|null;availability_date:string;capacity_override:number;reason:string|null;created_by:string|null;created_at:string;updated_at:string}; Insert:{id?:string;product_variant_id:string;pickup_point_id?:string|null;availability_date:string;capacity_override:number;reason?:string|null;created_by?:string|null}; Update: Partial<Database["public"]["Tables"]["availability_overrides"]["Insert"]>; Relationships: [] };
+      stock_reservations: { Row:{id:string;token:string;session_key:string;customer_id:string|null;product_variant_id:string;pickup_point_id:string;collection_date:string;quantity:number;status:StockReservationStatus;expires_at:string;extended_at:string|null;converted_order_id:string|null;created_at:string;updated_at:string}; Insert:never; Update:never; Relationships: [] };
+      orders: { Row:{id:string;public_code:string;customer_id:string|null;guest_email:string|null;guest_phone:string|null;pickup_point_id:string;collection_date:string;status:OrderStatus;total_cents:number;currency:string;confirmed_at:string|null;created_at:string;updated_at:string}; Insert:never; Update:never; Relationships: [] };
+      order_items: { Row:{id:string;order_id:string;product_variant_id:string;product_name_snapshot:string;variant_name_snapshot:string;unit_price_cents:number;quantity:number;line_total_cents:number;created_at:string}; Insert:never; Update:never; Relationships: [] };
+      subscription_capacity_allocations: { Row:{id:string;product_variant_id:string;pickup_point_id:string|null;allocation_date:string;quantity:number;source_reference:string|null;created_at:string;updated_at:string}; Insert:{id?:string;product_variant_id:string;pickup_point_id?:string|null;allocation_date:string;quantity:number;source_reference?:string|null}; Update: Partial<Database["public"]["Tables"]["subscription_capacity_allocations"]["Insert"]>; Relationships: [] };
     };
     Views: {
       pickup_points_public: { Row:{id:string;name:string;slug:string;type:PickupPointType;status:PickupPointStatus;is_main_bakery:boolean;address_line_1:string|null;address_line_2:string|null;postal_code:string|null;city:string|null;province:string|null;country_code:string;latitude:number|null;longitude:number|null;public_instructions:string|null;display_order:number}; Relationships: [] };
@@ -66,6 +75,15 @@ export interface Database {
       assign_user_role: { Args: { target_user_id: string; target_role: AppRole }; Returns: undefined };
       remove_user_role: { Args: { target_user_id: string; target_role: AppRole }; Returns: undefined };
       log_admin_event: { Args: { event_action: string; event_metadata?: Json }; Returns: undefined };
+      create_stock_reservation: { Args: { p_product_variant_id: string; p_pickup_point_id: string; p_collection_date: string; p_quantity: number; p_session_key: string; p_customer_id?: string | null }; Returns: { ok: boolean; reason: string; reservation_id: string | null; token: string | null; expires_at: string | null; quantity_available: number | null }[] };
+      expire_stock_reservations: { Args: Record<string, never>; Returns: number };
+      extend_stock_reservation: { Args: { p_token: string }; Returns: { ok: boolean; reason: string; expires_at: string | null }[] };
+      convert_reservation_to_order: { Args: { p_token: string; p_guest_email?: string | null; p_guest_phone?: string | null }; Returns: { ok: boolean; reason: string; order_id: string | null; public_code: string | null }[] };
+      cancel_order: { Args: { p_order_id: string; p_reason?: string | null }; Returns: { ok: boolean; reason: string }[] };
+      set_production_date_status: { Args: { p_id: string; p_status: ProductionDateStatus }; Returns: { ok: boolean; reason: string }[] };
+      check_variant_availability: { Args: { p_product_variant_id: string; p_pickup_point_id: string; p_collection_date: string }; Returns: { status: "available" | "low_stock" | "sold_out"; reason: string; quantity_available: number | null }[] };
+      next_available_date: { Args: { p_product_variant_id: string; p_pickup_point_id: string; p_from_date?: string; p_horizon_days?: number }; Returns: string | null };
+      available_pickup_points_for_variant: { Args: { p_product_variant_id: string; p_collection_date: string }; Returns: { pickup_point_id: string; status: "available" | "low_stock" | "sold_out"; reason: string; quantity_available: number | null }[] };
     };
     Enums: { app_role: AppRole };
     CompositeTypes: Record<string, never>;
