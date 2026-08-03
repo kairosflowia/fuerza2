@@ -124,3 +124,13 @@ export async function signOutAction() {
   }
   redirect("/cuenta/acceder");
 }
+
+export async function updateNotificationPreferences(formData: FormData) {
+  const supabase: any = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/cuenta/acceder");
+  for (const category of ["subscription", "reminder", "marketing"] as const) {
+    await supabase.from("notification_preferences").upsert({ customer_id: user.id, channel: "email", category, enabled: formData.get(category) === "on", consent_version: "2026-08" }, { onConflict: "customer_id,channel,category" });
+  }
+  redirect("/cuenta");
+}

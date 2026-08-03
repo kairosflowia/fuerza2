@@ -44,7 +44,7 @@ describe("navigation contracts", () => {
   });
 
   it("defines every structural admin route without invented records", () => {
-    expect(adminNavigation).toHaveLength(12);
+    expect(adminNavigation).toHaveLength(13);
     expect(adminNavigation.map(({ slug }) => slug)).toContain("produccion");
     expect(adminNavigation.map(({ slug }) => slug)).toContain("auditoria");
   });

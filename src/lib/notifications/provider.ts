@@ -1,0 +1,7 @@
+import { Resend } from "resend";
+export type EmailMessage={to:string;subject:string;html:string;text:string;idempotencyKey:string};
+export type DeliveryResult={ok:boolean;messageId?:string;errorCode?:string;error?:string};
+export interface EmailProvider{send(message:EmailMessage):Promise<DeliveryResult>}
+export class FakeEmailProvider implements EmailProvider{constructor(private mode=process.env.FAKE_EMAIL_MODE??"success"){}async send(message:EmailMessage){if(this.mode==="failure")return{ok:false,errorCode:"fake_failure",error:"Fallo simulado"};if(this.mode==="timeout")return{ok:false,errorCode:"timeout",error:"Timeout simulado"};return{ok:true,messageId:`fake_${message.idempotencyKey.replaceAll(":","_")}`}}}
+export class ResendEmailProvider implements EmailProvider{private client=new Resend(process.env.RESEND_API_KEY);async send(message:EmailMessage){if(!process.env.RESEND_API_KEY||!process.env.RESEND_FROM_EMAIL)return{ok:false,errorCode:"not_configured",error:"Resend no configurado"};const{data,error}=await this.client.emails.send({from:process.env.RESEND_FROM_EMAIL,to:message.to,replyTo:process.env.RESEND_REPLY_TO_EMAIL,subject:message.subject,html:message.html,text:message.text},{idempotencyKey:message.idempotencyKey});return error?{ok:false,errorCode:error.name,error:error.message}:{ok:true,messageId:data?.id}}}
+export function getEmailProvider():EmailProvider{return process.env.EMAIL_PROVIDER==="resend"?new ResendEmailProvider():new FakeEmailProvider()}

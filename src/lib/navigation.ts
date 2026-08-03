@@ -43,6 +43,7 @@ export const adminNavigation = [
   { slug: "pagos", label: "Pagos", shortLabel: "Pagos", description: "Revisa pagos, incidencias y reembolsos." },
   { slug: "suscripciones", label: "Suscripciones", shortLabel: "Planes", description: "Gestiona el futuro Plan de Pan y sus entregas." },
   { slug: "contenido", label: "Contenido", shortLabel: "Contenido", description: "Mantén los textos e imágenes institucionales permitidos." },
+  { slug: "comunicaciones", label: "Comunicaciones", shortLabel: "Mensajes", description: "Consulta la cola, entregas y fallos transaccionales." },
   { slug: "usuarios", label: "Usuarios", shortLabel: "Usuarios", description: "Gestiona usuarios y permisos del equipo." },
   { slug: "configuracion", label: "Configuración", shortLabel: "Ajustes", description: "Ajusta las reglas generales y datos del portal." },
   { slug: "auditoria", label: "Auditoría", shortLabel: "Auditoría", description: "Consulta el historial de acciones relevantes." },

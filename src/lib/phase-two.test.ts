@@ -44,6 +44,7 @@ describe("public route architecture", () => {
       "/admin/productos/nuevo",
       "/admin/suscripciones/planes",
       "/admin/suscripciones/planes/nuevo",
+      "/admin/contenido/emails/preview",
       "/carrito",
       "/admin/puntos-de-recogida/nuevo",
       "/admin/configuracion/calendario",
