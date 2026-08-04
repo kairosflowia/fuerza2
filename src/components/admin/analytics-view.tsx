@@ -1,4 +1,6 @@
+"use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/states";
 import { euro, integer } from "@/lib/analytics";
@@ -24,6 +26,21 @@ export function RankedTable({ title, rows, kind }: { title: string; rows: Ranked
   return <section className="analytics-table"><h2>{title}</h2><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>{kind === "products" ? "Producto" : "Punto"}</th><th>Unidades</th><th>Pedidos</th><th>Ingresos</th></tr></thead><tbody>{rows.map((row,index)=><tr key={`${row.product_id ?? row.pickup_point_id}-${index}`}><td>{row.product_name_snapshot ?? row.point_name}</td><td>{integer(row.units)}</td><td>{integer(row.orders)}</td><td>{euro(row.revenue_cents)}</td></tr>)}</tbody></table></div></section>;
 }
 
+const analyticsTabs = [
+  ["/admin", "Resumen"],
+  ["/admin/analitica/productos", "Productos"],
+  ["/admin/analitica/clientes", "Clientes"],
+  ["/admin/analitica/suscripciones", "Plan de Pan"],
+  ["/admin/analitica/puntos", "Puntos"],
+] as const;
+
 export function AnalyticsLinks() {
-  return <nav className="analytics-tabs" aria-label="Vistas de analítica"><Link href="/admin">Resumen</Link><Link href="/admin/analitica/productos">Productos</Link><Link href="/admin/analitica/clientes">Clientes</Link><Link href="/admin/analitica/suscripciones">Plan de Pan</Link><Link href="/admin/analitica/puntos">Puntos</Link></nav>;
+  const pathname = usePathname();
+  return (
+    <nav className="analytics-tabs" aria-label="Vistas de analítica">
+      {analyticsTabs.map(([href, label]) => (
+        <Link href={href} key={href} aria-current={pathname === href ? "page" : undefined}>{label}</Link>
+      ))}
+    </nav>
+  );
 }

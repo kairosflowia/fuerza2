@@ -2,14 +2,47 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactElement, type SVGProps } from "react";
 
-import { adminNavigation } from "@/lib/navigation";
+import { adminNavigation, adminNavigationGroups, type AdminNavIcon } from "@/lib/navigation";
 import { visibleAdminSections } from "@/lib/auth/permissions";
 import type { AppRole } from "@/lib/supabase/database.types";
+import {
+  CalendarIcon,
+  CardIcon,
+  ChartIcon,
+  ClipboardIcon,
+  DocumentIcon,
+  GearIcon,
+  MailIcon,
+  OvenIcon,
+  PackageIcon,
+  PinIcon,
+  RepeatIcon,
+  ShieldIcon,
+  UserIcon,
+  UsersIcon,
+} from "@/components/ui/icons";
 
 import { Button } from "../ui/button";
 import { Drawer } from "../ui/dialog";
+
+const NAV_ICONS: Record<AdminNavIcon, (props: SVGProps<SVGSVGElement>) => ReactElement> = {
+  oven: OvenIcon,
+  clipboard: ClipboardIcon,
+  package: PackageIcon,
+  calendar: CalendarIcon,
+  pin: PinIcon,
+  user: UserIcon,
+  card: CardIcon,
+  repeat: RepeatIcon,
+  chart: ChartIcon,
+  document: DocumentIcon,
+  mail: MailIcon,
+  users: UsersIcon,
+  gear: GearIcon,
+  shield: ShieldIcon,
+};
 
 function AdminLinks({ roles, onNavigate }: { roles: readonly AppRole[]; onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -17,17 +50,28 @@ function AdminLinks({ roles, onNavigate }: { roles: readonly AppRole[]; onNaviga
 
   return (
     <nav className="admin-nav" aria-label="Administración">
-      {sections.map((item) => {
-        const href = `/admin/${item.slug}`;
+      {adminNavigationGroups.map((group) => {
+        const items = sections.filter((item) => item.group === group.key);
+        if (!items.length) return null;
         return (
-          <Link
-            href={href}
-            key={item.slug}
-            aria-current={pathname === href ? "page" : undefined}
-            onClick={onNavigate}
-          >
-            {item.label}
-          </Link>
+          <div className="admin-nav__group" key={group.key}>
+            <p className="admin-nav__heading">{group.label}</p>
+            {items.map((item) => {
+              const href = `/admin/${item.slug}`;
+              const Icon = NAV_ICONS[item.icon];
+              return (
+                <Link
+                  href={href}
+                  key={item.slug}
+                  aria-current={pathname === href ? "page" : undefined}
+                  onClick={onNavigate}
+                >
+                  <Icon />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         );
       })}
     </nav>
