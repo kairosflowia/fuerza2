@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/catalog-domain";
 
 type Variant = { id: string; name: string; priceCents: number };
 
-export function ProductOrderForm({ productName, variants }: { productName: string; variants: Variant[] }) {
+export function ProductOrderForm({ productName, variants, image }: { productName: string; variants: Variant[]; image?: string }) {
   const cart = useCart();
   const router = useRouter();
   const [variantId, setVariantId] = useState(variants[0]?.id ?? "");
@@ -61,14 +61,14 @@ export function ProductOrderForm({ productName, variants }: { productName: strin
         type="button"
         className="product-order-form__submit"
         onClick={() => {
-          cart.add({ variantId: variant.id, productName, variantName: variant.name, quantity, priceCents: variant.priceCents, note: note.trim() || undefined });
+          cart.add({ variantId: variant.id, productName, variantName: variant.name, quantity, priceCents: variant.priceCents, image, note: note.trim() || undefined });
           setAdded(true);
           setQuantity(1);
           setNote("");
           setTimeout(() => router.push("/reserva-y-recoge"), 500);
         }}
       >
-        <span>{added ? "Añadido ✓" : "Añadir al pedido"}</span>
+        <span>{added ? "Añadido ✓" : "Añadir a la cesta"}</span>
         <span>{formatPrice(total)}</span>
       </button>
     </div>

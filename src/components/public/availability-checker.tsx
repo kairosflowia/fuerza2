@@ -12,7 +12,7 @@ const initial: AvailabilityCheckState = { checked: false };
 type Variant = { id: string; name: string; priceCents: number };
 type Point = { id: string; name: string };
 
-export function AvailabilityChecker({ variants, points }: { variants: Variant[]; points: Point[] }) {
+export function AvailabilityChecker({ variants, points, image }: { variants: Variant[]; points: Point[]; image?: string }) {
   const [state, action, pending] = useActionState(checkAvailabilityAction, initial);
   const today = new Date().toISOString().slice(0, 10);
   const [variantId,setVariantId]=useState(variants[0]?.id??"");
@@ -44,7 +44,7 @@ export function AvailabilityChecker({ variants, points }: { variants: Variant[];
           ) : null}
         </Alert>
       ) : null}
-      {state.checked && state.status!=="sold_out"?<Button type="button" onClick={()=>{const variant=variants.find(item=>item.id===variantId)??variants[0];add({variantId:variant.id,variantName:variant.name,productName:"Pan FUERZA",quantity:1,priceCents:variant.priceCents})}}>Añadir al carrito</Button>:null}
+      {state.checked && state.status!=="sold_out"?<Button type="button" onClick={()=>{const variant=variants.find(item=>item.id===variantId)??variants[0];add({variantId:variant.id,variantName:variant.name,productName:"Pan FUERZA",quantity:1,priceCents:variant.priceCents,image})}}>Añadir a la cesta</Button>:null}
     </form>
   );
 }

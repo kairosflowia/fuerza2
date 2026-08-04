@@ -68,6 +68,7 @@ export default async function ProductoPage({ params }: { params: Promise<{ famil
                 <ProductOrderForm
                   productName={product.name}
                   variants={activeVariants.map((v) => ({ id: v.id, name: v.name, priceCents: v.price_cents! }))}
+                  image={image?.storage_path}
                 />
               ) : (
                 <p>Este producto no tiene ninguna variante disponible ahora mismo.</p>

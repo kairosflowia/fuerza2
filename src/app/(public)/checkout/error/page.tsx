@@ -1,1 +1,0 @@
-export default function CheckoutError(){return <main id="main-content"><h1>No se ha completado el pago</h1><p>La encomienda no está confirmada. Puedes volver al carrito e intentarlo de nuevo.</p></main>}

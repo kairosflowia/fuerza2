@@ -38,6 +38,14 @@ export function ArrowRightIcon(props: IconProps) {
   );
 }
 
+export function ArrowLeftIcon(props: IconProps) {
+  return (
+    <svg {...baseProps} {...props}>
+      <path d="M19 12H5m5-5-5 5 5 5" />
+    </svg>
+  );
+}
+
 export function StatusIcon(props: IconProps) {
   return (
     <svg {...baseProps} {...props}>
@@ -248,6 +256,16 @@ export function EyeOffIcon(props: IconProps) {
       <path d="M3 3l18 18" />
       <path d="M9.9 5.1A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a15.6 15.6 0 0 1-3.1 4M6.5 6.6C4 8.3 2 12 2 12s3.5 7 10 7c1.3 0 2.5-.2 3.6-.7" />
       <path d="M9.5 9.7A3 3 0 0 0 12 15a3 3 0 0 0 2.4-1.2" />
+    </svg>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <svg {...baseProps} {...props}>
+      <path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7" />
+      <path d="M6 7h12l-.8 12.5A2 2 0 0 1 15.2 21H8.8a2 2 0 0 1-2-1.5L6 7Z" />
+      <path d="M10 11v6M14 11v6" />
     </svg>
   );
 }

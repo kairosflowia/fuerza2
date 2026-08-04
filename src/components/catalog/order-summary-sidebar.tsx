@@ -21,7 +21,7 @@ export function OrderSummarySidebar() {
       </div>
 
       <div className="catalog-sidebar__card">
-        <p className="catalog-sidebar__heading">Tu reserva</p>
+        <p className="catalog-sidebar__heading">Tu Cesta</p>
         {cart.items.length ? (
           <>
             <ul className="catalog-sidebar__items">
@@ -36,7 +36,7 @@ export function OrderSummarySidebar() {
               <span>Total</span>
               <span>{formatPrice(cart.total)}</span>
             </p>
-            <Link href="/carrito" className="button button--primary button--full">Continuar reserva</Link>
+            <Link href="/carrito" className="button button--primary button--full">Ver cesta</Link>
           </>
         ) : (
           <p className="catalog-sidebar__empty">Todavía no has añadido productos.</p>

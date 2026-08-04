@@ -28,7 +28,7 @@ export function CatalogTopBar() {
         </label>
       ) : null}
 
-      <Link href="/carrito" className="catalog-topbar__cart" aria-label={`Carrito, ${cart.count} artículos, ${formatPrice(cart.total)}`}>
+      <Link href="/carrito" className="catalog-topbar__cart" aria-label={`Cesta, ${cart.count} artículos, ${formatPrice(cart.total)}`}>
         <CartIcon />
         <span className="catalog-topbar__cart-total">{formatPrice(cart.total)}</span>
         {cart.count > 0 ? <span className="catalog-topbar__cart-count" aria-hidden="true">{cart.count}</span> : null}
