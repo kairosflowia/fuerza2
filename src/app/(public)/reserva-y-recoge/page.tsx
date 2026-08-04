@@ -44,8 +44,10 @@ export default async function ReservaYRecogePage() {
         title="Elige qué quieres reservar"
         description="Selecciona una categoría para ver sus productos. Podrás elegir cantidad y añadirlos a tu pedido."
       />
-      <Section>
+      <Section className="reserva-hero">
+        <Image src="https://images.unsplash.com/photo-1529707481702-65fc20926103?auto=format&fit=crop&w=1600&q=60" alt="" fill sizes="100vw" style={{ objectFit: "cover" }} className="reserva-hero__bg" priority={false} />
         <Container>
+          <p className="reserva-brand">FUERZA</p>
           {families.length ? (
             <div className="category-grid">
               {families.map(({ family, count }) => {

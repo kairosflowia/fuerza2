@@ -1,17 +1,32 @@
 import Link from "next/link";
 
 import { publicNavigation } from "@/lib/navigation";
+import { FacebookIcon, InstagramIcon, TikTokIcon } from "@/components/ui/icons";
 
 import { Container } from "../ui/layout";
+
+const socialLinks = [
+  { label: "Instagram", href: "#", Icon: InstagramIcon },
+  { label: "Facebook", href: "#", Icon: FacebookIcon },
+  { label: "TikTok", href: "#", Icon: TikTokIcon },
+] as const;
 
 export function PublicFooter() {
   return (
     <footer className="public-footer">
       <Container size="wide" className="public-footer__grid">
         <div>
-          <p className="wordmark wordmark--inverse">FUERZA</p>
-          <p className="footer-manifesto">Pan artesanal de masa madre elaborado con harinas locales y tiempo real. Transformamos lo simple en algo que alimenta de verdad.</p>
+          <p className="wordmark">FUERZA</p>
+          <p className="footer-manifesto">Pan artesanal de masa madre elaborado con harinas locales y tiempo real.</p>
           <p>Obrador de masa madre · Asturias · España</p>
+          <a href="mailto:hola@fuerza.com" className="footer-email">hola@fuerza.com</a>
+          <div className="footer-social" aria-label="Redes sociales de FUERZA">
+            {socialLinks.map(({ label, href, Icon }) => (
+              <a key={label} href={href} aria-label={label} className="footer-social__link">
+                <Icon />
+              </a>
+            ))}
+          </div>
         </div>
         <nav aria-label="Navegación del pie">
           <p className="footer-heading">Explora</p>
