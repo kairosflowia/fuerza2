@@ -6,10 +6,10 @@ import Image from "next/image";
 import { cn } from "@/lib/cn";
 
 const HOTSPOTS = [
-  { id: "masa-madre", x: 15, y: 62, tone: "green", title: "Masa Madre Viva", text: "Cultivo propio alimentado a diario con harinas locales de Asturias." },
-  { id: "harina", x: 55, y: 30, tone: "yellow", title: "Harinas integrales molidas a la piedra", text: "100% grano entero sin aditivos ni conservantes." },
-  { id: "corteza", x: 33, y: 40, tone: "yellow", title: "Corteza Crujiente", text: "Caramelización natural y horneado a la piedra." },
-  { id: "miga", x: 78, y: 55, tone: "green", title: "Miga Alveolada", text: "Fermentación lenta de 24 a 48 horas para una digestión ligera." },
+  { id: "masa-madre", x: 15, y: 62, tone: "terracota", label: "Fermentación", title: "Masa Madre Viva", text: "Cultivo propio alimentado a diario con harinas locales de Asturias." },
+  { id: "harina", x: 55, y: 30, tone: "trigo", label: "Harinas", title: "Harinas integrales molidas a la piedra", text: "100% grano entero sin aditivos ni conservantes." },
+  { id: "corteza", x: 33, y: 40, tone: "terracota", label: "Corteza", title: "Corteza Crujiente", text: "Caramelización natural y horneado a la piedra." },
+  { id: "miga", x: 78, y: 55, tone: "trigo", label: "Miga", title: "Miga Alveolada", text: "Fermentación lenta de 24 a 48 horas para una digestión ligera." },
 ] as const;
 
 function popoverAlign(x: number): "left" | "center" | "right" {
@@ -66,8 +66,12 @@ export function BreadAnatomy() {
           </button>
           {openId === hotspot.id ? (
             <div id={`bread-anatomy-popover-${hotspot.id}`} className={cn("bread-anatomy__popover", `bread-anatomy__popover--${popoverAlign(hotspot.x)}`)} role="tooltip">
-              <h3>{hotspot.title}</h3>
-              <p>{hotspot.text}</p>
+              <div className="bread-anatomy__popover-inner">
+                <p className="bread-anatomy__popover-label">{hotspot.label}</p>
+                <h3>{hotspot.title}</h3>
+                <p>{hotspot.text}</p>
+              </div>
+              <span className="bread-anatomy__popover-arrow" aria-hidden="true" />
             </div>
           ) : null}
         </div>
