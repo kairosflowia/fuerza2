@@ -10,7 +10,7 @@ export function Metric({ label, value, detail }: { label: string; value: string;
 }
 
 export function AnalyticsFilters({ params, points, products }: { params: Record<string,string|undefined>; points: {id:string;name:string}[]; products: {id:string;name:string}[] }) {
-  return <form className="analytics-filters">
+  return <form className="admin-filters">
     <label>Periodo<select name="periodo" defaultValue={params.periodo ?? "7d"}>{[["today","Hoy"],["yesterday","Ayer"],["7d","Últimos 7 días"],["30d","Últimos 30 días"],["month","Mes actual"],["custom","Intervalo personalizado"]].map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label>
     <label>Desde<input type="date" name="desde" defaultValue={params.desde}/></label><label>Hasta<input type="date" name="hasta" defaultValue={params.hasta}/></label>
     <label>Punto<select name="punto" defaultValue={params.punto ?? ""}><option value="">Todos</option>{points.map(point=><option key={point.id} value={point.id}>{point.name}</option>)}</select></label>
@@ -37,7 +37,7 @@ const analyticsTabs = [
 export function AnalyticsLinks() {
   const pathname = usePathname();
   return (
-    <nav className="analytics-tabs" aria-label="Vistas de analítica">
+    <nav className="admin-tabs" aria-label="Vistas de analítica">
       {analyticsTabs.map(([href, label]) => (
         <Link href={href} key={href} aria-current={pathname === href ? "page" : undefined}>{label}</Link>
       ))}

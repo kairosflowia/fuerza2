@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { toggleProductStatusAction } from "./actions";
-import { FamilyForm } from "@/components/admin/catalog-forms";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { FamilyManager } from "@/components/admin/family-manager";
+import { Badge, Button, EmptyState } from "@/components/ui";
 import { EditIcon, EyeIcon, EyeOffIcon } from "@/components/ui/icons";
 import { formatPrice } from "@/lib/catalog";
 import { createClient } from "@/lib/supabase/server";
@@ -31,7 +31,12 @@ export default async function ProductsAdminPage({ searchParams }: { searchParams
       <AdminPageHeader
         title="Productos"
         description="Catálogo, familias y estado de publicación."
-        actions={<Link className="button button--primary" href="/admin/productos/nuevo">Nuevo producto</Link>}
+        actions={
+          <div className="admin-action-group">
+            <FamilyManager families={families ?? []} />
+            <Link className="button button--primary" href="/admin/productos/nuevo">Nuevo producto</Link>
+          </div>
+        }
       />
       <form className="admin-toolbar">
         <label className="admin-toolbar__search">
@@ -99,21 +104,8 @@ export default async function ProductsAdminPage({ searchParams }: { searchParams
           </table>
         </div>
       ) : (
-        <EmptyState title="Todavía no hay productos" description="Crea una familia y después registra el primer producto real." />
+        <EmptyState title="Todavía no hay productos" description="Crea una categoría y después registra el primer producto real." />
       )}
-      <section className="admin-catalog-section">
-        <h2>Familias</h2>
-        {families?.map((f) => (
-          <Card key={f.id}>
-            <details>
-              <summary><strong>{f.name}</strong> · {f.status}</summary>
-              <FamilyForm defaults={f} />
-            </details>
-          </Card>
-        ))}
-        <h3>Nueva familia</h3>
-        <FamilyForm />
-      </section>
     </>
   );
 }

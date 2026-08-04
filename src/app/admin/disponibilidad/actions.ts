@@ -68,7 +68,12 @@ export async function updateProductionCapacityAction(_s: AvailabilityActionState
   return { ok: true, message: "Capacidad actualizada." };
 }
 
-export async function setProductionDateStatusAction(f: FormData) {
+const STATUS_ACTION_REASONS: Record<string, string> = {
+  operator_status_limited: "Tu rol solo puede abrir o cerrar fechas, no cancelarlas.",
+  not_found: "Esta fecha de producción ya no existe.",
+};
+
+export async function setProductionDateStatusAction(_s: AvailabilityActionState, f: FormData): Promise<AvailabilityActionState> {
   // La restricción fina (operator solo abre/cierra, nunca cancela) vive en
   // la función set_production_date_status, no aquí: así no hay dos lugares
   // que puedan quedar desincronizados sobre lo que cada rol puede hacer.
@@ -77,8 +82,12 @@ export async function setProductionDateStatusAction(f: FormData) {
   const db = await createClient();
   const id = text(f, "id");
   const status = text(f, "status") as ProductionDateStatus;
-  await db.rpc("set_production_date_status", { p_id: id, p_status: status });
+  const { data, error } = await db.rpc("set_production_date_status", { p_id: id, p_status: status });
+  if (error) return { ok: false, message: "No se ha podido actualizar el estado." };
+  const result = data?.[0];
+  if (!result?.ok) return { ok: false, message: STATUS_ACTION_REASONS[result?.reason ?? ""] ?? "No se ha podido actualizar el estado." };
   refresh();
+  return { ok: true, message: "Estado actualizado." };
 }
 
 export async function createAvailabilityOverrideAction(_s: AvailabilityActionState, f: FormData): Promise<AvailabilityActionState> {

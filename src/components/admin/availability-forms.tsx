@@ -60,30 +60,32 @@ export function CapacityForm({ row }: { row: ProductionDateRow }) {
 const STATUS_LABELS_ES: Record<string, string> = { draft: "Borrador", open: "Abierta", closed: "Cerrada", cancelled: "Cancelada" };
 
 export function StatusActions({ id, status, canCancel }: { id: string; status: string; canCancel: boolean }) {
+  const [state, action, pending] = useActionState(setProductionDateStatusAction, initial);
   return (
     <div className="admin-actions">
       <Badge>{STATUS_LABELS_ES[status] ?? status}</Badge>
       {status !== "open" ? (
-        <form action={setProductionDateStatusAction}>
+        <form action={action}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="status" value="open" />
-          <Button type="submit" variant="secondary">Abrir</Button>
+          <Button type="submit" variant="secondary" loading={pending}>Abrir</Button>
         </form>
       ) : null}
       {status !== "closed" ? (
-        <form action={setProductionDateStatusAction}>
+        <form action={action}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="status" value="closed" />
-          <Button type="submit" variant="secondary">Cerrar</Button>
+          <Button type="submit" variant="secondary" loading={pending}>Cerrar</Button>
         </form>
       ) : null}
       {canCancel && status !== "cancelled" ? (
-        <form action={setProductionDateStatusAction}>
+        <form action={action}>
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="status" value="cancelled" />
-          <Button type="submit" variant="destructive">Cancelar</Button>
+          <Button type="submit" variant="destructive" loading={pending}>Cancelar</Button>
         </form>
       ) : null}
+      {state.message ? <Alert variant={state.ok ? "success" : "error"} title={state.ok ? "Actualizado" : "No se ha podido actualizar"}>{state.message}</Alert> : null}
     </div>
   );
 }

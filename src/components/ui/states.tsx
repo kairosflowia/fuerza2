@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode, SVGProps } from "react";
+
+import { cn } from "@/lib/cn";
 
 import { WheatIcon } from "./icons";
 
@@ -6,12 +8,14 @@ interface StateProps {
   title: string;
   description: string;
   action?: ReactNode;
+  icon?: (props: SVGProps<SVGSVGElement>) => ReactElement;
+  className?: string;
 }
 
-export function EmptyState({ title, description, action }: StateProps) {
+export function EmptyState({ title, description, action, icon: Icon = WheatIcon, className }: StateProps) {
   return (
-    <div className="state state--empty">
-      <WheatIcon className="state__icon" />
+    <div className={cn("state state--empty", className)}>
+      <Icon className="state__icon" />
       <h2>{title}</h2>
       <p>{description}</p>
       {action ? <div className="state__action">{action}</div> : null}
