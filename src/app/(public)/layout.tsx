@@ -4,7 +4,6 @@ import { PublicFooter } from "@/components/public/public-footer";
 import { PublicHeader } from "@/components/public/public-header";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { PwaRegister } from "@/components/pwa/pwa-register";
-import { CartProvider } from "@/components/cart/cart-provider";
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const websiteData = {
@@ -17,7 +16,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <CartProvider>
+    <>
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <PublicHeader />
       {children}
@@ -28,6 +27,6 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteData) }}
       />
-    </CartProvider>
+    </>
   );
 }

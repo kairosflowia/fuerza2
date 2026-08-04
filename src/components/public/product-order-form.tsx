@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { useCart } from "@/components/cart/cart-provider";
@@ -9,6 +10,7 @@ type Variant = { id: string; name: string; priceCents: number };
 
 export function ProductOrderForm({ productName, variants }: { productName: string; variants: Variant[] }) {
   const cart = useCart();
+  const router = useRouter();
   const [variantId, setVariantId] = useState(variants[0]?.id ?? "");
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
@@ -59,10 +61,11 @@ export function ProductOrderForm({ productName, variants }: { productName: strin
         type="button"
         className="product-order-form__submit"
         onClick={() => {
-          cart.add({ variantId: variant.id, productName, variantName: variant.name, quantity, note: note.trim() || undefined });
+          cart.add({ variantId: variant.id, productName, variantName: variant.name, quantity, priceCents: variant.priceCents, note: note.trim() || undefined });
           setAdded(true);
           setQuantity(1);
           setNote("");
+          setTimeout(() => router.push("/reserva-y-recoge"), 500);
         }}
       >
         <span>{added ? "Añadido ✓" : "Añadir al pedido"}</span>

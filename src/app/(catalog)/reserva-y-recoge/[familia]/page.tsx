@@ -5,8 +5,8 @@ import { notFound } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Container, Section } from "@/components/ui/layout";
-import { Breadcrumbs } from "@/components/public/breadcrumbs";
+import { Container } from "@/components/ui/layout";
+import { OrderSummarySidebar } from "@/components/catalog/order-summary-sidebar";
 import { formatPrice, getPublicCatalog } from "@/lib/catalog";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -26,10 +26,9 @@ export default async function CategoriaPage({ params }: { params: Promise<{ fami
   const family = products[0].family!;
 
   return (
-    <main id="main-content">
-      <Section>
+    <main id="main-content" className="catalog-layout">
+      <div className="catalog-layout__main">
         <Container>
-          <Breadcrumbs items={[{ label: "Reserva y recoge", href: "/reserva-y-recoge" }, { label: family.name }]} />
           <h1>{family.name}</h1>
           {family.description ? <p>{family.description}</p> : null}
           <div className="category-product-grid">
@@ -51,7 +50,8 @@ export default async function CategoriaPage({ params }: { params: Promise<{ fami
             })}
           </div>
         </Container>
-      </Section>
+      </div>
+      <OrderSummarySidebar />
     </main>
   );
 }

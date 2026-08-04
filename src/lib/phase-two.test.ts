@@ -71,7 +71,9 @@ describe("public route architecture", () => {
   });
 
   it("gives each institutional page one explicit page heading contract", () => {
-    const pages = ["pan", "obrador", "nosotros", "plan-de-pan", "donde-estamos", "reserva-y-recoge", "contacto"];
+    // reserva-y-recoge vive ahora en el grupo de rutas (catalog), con su propio
+    // shell de app (sin header/footer globales) en lugar del contrato PageIntro/h1.
+    const pages = ["pan", "obrador", "nosotros", "plan-de-pan", "donde-estamos", "contacto"];
     for (const page of pages) {
       const source = readFileSync(resolve(projectRoot, `src/app/(public)/${page}/page.tsx`), "utf8");
       expect(source).toContain("<PageIntro");

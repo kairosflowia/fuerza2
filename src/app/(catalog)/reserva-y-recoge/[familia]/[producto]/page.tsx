@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
-import { Breadcrumbs } from "@/components/public/breadcrumbs";
 import { AllergenBadge } from "@/components/public/allergen-icon";
 import { ProductOrderForm } from "@/components/public/product-order-form";
 import { Container, Section } from "@/components/ui/layout";
@@ -35,7 +34,6 @@ export default async function ProductoPage({ params }: { params: Promise<{ famil
     <main id="main-content">
       <Section>
         <Container>
-          <Breadcrumbs items={[{ label: "Reserva y recoge", href: "/reserva-y-recoge" }, { label: product.family?.name ?? "", href: `/reserva-y-recoge/${familia}` }, { label: product.name }]} />
           <div className="product-order-grid">
             <figure className="product-order-figure">
               {image ? <Image src={`/api/product-images/${image.storage_path}`} alt={image.alt_text ?? ""} width={800} height={600} priority /> : <div className="catalog-image-empty" aria-hidden="true" />}
