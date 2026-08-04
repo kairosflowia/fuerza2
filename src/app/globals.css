@@ -249,23 +249,24 @@ p { max-width: 68ch; }
 .hero-carousel__cta:hover { transform: scale(1.05); }
 @keyframes hero-carousel-drift { from { transform: scale(1); } to { transform: scale(1.08); } }
 
-.bread-anatomy { position: relative; aspect-ratio: 3 / 2; overflow: hidden; border-radius: var(--radius-3); }
+.bread-anatomy { position: relative; aspect-ratio: 3 / 2; background: var(--background); }
+.bread-anatomy img { border-radius: var(--radius-3); filter: drop-shadow(0px 20px 30px rgba(0, 0, 0, 0.12)); }
 .bread-anatomy__marker { position: absolute; transform: translate(-50%, -50%); }
 .bread-anatomy__hotspot { position: relative; display: block; width: 2.75rem; height: 2.75rem; border: none; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.bread-anatomy__hotspot::before { content: ""; position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 50%; transform: translate(-50%, -50%); animation: bread-hotspot-pulse 2.2s ease-out infinite; }
+.bread-anatomy__hotspot::before { content: ""; position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; border: 1px solid rgba(228, 87, 46, 0.6); border-radius: 50%; transform: translate(-50%, -50%); animation: bread-hotspot-pulse 2.2s ease-out infinite; }
 .bread-anatomy__hotspot::after { content: ""; position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; border: 1px solid rgba(255, 255, 255, 0.85); border-radius: 50%; background: rgba(253, 251, 247, 0.95); box-shadow: 0 1px 4px rgb(0 0 0 / 25%); transform: translate(-50%, -50%); transition: transform 0.25s ease, border-color 0.25s ease; }
 .bread-anatomy__hotspot:hover::after, .bread-anatomy__hotspot:focus-visible::after { transform: translate(-50%, -50%) scale(1.25); border-color: var(--terracota); }
 .bread-anatomy__hotspot--trigo:hover::after, .bread-anatomy__hotspot--trigo:focus-visible::after { border-color: var(--amarillo); }
-.bread-anatomy__hotspot:focus-visible { outline: 2px solid var(--crema); outline-offset: 2px; border-radius: 50%; }
+.bread-anatomy__hotspot:focus-visible { outline: 2px solid var(--terracota); outline-offset: 2px; border-radius: 50%; }
 .bread-anatomy__popover { position: absolute; z-index: 2; bottom: calc(100% + var(--space-4)); width: max(14rem, 60vw); max-width: 18rem; }
 .bread-anatomy__popover--center { left: 50%; transform: translateX(-50%); }
 .bread-anatomy__popover--left { left: 0; }
 .bread-anatomy__popover--right { right: 0; }
-.bread-anatomy__popover-inner { position: relative; z-index: 1; padding: 1rem 1.25rem; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: var(--radius-3); background: rgba(253, 251, 247, 0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 12px 32px -8px rgb(0 0 0 / 8%); animation: bread-popover-in 0.25s ease; }
+.bread-anatomy__popover-inner { position: relative; z-index: 1; padding: 1rem 1.25rem; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: var(--radius-3); background: rgba(245, 241, 232, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); animation: bread-popover-in 0.25s ease; }
 .bread-anatomy__popover-label { margin: 0 0 0.35rem; color: var(--terracota); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; }
 .bread-anatomy__popover h3 { margin: 0 0 0.4rem; color: #1a1a1a; font-family: var(--font-fraunces), serif; font-size: 1rem; font-weight: 400; }
 .bread-anatomy__popover p { margin: 0; color: #555; font-family: var(--font-inter), sans-serif; font-size: 0.85rem; font-weight: 300; line-height: 1.5; }
-.bread-anatomy__popover-arrow { position: absolute; bottom: -5px; width: 10px; height: 10px; border-right: 1px solid rgba(0, 0, 0, 0.08); border-bottom: 1px solid rgba(0, 0, 0, 0.08); background: rgba(253, 251, 247, 0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transform: rotate(45deg); }
+.bread-anatomy__popover-arrow { position: absolute; bottom: -5px; width: 10px; height: 10px; border-right: 1px solid rgba(0, 0, 0, 0.08); border-bottom: 1px solid rgba(0, 0, 0, 0.08); background: rgba(245, 241, 232, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transform: rotate(45deg); }
 .bread-anatomy__popover--center .bread-anatomy__popover-arrow { left: calc(50% - 5px); }
 .bread-anatomy__popover--left .bread-anatomy__popover-arrow { left: 1rem; }
 .bread-anatomy__popover--right .bread-anatomy__popover-arrow { right: 1rem; }
