@@ -269,3 +269,13 @@ export function TrashIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function BoxesIcon(props: IconProps) {
+  return (
+    <svg {...baseProps} {...props}>
+      <rect x="3" y="11" width="7" height="7" rx="1" />
+      <rect x="14" y="11" width="7" height="7" rx="1" />
+      <path d="M8.5 11V6.5A1.5 1.5 0 0 1 10 5h4a1.5 1.5 0 0 1 1.5 1.5V11" />
+    </svg>
+  );
+}

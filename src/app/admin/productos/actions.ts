@@ -40,3 +40,43 @@ export async function discontinueProductAction(f:FormData){const db=await author
 export async function toggleProductStatusAction(f:FormData){const db=await authorized(),id=text(f,"id"),slug=text(f,"slug"),next=text(f,"next") as "draft"|"active";await db.from("products").update({status:next}).eq("id",id);refresh(slug);redirect("/admin/productos");}
 export async function uploadProductImageAction(f:FormData){const db=await authorized(),productId=text(f,"product_id"),slug=text(f,"slug"),alt=text(f,"alt_text"),file=f.get("image");if(!(file instanceof File)||!alt||file.size>8388608||!["image/jpeg","image/png","image/webp","image/avif"].includes(file.type))return;const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/avif":"avif"}[file.type];const path=`${productId}/${crypto.randomUUID()}.${ext}`;const up=await db.storage.from("product-images").upload(path,file,{contentType:file.type,upsert:false});if(!up.error)await db.from("product_images").insert({product_id:productId,storage_path:path,alt_text:alt,is_primary:f.get("is_primary")==="on"});refresh(slug);}
 export async function removeProductImageAction(f:FormData){const db=await authorized(),id=text(f,"image_id"),path=text(f,"storage_path"),slug=text(f,"slug");const removed=await db.from("product_images").delete().eq("id",id);if(!removed.error)await db.storage.from("product-images").remove([path]);refresh(slug);}
+
+export type WeeklySpecialActionState = { ok: boolean; message?: string };
+
+function refreshWeeklySpecial() {
+  revalidateTag("catalog", "max");
+  revalidateTag("weekly-special", "max");
+  revalidatePath("/");
+  revalidatePath("/reserva-y-recoge");
+  revalidatePath("/admin/productos/especial-semana");
+}
+
+export async function saveWeeklySpecialAction(_s: WeeklySpecialActionState, f: FormData): Promise<WeeklySpecialActionState> {
+  const productId = text(f, "product_id");
+  const collectionDate = text(f, "collection_date");
+  const headline = text(f, "headline") || null;
+  if (!productId || !collectionDate) return { ok: false, message: "Selecciona un producto y un sábado." };
+  if (new Date(`${collectionDate}T00:00:00`).getDay() !== 6) return { ok: false, message: "La fecha tiene que ser un sábado." };
+
+  const db = await authorized();
+  const upsert = await db.from("weekly_specials").upsert({ product_id: productId, collection_date: collectionDate, headline }, { onConflict: "collection_date" });
+  if (upsert.error) return { ok: false, message: "No se ha podido guardar el especial de la semana." };
+
+  // El motor de disponibilidad exige que el producto tenga el sábado activo
+  // en product_production_weekdays; si el producto elegido no lo tenía
+  // (p.ej. viene de "Pan especial del día", con un único día fijo), se
+  // añade aquí para que la reserva anticipada no falle por ese motivo. La
+  // capacidad de producción de ese sábado concreto (production_dates) sigue
+  // gestionándose en Disponibilidad, como para cualquier otro día.
+  await db.from("product_production_weekdays").upsert({ product_id: productId, weekday: 6, is_active: true }, { onConflict: "product_id,weekday" });
+
+  refreshWeeklySpecial();
+  return { ok: true, message: "Especial de la semana guardado. No olvides fijar la capacidad de producción de ese sábado en Disponibilidad." };
+}
+
+export async function deleteWeeklySpecialAction(f: FormData) {
+  const db = await authorized();
+  await db.from("weekly_specials").delete().eq("id", text(f, "id"));
+  refreshWeeklySpecial();
+  redirect("/admin/productos/especial-semana");
+}

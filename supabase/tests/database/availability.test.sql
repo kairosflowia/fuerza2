@@ -1,5 +1,5 @@
 begin;
-select plan(50);
+select plan(70);
 
 -- ---------------------------------------------------------------------------
 -- Preparación: familia, producto, variante, punto, ventanas, capacidad,
@@ -40,7 +40,8 @@ values
   ('availability.cutoff_time', '"23:59"'::jsonb, false, '00000000-0000-0000-0000-000000000401'),
   ('availability.cutoff_days_before', '0'::jsonb, false, '00000000-0000-0000-0000-000000000401'),
   ('availability.reservation_duration_seconds', '900'::jsonb, false, '00000000-0000-0000-0000-000000000401'),
-  ('availability.low_stock_threshold', '2'::jsonb, false, '00000000-0000-0000-0000-000000000401');
+  ('availability.low_stock_threshold', '2'::jsonb, false, '00000000-0000-0000-0000-000000000401')
+on conflict (key) do update set value = excluded.value, is_public = excluded.is_public, updated_by = excluded.updated_by;
 
 -- 1. Disponible desde el principio, con la capacidad completa.
 select results_eq(
@@ -287,7 +288,142 @@ select is((select count(*)::integer from public.stock_reservations), 0, 'un clie
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000404', true);
 select ok((select count(*)::integer from public.stock_reservations) > 0, 'operator ve todas las reservas para producción');
 
--- 29. El público (anon) solo alcanza las funciones de solo lectura, nunca las tablas.
+-- 29. Variante con stock_tracking=true: se rige por stock_quantity, no por
+--     production_dates (20260808160000_stock_gated_availability.sql). Sin
+--     ninguna fila en production_dates para estas variantes, antes del fix
+--     habrían quedado 'production_not_open' para siempre sin importar el stock.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000401', true);
+
+insert into public.product_variants (id, product_id, name, price_cents, vat_rate, status, stock_tracking, stock_quantity)
+values
+  ('40000000-0000-0000-0000-000000000009', '40000000-0000-0000-0000-000000000002', 'Congelado bajo stock', 800, 10.00, 'active', true, 2),
+  ('40000000-0000-0000-0000-000000000010', '40000000-0000-0000-0000-000000000002', 'Congelado agotado', 800, 10.00, 'active', true, 0);
+
+select results_eq(
+  $$ select status, reason, quantity_available from public.check_variant_availability('40000000-0000-0000-0000-000000000009', '40000000-0000-0000-0000-000000000004', current_date + 10) $$,
+  $$ values ('low_stock'::text, 'available'::text, 2) $$,
+  'variante con stock_tracking y 2 unidades (umbral 2) es low_stock, sin necesidad de production_dates'
+);
+
+select results_eq(
+  $$ select status, reason, quantity_available from public.check_variant_availability('40000000-0000-0000-0000-000000000010', '40000000-0000-0000-0000-000000000004', current_date + 10) $$,
+  $$ values ('sold_out'::text, 'out_of_stock'::text, null::integer) $$,
+  'variante con stock_tracking y 0 unidades es sold_out con motivo out_of_stock, no production_not_open'
+);
+
+-- 30. La reserva agota el stock compartido entre fechas: reservar para una
+--     fecha de recogida consume el mismo stock_quantity para cualquier otra.
+select is(
+  (select ok from public.create_stock_reservation('40000000-0000-0000-0000-000000000009', '40000000-0000-0000-0000-000000000004', current_date + 10, 2, 'sesion-stock')),
+  true, 'reservar las 2 unidades de stock disponibles tiene éxito'
+);
+select results_eq(
+  $$ select status, reason, quantity_available from public.check_variant_availability('40000000-0000-0000-0000-000000000009', '40000000-0000-0000-0000-000000000004', current_date + 101) $$,
+  $$ values ('sold_out'::text, 'out_of_stock'::text, null::integer) $$,
+  'tras reservar las 2 unidades, la variante queda agotada también para otra fecha de recogida: el stock es compartido, no por fecha'
+);
+
+-- 31. create_staff_order(): registra pedidos tomados por WhatsApp, teléfono o
+--     presencial en el mismo motor de disponibilidad (Documento funcional
+--     §5, "sistema de reservas unificado"). Nace 'confirmed' directamente,
+--     sin ventana de pago ni Stripe, y descuenta stock_quantity igual que un
+--     pedido web pagado.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000401', true);
+insert into public.product_variants (id, product_id, name, price_cents, vat_rate, status, stock_tracking, stock_quantity)
+values ('40000000-0000-0000-0000-000000000011', '40000000-0000-0000-0000-000000000002', 'Congelado pedido manual', 900, 10.00, 'active', true, 5);
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000404', true);
+
+select results_eq(
+  $$ select ok, reason from public.create_staff_order('[{"variant_id":"40000000-0000-0000-0000-000000000011","quantity":1}]'::jsonb, '40000000-0000-0000-0000-000000000004', current_date + 102, 'Cliente Manual', '600111222', null, 'fax', 'paid', null) $$,
+  $$ values (false, 'invalid_channel'::text) $$,
+  'canal inválido es rechazado'
+);
+select results_eq(
+  $$ select ok, reason from public.create_staff_order('[{"variant_id":"40000000-0000-0000-0000-000000000011","quantity":1}]'::jsonb, '40000000-0000-0000-0000-000000000004', current_date + 102, 'Cliente Manual', '600111222', null, 'phone', 'cash', null) $$,
+  $$ values (false, 'invalid_payment_status'::text) $$,
+  'estado de pago inválido es rechazado'
+);
+select results_eq(
+  $$ select ok, reason from public.create_staff_order('[{"variant_id":"40000000-0000-0000-0000-000000000011","quantity":1}]'::jsonb, '40000000-0000-0000-0000-000000000004', current_date + 102, '', '600111222', null, 'phone', 'paid', null) $$,
+  $$ values (false, 'invalid_customer'::text) $$,
+  'sin nombre de cliente es rechazado'
+);
+
+select is(
+  (select ok from public.create_staff_order('[{"variant_id":"40000000-0000-0000-0000-000000000011","quantity":2}]'::jsonb, '40000000-0000-0000-0000-000000000004', current_date + 102, 'Cliente Manual', '600111222', 'cliente@example.test', 'whatsapp', 'paid', 'Pedido por WhatsApp')),
+  true, 'operator puede registrar un pedido manual dentro de su rol de pedidos'
+);
+
+select results_eq(
+  $$ select status, payment_status, channel from public.orders where customer_phone = '600111222' $$,
+  $$ values ('confirmed'::public.order_status, 'paid'::public.payment_status, 'whatsapp'::text) $$,
+  'el pedido manual nace confirmed, con el canal y el estado de pago indicados'
+);
+
+select is(
+  (select count(*)::integer from public.product_stock_movements where order_id = (select id from public.orders where customer_phone = '600111222') and type = 'venta' and quantity = -2),
+  1, 'la venta manual descuenta 2 unidades del stock de la variante con seguimiento'
+);
+
+select is(
+  (select count(*)::integer from public.order_status_history where order_id = (select id from public.orders where customer_phone = '600111222') and new_status = 'confirmed' and source = 'operator'),
+  1, 'el historial registra la confirmación con el origen operator'
+);
+
+select results_eq(
+  $$ select status, reason from public.check_variant_availability('40000000-0000-0000-0000-000000000011', '40000000-0000-0000-0000-000000000004', current_date + 200) $$,
+  $$ values ('available'::text, 'available'::text) $$,
+  'tras vender 2 de 5, siguen disponibles 3 unidades para cualquier otra fecha: el pedido manual sí descuenta stock_quantity'
+);
+
+select is(
+  (select ok from public.create_staff_order('[{"variant_id":"40000000-0000-0000-0000-000000000011","quantity":3}]'::jsonb, '40000000-0000-0000-0000-000000000004', current_date + 200, 'Cliente Manual 2', '600111223', null, 'in_person', 'pending', null)),
+  true, 'vender las 3 unidades restantes agota exactamente el stock, ni más ni menos'
+);
+select results_eq(
+  $$ select status, reason from public.check_variant_availability('40000000-0000-0000-0000-000000000011', '40000000-0000-0000-0000-000000000004', current_date + 201) $$,
+  $$ values ('sold_out'::text, 'out_of_stock'::text) $$,
+  'con las 5 unidades vendidas entre dos pedidos manuales, la variante queda agotada para cualquier fecha'
+);
+
+-- 32. Solo owner/admin/operator pueden registrar pedidos manuales.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000402', true);
+select throws_ok(
+  $$ select public.create_staff_order('[{"variant_id":"40000000-0000-0000-0000-000000000011","quantity":1}]'::jsonb, '40000000-0000-0000-0000-000000000004', current_date + 210, 'Cliente', '600000000', null, 'phone', 'paid', null) $$,
+  '42501', null, 'un cliente sin rol de staff no puede registrar pedidos manuales'
+);
+reset role;
+set local role anon;
+select throws_ok(
+  $$ select public.create_staff_order('[{"variant_id":"40000000-0000-0000-0000-000000000011","quantity":1}]'::jsonb, '40000000-0000-0000-0000-000000000004', current_date + 210, 'Cliente', '600000000', null, 'phone', 'paid', null) $$,
+  '42501', null, 'anon no puede registrar pedidos manuales'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000401', true);
+
+-- 33. cancel_order() ahora también fija cancelled_at/cancellation_reason y
+--     registra el historial (antes solo lo hacía el UPDATE directo del
+--     panel /admin/pedidos, que dejaba esas columnas sin tocar).
+select is(
+  (select ok from public.cancel_order((select id from public.orders where customer_phone = '600111222'), 'Cliente canceló por teléfono')),
+  true, 'owner puede cancelar un pedido manual confirmado a través de cancel_order'
+);
+select ok(
+  (select cancelled_at is not null and cancellation_reason = 'Cliente canceló por teléfono' from public.orders where customer_phone = '600111222'),
+  'cancel_order fija cancelled_at y cancellation_reason'
+);
+select is(
+  (select count(*)::integer from public.order_status_history where order_id = (select id from public.orders where customer_phone = '600111222') and new_status = 'cancelled'),
+  1, 'cancel_order registra la transición en order_status_history'
+);
+select is(
+  (select count(*)::integer from public.product_stock_movements where order_id = (select id from public.orders where customer_phone = '600111222') and type = 'devolucion' and quantity = 2),
+  1, 'cancelar un pedido confirmado con stock_tracking restituye las unidades vendidas'
+);
+
+-- 34. El público (anon) solo alcanza las funciones de solo lectura, nunca las tablas.
 select set_config('request.jwt.claim.sub', '', true);
 reset role;
 set local role anon;

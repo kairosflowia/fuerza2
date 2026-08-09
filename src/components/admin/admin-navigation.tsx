@@ -8,6 +8,7 @@ import { adminNavigation, adminNavigationGroups, type AdminNavIcon } from "@/lib
 import { visibleAdminSections } from "@/lib/auth/permissions";
 import type { AppRole } from "@/lib/supabase/database.types";
 import {
+  BoxesIcon,
   CalendarIcon,
   CardIcon,
   ChartIcon,
@@ -31,6 +32,7 @@ const NAV_ICONS: Record<AdminNavIcon, (props: SVGProps<SVGSVGElement>) => ReactE
   oven: OvenIcon,
   clipboard: ClipboardIcon,
   package: PackageIcon,
+  boxes: BoxesIcon,
   calendar: CalendarIcon,
   pin: PinIcon,
   user: UserIcon,

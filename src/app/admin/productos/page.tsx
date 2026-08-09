@@ -34,6 +34,7 @@ export default async function ProductsAdminPage({ searchParams }: { searchParams
         actions={
           <div className="admin-action-group">
             <FamilyManager families={families ?? []} />
+            <Link className="button button--secondary" href="/admin/productos/especial-semana">Especial de la semana</Link>
             <Link className="button button--primary" href="/admin/productos/nuevo">Nuevo producto</Link>
           </div>
         }

@@ -8,8 +8,10 @@ import { HeroVideo } from "@/components/public/hero-video";
 import { Newsletter } from "@/components/public/newsletter";
 import { ProcessTimeline, type ProcessStep } from "@/components/public/process-timeline";
 import { Container, Section } from "@/components/ui";
+import { WeeklySpecialBanner } from "@/components/public/weekly-special-banner";
 import { getPublicCatalog } from "@/lib/catalog";
 import { createPageMetadata } from "@/lib/seo";
+import { getCurrentWeeklySpecial } from "@/lib/weekly-special";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Pan de masa madre en Asturias",
@@ -28,12 +30,20 @@ const processSteps: ProcessStep[] = [
 ];
 
 export default async function Home() {
-  const catalog = await getPublicCatalog();
+  const [catalog, weeklySpecial] = await Promise.all([getPublicCatalog(), getCurrentWeeklySpecial()]);
   const rusticBreads = catalog.filter((p) => p.family?.slug === "hogazas-artesanas").slice(0, 3);
 
   return (
     <main id="main-content">
       <HeroCarousel />
+
+      {weeklySpecial ? (
+        <Section>
+          <Container size="wide">
+            <WeeklySpecialBanner special={weeklySpecial} />
+          </Container>
+        </Section>
+      ) : null}
 
       <Section>
         <Container size="wide">
@@ -67,6 +77,20 @@ export default async function Home() {
       </Section>
 
       <Section tone="sunken">
+        <Container size="wide">
+          <SectionHeading
+            eyebrow="Pan fresco en casa, cada semana"
+            title="Fuerza Habitual"
+            description="Suscríbete y recibe tu pan de masa madre sin tener que reservar cada vez. Con 4 unidades o más en tu cesta, el 5% de descuento se aplica automáticamente."
+          />
+          <div className="component-row">
+            <Link className="button button--primary" href="/plan-de-pan">Conocer Fuerza Habitual</Link>
+            <Link className="button button--secondary" href="/plan-de-pan/membresias">Ver membresías</Link>
+          </div>
+        </Container>
+      </Section>
+
+      <Section>
         <Container size="wide">
           <SectionHeading eyebrow="El tiempo que transforma" title="Lo que ocurre antes de abrir el horno" description="Pasa el cursor o toca cada paso para ver qué ocurre en ese momento." />
           <ProcessTimeline steps={processSteps} />

@@ -1,0 +1,46 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { BasketConfigurator } from "@/components/subscriptions/basket-configurator";
+import { PageIntro } from "@/components/public/page-intro";
+import { Container, Section } from "@/components/ui";
+import { getCurrentIdentity } from "@/lib/auth/session";
+import { createPageMetadata } from "@/lib/seo";
+import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Membresías Fuerza Habitual",
+  description: "Elige tu pan y tu frecuencia para Fuerza Habitual.",
+  path: "/plan-de-pan/membresias",
+});
+
+export default async function MembresiasPage() {
+  const identity = await getCurrentIdentity();
+  if (!identity) redirect("/cuenta/acceder?next=/plan-de-pan/membresias");
+
+  const db: any = await createClient();
+  const [{ data: variants }, { data: products }, { data: points }] = await Promise.all([
+    db.from("product_variants").select("id,name,price_cents,product_id").eq("status", "active").eq("subscribable", true).not("price_cents", "is", null).order("name"),
+    db.from("products").select("id,name").eq("status", "active"),
+    db.from("pickup_points_public").select("id,name").eq("status", "active"),
+  ]);
+  const productName = (id: string) => products?.find((p: any) => p.id === id)?.name ?? "Producto";
+  const options = (variants ?? [])
+    .map((v: any) => ({ id: v.id, label: `${productName(v.product_id)} — ${v.name}`, priceCents: v.price_cents as number }))
+    .sort((a: any, b: any) => a.label.localeCompare(b.label));
+
+  return (
+    <main id="main-content">
+      <PageIntro
+        eyebrow="Explora los panes disponibles"
+        title="Membresías Fuerza Habitual"
+        description="Elige el pan que quieres recibir, la cantidad y la frecuencia. Con 4 unidades o más en tu cesta, el 5% de descuento se aplica automáticamente."
+      />
+      <Section>
+        <Container>
+          <BasketConfigurator variants={options} pickupPoints={points ?? []} />
+        </Container>
+      </Section>
+    </main>
+  );
+}

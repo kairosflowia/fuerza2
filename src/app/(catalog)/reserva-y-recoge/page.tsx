@@ -4,8 +4,11 @@ import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { Container } from "@/components/ui/layout";
 import { OrderSummarySidebar } from "@/components/catalog/order-summary-sidebar";
+import { WeeklySpecialBanner } from "@/components/public/weekly-special-banner";
 import { getPublicCatalog } from "@/lib/catalog";
+import { getCutoffConfig } from "@/lib/order-cutoff-server";
 import { createPageMetadata } from "@/lib/seo";
+import { getCurrentWeeklySpecial } from "@/lib/weekly-special";
 
 export const metadata = createPageMetadata({
   title: "Reserva y recoge",
@@ -14,7 +17,7 @@ export const metadata = createPageMetadata({
 });
 
 export default async function ReservaYRecogePage() {
-  const catalog = await getPublicCatalog();
+  const [catalog, cutoffConfig, weeklySpecial] = await Promise.all([getPublicCatalog(), getCutoffConfig(), getCurrentWeeklySpecial()]);
   const families = [...new Map(catalog.flatMap((p) => (p.family ? [[p.family.id, p.family]] as const : []))).values()]
     .map((family) => ({ family, count: catalog.filter((p) => p.family?.id === family.id).length }))
     .filter(({ count }) => count > 0)
@@ -25,6 +28,7 @@ export default async function ReservaYRecogePage() {
       <div className="catalog-layout__main">
         <Container>
           <p className="reserva-brand">FUERZA</p>
+          {weeklySpecial ? <WeeklySpecialBanner special={weeklySpecial} /> : null}
           {families.length ? (
             <div className="category-grid">
               {families.map(({ family, count }) => {
@@ -53,7 +57,7 @@ export default async function ReservaYRecogePage() {
           )}
         </Container>
       </div>
-      <OrderSummarySidebar />
+      <OrderSummarySidebar cutoffConfig={cutoffConfig} />
     </main>
   );
 }

@@ -1,1 +1,0 @@
-import{PlanForm}from"@/components/subscriptions/plan-form";import{AdminPageHeader}from"@/components/admin/admin-page-header";export default function NewPlan(){return <><AdminPageHeader title="Nuevo plan" description="Guárdalo como borrador hasta configurar Stripe y sus productos."/><PlanForm/></>}

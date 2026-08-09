@@ -1,34 +1,81 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { EditorialGrid, SectionHeading, ValueCard } from "@/components/public/editorial";
 import { PageIntro } from "@/components/public/page-intro";
-import { Card, Container, EmptyState, Section } from "@/components/ui";
+import { Card, Container, Section } from "@/components/ui";
+import { FREQUENCY_DESCRIPTIONS_ES, FREQUENCY_LABELS_ES, type SubscriptionFrequency } from "@/lib/subscriptions-domain";
 import { createPageMetadata } from "@/lib/seo";
-import { createClient } from "@/lib/supabase/server";
 
-export const revalidate = 60;
 export const metadata: Metadata = createPageMetadata({
-  title: "Plan de Pan",
-  description: "Suscripción recurrente de pan FUERZA con capacidad reservada.",
+  title: "Fuerza Habitual",
+  description: "Suscríbete y recibe tu pan de masa madre sin tener que reservar cada vez.",
   path: "/plan-de-pan",
 });
 
-export default async function Plans() {
-  const db: any = await createClient();
-  const { data: plans } = await db
-    .from("subscription_plans")
-    .select("id,name,slug,description,billing_interval,billing_interval_count,price_cents,currency,subscription_plan_items(quantity,product_variants(name,products(name)))")
-    .eq("status", "active")
-    .eq("is_public", true)
-    .order("display_order");
+const FREQUENCIES: SubscriptionFrequency[] = ["weekly", "biweekly", "every_3_weeks", "monthly"];
 
-  return <main id="main-content"><Section><Container>
-    <PageIntro title="Plan de Pan" eyebrow="Una plaza reservada" description="Tu pan previsto y pagado de forma recurrente. Cada plaza se abre únicamente cuando podemos reservar producción y recogida." />
-    {plans?.length ? <div className="editorial-grid">{plans.map((plan: any) => <Card key={plan.id}>
-      <h2>{plan.name}</h2><p>{plan.description}</p>
-      <p>{plan.billing_interval === "weekly" ? "Semanal" : plan.billing_interval === "biweekly" ? "Quincenal" : "Mensual"} · {(plan.price_cents / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}</p>
-      <ul>{plan.subscription_plan_items?.map((item: any) => <li key={item.product_variants?.name}>{item.quantity} × {item.product_variants?.products?.name} · {item.product_variants?.name}</li>)}</ul>
-      <Link className="button button--primary" href={`/plan-de-pan/${plan.slug}`}>Elegir este plan</Link>
-    </Card>)}</div> : <EmptyState title="Todavía no hay planes disponibles" description="Abriremos el Plan de Pan cuando existan opciones reales y capacidad reservada." />}
-  </Container></Section></main>;
+export default function FuerzaHabitualLanding() {
+  return (
+    <main id="main-content">
+      <PageIntro
+        eyebrow="Pan fresco en casa, cada semana"
+        title="Fuerza Habitual"
+        description="Suscríbete y recibe pan de masa madre recién horneado, sin tener que reservar cada vez. Simple, cómodo y con un 5% de descuento cuando eliges 4 unidades o más."
+      />
+
+      <Section>
+        <Container size="wide">
+          <div className="component-row">
+            <Link className="button button--primary" href="/plan-de-pan/membresias">Conocer membresías</Link>
+          </div>
+        </Container>
+      </Section>
+
+      <Section tone="sunken">
+        <Container size="wide">
+          <SectionHeading eyebrow="Así de simple" title="¿Cómo funciona Fuerza Habitual?" />
+          <EditorialGrid columns={3}>
+            <ValueCard number="01" title="Elige tu pan">
+              Monta tu cesta con el pan de masa madre que quieras recibir dentro de Fuerza Habitual.
+            </ValueCard>
+            <ValueCard number="02" title="Define tu frecuencia">
+              Escoge la frecuencia que mejor se adapte a tu rutina: semanal, quincenal, cada 3 semanas o mensual.
+            </ValueCard>
+            <ValueCard number="03" title="Recíbelo sin volver a pedir">
+              Tu pan queda reservado automáticamente según tu suscripción. Lo recoges en tu punto habitual, sin tener que reservar cada vez.
+            </ValueCard>
+          </EditorialGrid>
+          <p>
+            <Link href="/donde-estamos">Ver puntos de recogida</Link>
+          </p>
+        </Container>
+      </Section>
+
+      <Section>
+        <Container size="wide">
+          <SectionHeading eyebrow="A tu ritmo" title="Elige tu frecuencia ideal" />
+          <EditorialGrid columns={4}>
+            {FREQUENCIES.map((frequency) => (
+              <Card key={frequency}>
+                <h3>{FREQUENCY_LABELS_ES[frequency]}</h3>
+                <p>{FREQUENCY_DESCRIPTIONS_ES[frequency]}</p>
+              </Card>
+            ))}
+          </EditorialGrid>
+        </Container>
+      </Section>
+
+      <Section tone="sunken">
+        <Container size="wide">
+          <SectionHeading
+            eyebrow="Tu cesta, tu pan"
+            title="Conoce los panes disponibles en membresía"
+            description="Explora los panes disponibles en formato Fuerza Habitual y elige los que mejor se adapten a tu rutina. Con 4 unidades o más en tu cesta, el 5% de descuento se aplica automáticamente."
+          />
+          <Link className="button button--primary" href="/plan-de-pan/membresias">Ver membresías</Link>
+        </Container>
+      </Section>
+    </main>
+  );
 }

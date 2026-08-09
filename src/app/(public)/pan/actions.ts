@@ -43,7 +43,10 @@ export async function checkAvailabilityAction(_state: AvailabilityCheckState, fo
   return {
     checked: true,
     status: availability.status,
-    message: availability.status === "low_stock" ? `Quedan ${availability.quantityAvailable} para ese día.` : "Disponible para ese día.",
+    message:
+      availability.status === "low_stock"
+        ? `¡Últimas unidades! Quedan ${availability.quantityAvailable} para ese día.`
+        : "Disponible para ese día.",
     quantityAvailable: availability.quantityAvailable,
   };
 }

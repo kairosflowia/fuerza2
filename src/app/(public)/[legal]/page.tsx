@@ -31,21 +31,34 @@ export default async function LegalPage({ params }: LegalPageProps) {
   return (
     <main id="main-content">
       <PageIntro
-        eyebrow="Información pendiente de validación"
+        eyebrow={"content" in page && page.content ? "Política vigente" : "Información pendiente de validación"}
         title={page.title}
         description={page.description}
       />
       <Section>
         <Container size="content" className="legal-content">
-          <Alert variant="warning" title="Documento no definitivo">
-            Esta estructura no constituye todavía una política jurídica aplicable. Los datos del titular y las condiciones se publicarán después de una revisión profesional.
-          </Alert>
-          {page.sections.map((section) => (
-            <Card key={section} className="legal-section">
-              <h2>{section}</h2>
-              <p>Este apartado está reservado para el contenido validado antes de activar servicios que traten datos o permitan comprar.</p>
-            </Card>
-          ))}
+          {"content" in page && page.content ? (
+            page.content.map((block) => (
+              <Card key={block.heading} className="legal-section">
+                <h2>{block.heading}</h2>
+                {block.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </Card>
+            ))
+          ) : (
+            <>
+              <Alert variant="warning" title="Documento no definitivo">
+                Esta estructura no constituye todavía una política jurídica aplicable. Los datos del titular y las condiciones se publicarán después de una revisión profesional.
+              </Alert>
+              {page.sections.map((section) => (
+                <Card key={section} className="legal-section">
+                  <h2>{section}</h2>
+                  <p>Este apartado está reservado para el contenido validado antes de activar servicios que traten datos o permitan comprar.</p>
+                </Card>
+              ))}
+            </>
+          )}
         </Container>
       </Section>
     </main>

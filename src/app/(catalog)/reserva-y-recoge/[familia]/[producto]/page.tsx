@@ -67,7 +67,7 @@ export default async function ProductoPage({ params }: { params: Promise<{ famil
               {activeVariants.length ? (
                 <ProductOrderForm
                   productName={product.name}
-                  variants={activeVariants.map((v) => ({ id: v.id, name: v.name, priceCents: v.price_cents! }))}
+                  variants={activeVariants.map((v) => ({ id: v.id, name: v.name, priceCents: v.price_cents!, stockTracking: v.stock_tracking, stockQuantity: v.stock_quantity }))}
                   image={image?.storage_path}
                 />
               ) : (

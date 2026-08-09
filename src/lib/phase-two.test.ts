@@ -25,6 +25,7 @@ describe("public route architecture", () => {
       "/obrador",
       "/nosotros",
       "/plan-de-pan",
+      "/plan-de-pan/membresias",
       "/donde-estamos",
       "/reserva-y-recoge",
       "/contacto",
@@ -53,6 +54,9 @@ describe("public route architecture", () => {
       "/admin/configuracion/calendario",
       "/admin/configuracion/legal",
       "/admin/configuracion/sistema",
+      "/admin/configuracion/reservas",
+      "/admin/pedidos/nuevo",
+      "/admin/productos/especial-semana",
       "/admin/analitica/clientes",
       "/admin/analitica/suscripciones",
       "/admin/analitica/puntos",
@@ -99,15 +103,17 @@ describe("public content safeguards", () => {
     expect(legalPage).not.toMatch(/CIF|NIF|domicilio fiscal/i);
   });
 
-  it("keeps the homepage editorial and the catalogue free of reservation controls", () => {
+  it("keeps the homepage editorial free of reservation controls, while the catalogue allows a quick add to cart", () => {
     const home = readFileSync(resolve(projectRoot, "src/app/(public)/page.tsx"), "utf8");
     const heroCarousel = readFileSync(resolve(projectRoot, "src/components/public/hero-carousel.tsx"), "utf8");
-    const pan = readFileSync(resolve(projectRoot, "src/app/(public)/pan/page.tsx"), "utf8");
+    const catalogCard = readFileSync(resolve(projectRoot, "src/components/public/catalog-product-card.tsx"), "utf8");
     const editorial = readFileSync(resolve(projectRoot, "src/components/public/editorial.tsx"), "utf8");
     expect((home + heroCarousel).match(/<h1[ >]/g)).toHaveLength(1);
     expect(editorial).toContain("Sin precio ni disponibilidad");
-    expect(pan).toContain("IVA incluido");
-    expect(pan).not.toMatch(/Añadir al carrito|Comprar ahora|Reservar ahora/);
+    // El catálogo (/pan) pasó a permitir añadir a la cesta directamente desde
+    // la tarjeta (a pedido explícito del usuario), a diferencia de la
+    // restricción original de esta fase que lo mantenía solo informativo.
+    expect(catalogCard).toContain("useCart");
   });
 });
 

@@ -20,9 +20,16 @@ export const AVAILABILITY_REASON_LABELS_ES: Record<string, string> = {
   production_not_open: "Todavía no hemos abierto pedidos para esa fecha",
   cutoff_passed: "Ya hemos cerrado los pedidos para esa fecha",
   sold_out: "Agotado para esa fecha",
+  out_of_stock: "Agotado",
   subscription_capacity_only: "Lo que queda está reservado para el Plan de Pan",
   invalid_quantity: "La cantidad indicada no es válida",
   invalid_session: "No hemos podido identificar la sesión",
+  invalid_channel: "Indica un canal válido (WhatsApp, teléfono o presencial)",
+  invalid_payment_status: "Indica un estado de pago válido",
+  invalid_customer: "Indica nombre y teléfono del cliente",
+  invalid_checkout: "Añade al menos un artículo con cantidad válida",
+  variant_unavailable: "Esta variante no está publicada o no tiene precio",
+  reserved_for_subscribers: "Reservado por ahora para quienes tienen Fuerza Habitual. Pronto se abre para todo el mundo.",
 };
 
 export function availabilityReasonLabel(reason: string): string {

@@ -5,15 +5,15 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
-describe("Plan de Pan contracts", () => {
-  it("keeps plan prices and Stripe identifiers server-owned", () => {
+describe("Fuerza Habitual contracts", () => {
+  it("prices Stripe items from the server-fetched basket, never from the request body", () => {
     const createRoute = read("src/app/api/subscriptions/create/route.ts");
-    expect(createRoute).toContain("candidate.stripe_price_id");
-    expect(createRoute).not.toMatch(/b\.stripe_price_id|b\.price|b\.amount/);
+    expect(createRoute).toContain("item.unit_price_cents_snapshot");
+    expect(createRoute).not.toMatch(/body\.(price|amount|unit_amount)/);
   });
 
   it("uses Stripe Payment Element and webhook authority", () => {
-    expect(read("src/components/subscriptions/configurator.tsx")).toContain("<PaymentElement");
+    expect(read("src/components/subscriptions/basket-configurator.tsx")).toContain("<PaymentElement");
     const confirmation = read("src/app/(public)/plan-de-pan/confirmacion/page.tsx");
     expect(confirmation).toContain("customer_id");
     expect(confirmation).not.toContain("update(");
@@ -29,16 +29,14 @@ describe("Plan de Pan contracts", () => {
 
   it("keeps private subscription routes and POST requests out of the service-worker cache", () => {
     const worker = read("public/sw.js");
-    expect(worker).toContain("/plan-de-pan/checkout");
+    expect(worker).toContain("/plan-de-pan/membresias");
     expect(worker).toContain('url.pathname.startsWith("/cuenta/")');
     expect(worker).toContain('request.method !== "GET"');
   });
 
   it("uses one database ledger and idempotent invoice conversion", () => {
-    const migration = read("supabase/migrations/20260803240000_plan_de_pan_subscriptions.sql");
-    expect(migration).toContain("public.payment_events");
-    expect(migration).toContain("stripe_invoice_id text unique");
-    expect(migration).toContain("subscription_cycle_id uuid unique");
+    const migration = read("supabase/migrations/20260808210000_fuerza_habitual_redesign.sql");
+    expect(migration).toContain("stripe_event_id = p_event_id");
     expect(migration).toContain("pg_advisory_xact_lock");
   });
 });

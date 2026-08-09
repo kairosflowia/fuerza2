@@ -36,17 +36,19 @@ export function PublicFooter() {
         </nav>
         <div>
           <p className="footer-heading">Obrador</p>
-          <p>Horario general<br />09:00–18:00</p>
+          <p>Martes a sábado<br />Recogida 10:00–14:30</p>
           <Link href="/donde-estamos">Dónde estamos</Link>
         </div>
         <nav aria-label="Información legal">
           <p className="footer-heading">Información</p>
           <Link href="/contacto">Contacto</Link>
           <Link href="/cuenta/acceder">Mi cuenta</Link>
+          <Link href="/plan-de-pan">Fuerza Habitual</Link>
           <Link href="/aviso-legal">Aviso legal</Link>
           <Link href="/privacidad">Privacidad</Link>
           <Link href="/cookies">Cookies</Link>
           <Link href="/condiciones-de-compra">Condiciones de compra</Link>
+          <Link href="/politica-de-cancelacion">Política de cancelación</Link>
         </nav>
       </Container>
       <Container size="wide" className="public-footer__bottom">

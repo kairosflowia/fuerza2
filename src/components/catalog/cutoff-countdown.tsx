@@ -2,22 +2,22 @@
 
 import { useEffect, useState } from "react";
 
-import { formatCountdown, nextCutoff, ORDER_CUTOFF_HOUR } from "@/lib/order-cutoff";
+import { earliestBookableDate, formatEarliestDate, formatLeadTimeLabel, type CutoffConfig } from "@/lib/order-cutoff";
 
-export function CutoffCountdown() {
-  const [remaining, setRemaining] = useState<string | null>(null);
+export function CutoffCountdown({ config }: { config: CutoffConfig }) {
+  const [label, setLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    const tick = () => setRemaining(formatCountdown(nextCutoff().getTime() - Date.now()));
+    const tick = () => setLabel(formatEarliestDate(earliestBookableDate(config)));
     tick();
-    const id = setInterval(tick, 30000);
+    const id = setInterval(tick, 60000);
     return () => clearInterval(id);
-  }, []);
+  }, [config]);
 
   return (
     <p className="catalog-cutoff">
-      <span className="catalog-cutoff__label">Corte de pedidos {ORDER_CUTOFF_HOUR}:00h</span>
-      <span className="catalog-cutoff__time">{remaining ?? "…"}</span>
+      <span className="catalog-cutoff__label">{formatLeadTimeLabel(config)}</span>
+      <span className="catalog-cutoff__time">{label ?? "…"}</span>
     </p>
   );
 }

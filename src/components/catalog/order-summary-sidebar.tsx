@@ -4,11 +4,12 @@ import Link from "next/link";
 
 import { useCart } from "@/components/cart/cart-provider";
 import { formatPrice } from "@/lib/catalog-domain";
+import type { CutoffConfig } from "@/lib/order-cutoff";
 
 import { CutoffCountdown } from "./cutoff-countdown";
 import { usePickupPoint } from "./pickup-point-provider";
 
-export function OrderSummarySidebar() {
+export function OrderSummarySidebar({ cutoffConfig }: { cutoffConfig: CutoffConfig }) {
   const { selected } = usePickupPoint();
   const cart = useCart();
 
@@ -17,7 +18,7 @@ export function OrderSummarySidebar() {
       <div className="catalog-sidebar__card">
         <p className="catalog-sidebar__heading">Punto de recogida</p>
         <p className="catalog-sidebar__pickup">{selected?.name ?? "Selecciona un punto"}</p>
-        <CutoffCountdown />
+        <CutoffCountdown config={cutoffConfig} />
       </div>
 
       <div className="catalog-sidebar__card">
