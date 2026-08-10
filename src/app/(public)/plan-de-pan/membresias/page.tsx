@@ -19,15 +19,25 @@ export default async function MembresiasPage() {
   if (!identity) redirect("/cuenta/acceder?next=/plan-de-pan/membresias");
 
   const db: any = await createClient();
-  const [{ data: variants }, { data: products }, { data: points }] = await Promise.all([
+  const [{ data: variants }, { data: products }, { data: images }, { data: points }] = await Promise.all([
     db.from("product_variants").select("id,name,price_cents,product_id").eq("status", "active").eq("subscribable", true).not("price_cents", "is", null).order("name"),
     db.from("products").select("id,name").eq("status", "active"),
+    db.from("product_images").select("product_id,storage_path,is_primary").order("display_order"),
     db.from("pickup_points_public").select("id,name").eq("status", "active"),
   ]);
   const productName = (id: string) => products?.find((p: any) => p.id === id)?.name ?? "Producto";
+  const productImage = (id: string) => {
+    const forProduct = (images ?? []).filter((i: any) => i.product_id === id);
+    return forProduct.find((i: any) => i.is_primary)?.storage_path ?? forProduct[0]?.storage_path ?? null;
+  };
   const options = (variants ?? [])
-    .map((v: any) => ({ id: v.id, label: `${productName(v.product_id)} — ${v.name}`, priceCents: v.price_cents as number }))
-    .sort((a: any, b: any) => a.label.localeCompare(b.label));
+    .map((v: any) => ({
+      id: v.id,
+      name: v.name === "Única" ? productName(v.product_id) : `${productName(v.product_id)} — ${v.name}`,
+      priceCents: v.price_cents as number,
+      imagePath: productImage(v.product_id),
+    }))
+    .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
   return (
     <main id="main-content">
@@ -37,7 +47,7 @@ export default async function MembresiasPage() {
         description="Elige el pan que quieres recibir, la cantidad y la frecuencia. Con 4 unidades o más en tu cesta, el 5% de descuento se aplica automáticamente."
       />
       <Section>
-        <Container>
+        <Container size="wide">
           <BasketConfigurator variants={options} pickupPoints={points ?? []} />
         </Container>
       </Section>

@@ -2,21 +2,27 @@
 
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { useState } from "react";
+import Image from "next/image";
+import { useMemo, useState } from "react";
 
-import { Alert, Button, Select } from "@/components/ui";
-import { Input } from "@/components/ui/fields";
+import { Alert, Badge, Button, Card, Select } from "@/components/ui";
 import { formatPrice } from "@/lib/catalog-domain";
-import { basketDiscountPercent, FREQUENCY_LABELS_ES, type SubscriptionFrequency } from "@/lib/subscriptions-domain";
+import {
+  basketDiscountPercent,
+  FREQUENCY_DESCRIPTIONS_ES,
+  FREQUENCY_LABELS_ES,
+  SUBSCRIPTION_DISCOUNT_PERCENT,
+  SUBSCRIPTION_DISCOUNT_THRESHOLD_UNITS,
+  type SubscriptionFrequency,
+} from "@/lib/subscriptions-domain";
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
 
 const FREQUENCIES: SubscriptionFrequency[] = ["weekly", "biweekly", "every_3_weeks", "monthly"];
-const WEEKDAY_LABELS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+const WEEKDAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
-type VariantOption = { id: string; label: string; priceCents: number };
+type VariantOption = { id: string; name: string; priceCents: number; imagePath: string | null };
 type PickupPoint = { id: string; name: string };
-type Row = { key: number; variantId: string; quantity: number };
 
 function SubscriptionPayment({ subscriptionId }: { subscriptionId: string }) {
   const stripe = useStripe();
@@ -25,43 +31,75 @@ function SubscriptionPayment({ subscriptionId }: { subscriptionId: string }) {
   const [error, setError] = useState("");
 
   return (
-    <form
-      onSubmit={async (event) => {
-        event.preventDefault();
-        if (!stripe || !elements) return;
-        setBusy(true);
-        const result = await stripe.confirmPayment({ elements, confirmParams: { return_url: `${location.origin}/plan-de-pan/confirmacion?subscription=${subscriptionId}` } });
-        if (result.error) {
-          setError(result.error.message ?? "No se pudo completar el pago.");
-          setBusy(false);
-        }
-      }}
-    >
-      <PaymentElement />
-      <p>El primer pago y los siguientes se gestionan de forma segura con Stripe.</p>
-      <Button type="submit" loading={busy} disabled={!stripe}>Activar Fuerza Habitual</Button>
-      {error ? <Alert variant="error" title="No se ha podido pagar">{error}</Alert> : null}
-    </form>
+    <Card className="membership-payment-card">
+      <p className="membership-step__label">Último paso</p>
+      <h2>Añade tu método de pago</h2>
+      <form
+        onSubmit={async (event) => {
+          event.preventDefault();
+          if (!stripe || !elements) return;
+          setBusy(true);
+          const result = await stripe.confirmPayment({ elements, confirmParams: { return_url: `${location.origin}/plan-de-pan/confirmacion?subscription=${subscriptionId}` } });
+          if (result.error) {
+            setError(result.error.message ?? "No se pudo completar el pago.");
+            setBusy(false);
+          }
+        }}
+      >
+        <PaymentElement />
+        <p className="membership-summary__note">El primer pago y los siguientes se gestionan de forma segura con Stripe.</p>
+        <Button type="submit" loading={busy} disabled={!stripe} fullWidth>Activar Fuerza Habitual</Button>
+        {error ? <Alert variant="error" title="No se ha podido pagar">{error}</Alert> : null}
+      </form>
+    </Card>
   );
 }
 
 export function BasketConfigurator({ variants, pickupPoints }: { variants: VariantOption[]; pickupPoints: PickupPoint[] }) {
-  const [rows, setRows] = useState<Row[]>([{ key: 0, variantId: variants[0]?.id ?? "", quantity: 1 }]);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [frequency, setFrequency] = useState<SubscriptionFrequency>("weekly");
   const [pickupPointId, setPickupPointId] = useState("");
   const [weekday, setWeekday] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [payment, setPayment] = useState<{ clientSecret: string; subscriptionId: string } | null>(null);
-  const nextKey = rows.length ? Math.max(...rows.map((r) => r.key)) + 1 : 0;
 
-  const totalQuantity = rows.reduce((sum, row) => sum + (row.variantId ? row.quantity : 0), 0);
-  const subtotal = rows.reduce((sum, row) => {
-    const variant = variants.find((v) => v.id === row.variantId);
-    return sum + (variant ? variant.priceCents * row.quantity : 0);
-  }, 0);
+  const items = useMemo(
+    () => variants.map((v) => ({ ...v, quantity: quantities[v.id] ?? 0 })).filter((v) => v.quantity > 0),
+    [variants, quantities],
+  );
+  const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
+  const subtotal = items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0);
   const discountPercent = basketDiscountPercent(totalQuantity);
   const total = Math.round(subtotal * (1 - discountPercent / 100));
+  const missingForDiscount = Math.max(0, SUBSCRIPTION_DISCOUNT_THRESHOLD_UNITS - totalQuantity);
+  const canSubmit = items.length > 0 && Boolean(pickupPointId) && Boolean(weekday) && !busy;
+
+  function setQty(id: string, quantity: number) {
+    setQuantities((prev) => ({ ...prev, [id]: Math.max(0, Math.min(20, quantity)) }));
+  }
+
+  async function submit() {
+    setBusy(true);
+    setMessage("");
+    const response = await fetch("/api/subscriptions/create", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        items: items.map((i) => ({ variant_id: i.id, quantity: i.quantity })),
+        pickupPointId,
+        weekday: Number(weekday),
+        frequency,
+      }),
+    });
+    const data = await response.json();
+    setBusy(false);
+    if (!response.ok || !data.clientSecret) {
+      setMessage(response.status === 503 ? "El pago recurrente todavía no está disponible." : "No hay capacidad compatible con esta cesta. Prueba con otra cantidad, punto o día.");
+      return;
+    }
+    setPayment({ clientSecret: data.clientSecret, subscriptionId: data.subscriptionId });
+  }
 
   if (payment) {
     if (!stripePromise) return <Alert variant="warning" title="Pago no disponible">El pago recurrente todavía no está configurado.</Alert>;
@@ -77,88 +115,118 @@ export function BasketConfigurator({ variants, pickupPoints }: { variants: Varia
   }
 
   return (
-    <form
-      className="admin-form"
-      onSubmit={async (event) => {
-        event.preventDefault();
-        setBusy(true);
-        setMessage("");
-        const items = rows.filter((r) => r.variantId && r.quantity > 0).map((r) => ({ variant_id: r.variantId, quantity: r.quantity }));
-        const response = await fetch("/api/subscriptions/create", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ items, pickupPointId, weekday: Number(weekday), frequency }),
-        });
-        const data = await response.json();
-        setBusy(false);
-        if (!response.ok || !data.clientSecret) {
-          setMessage(response.status === 503 ? "El pago recurrente todavía no está disponible." : "No hay capacidad compatible con esta cesta. Prueba con otra cantidad, punto o día.");
-          return;
-        }
-        setPayment({ clientSecret: data.clientSecret, subscriptionId: data.subscriptionId });
-      }}
-    >
-      <fieldset className="admin-fieldset">
-        <legend>Tu cesta</legend>
-        {rows.map((row) => (
-          <div key={row.key} className="component-row">
-            <Select
-              id={`basket-variant-${row.key}`}
-              label="Pan"
-              value={row.variantId}
-              onChange={(e) => setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, variantId: e.target.value } : r)))}
-            >
-              {variants.map((v) => (
-                <option key={v.id} value={v.id}>{v.label} ({formatPrice(v.priceCents)})</option>
+    <div className="membership-builder">
+      <div className="membership-builder__main">
+        <section className="membership-step">
+          <p className="membership-step__label">Paso 1</p>
+          <h2>Elige tu pan</h2>
+          <div className="membership-bread-grid">
+            {variants.map((v) => {
+              const qty = quantities[v.id] ?? 0;
+              return (
+                <article key={v.id} className="membership-bread-card" data-selected={qty > 0 || undefined}>
+                  <div className="membership-bread-card__media">
+                    {v.imagePath ? (
+                      <Image src={`/api/product-images/${v.imagePath}`} alt="" width={320} height={320} />
+                    ) : (
+                      <div className="catalog-image-empty" aria-hidden="true" />
+                    )}
+                  </div>
+                  <div className="membership-bread-card__body">
+                    <p className="membership-bread-card__name">{v.name}</p>
+                    <p className="membership-bread-card__price">{formatPrice(v.priceCents)}</p>
+                    <div className="stepper stepper--compact">
+                      <button type="button" className="stepper__button" aria-label={`Quitar ${v.name}`} onClick={() => setQty(v.id, qty - 1)} disabled={qty <= 0}>−</button>
+                      <span className="stepper__value" aria-live="polite">{qty}</span>
+                      <button type="button" className="stepper__button" aria-label={`Añadir ${v.name}`} onClick={() => setQty(v.id, qty + 1)}>+</button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="membership-step">
+          <p className="membership-step__label">Paso 2</p>
+          <h2>Elige tu frecuencia</h2>
+          <div className="membership-frequency-grid">
+            {FREQUENCIES.map((f) => (
+              <button
+                key={f}
+                type="button"
+                className="membership-frequency-card"
+                aria-pressed={frequency === f}
+                onClick={() => setFrequency(f)}
+              >
+                <span className="membership-frequency-card__name">{FREQUENCY_LABELS_ES[f]}</span>
+                <span className="membership-frequency-card__desc">{FREQUENCY_DESCRIPTIONS_ES[f]}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="membership-step">
+          <p className="membership-step__label">Paso 3</p>
+          <h2>Dónde y cuándo recoges</h2>
+          <div className="component-row">
+            <Select id="basket-point" label="Punto de recogida" value={pickupPointId} onChange={(e) => setPickupPointId(e.target.value)} required>
+              <option value="">Selecciona</option>
+              {pickupPoints.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </Select>
-            <Input
-              id={`basket-quantity-${row.key}`}
-              label="Cantidad"
-              type="number"
-              min={1}
-              max={99}
-              value={row.quantity}
-              onChange={(e) => setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, quantity: Math.max(1, Number(e.target.value) || 1) } : r)))}
-            />
-            <Button type="button" variant="secondary" disabled={rows.length <= 1} onClick={() => setRows((prev) => prev.filter((r) => r.key !== row.key))}>
-              Quitar
-            </Button>
+            <Select id="basket-weekday" label="Día habitual" value={weekday} onChange={(e) => setWeekday(e.target.value)} required>
+              <option value="">Selecciona</option>
+              {WEEKDAY_LABELS.map((label, i) => (
+                <option key={label} value={i + 1}>{label}</option>
+              ))}
+            </Select>
           </div>
-        ))}
-        <Button type="button" variant="secondary" onClick={() => setRows((prev) => [...prev, { key: nextKey, variantId: variants[0]?.id ?? "", quantity: 1 }])}>
-          Añadir otro pan
-        </Button>
-      </fieldset>
+        </section>
+      </div>
 
-      <Select id="basket-frequency" label="Frecuencia" value={frequency} onChange={(e) => setFrequency(e.target.value as SubscriptionFrequency)}>
-        {FREQUENCIES.map((f) => (
-          <option key={f} value={f}>{FREQUENCY_LABELS_ES[f]}</option>
-        ))}
-      </Select>
+      <aside className="membership-summary">
+        <div className="membership-summary__card">
+          <p className="membership-summary__heading">Tu membresía</p>
+          {items.length ? (
+            <ul className="membership-summary__items">
+              {items.map((i) => (
+                <li key={i.id}>
+                  <span>{i.quantity} × {i.name}</span>
+                  <span>{formatPrice(i.priceCents * i.quantity)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="membership-summary__empty">Todavía no has elegido ningún pan.</p>
+          )}
 
-      <Select id="basket-point" label="Punto de recogida" value={pickupPointId} onChange={(e) => setPickupPointId(e.target.value)} required>
-        <option value="">Selecciona</option>
-        {pickupPoints.map((p) => (
-          <option key={p.id} value={p.id}>{p.name}</option>
-        ))}
-      </Select>
-      <Select id="basket-weekday" label="Día habitual" value={weekday} onChange={(e) => setWeekday(e.target.value)} required>
-        <option value="">Selecciona</option>
-        {WEEKDAY_LABELS.map((label, i) => (
-          <option key={label} value={i + 1}>{label}</option>
-        ))}
-      </Select>
+          {totalQuantity > 0 ? (
+            <div className="membership-discount">
+              {discountPercent > 0 ? (
+                <Badge variant="success">{SUBSCRIPTION_DISCOUNT_PERCENT}% de descuento aplicado</Badge>
+              ) : (
+                <p className="membership-discount__hint">
+                  Añade {missingForDiscount} unidad{missingForDiscount === 1 ? "" : "es"} más para el {SUBSCRIPTION_DISCOUNT_PERCENT}% de descuento
+                </p>
+              )}
+              <div className="membership-discount__bar"><span style={{ width: `${Math.min(100, (totalQuantity / SUBSCRIPTION_DISCOUNT_THRESHOLD_UNITS) * 100)}%` }} /></div>
+            </div>
+          ) : null}
 
-      <p>
-        Subtotal por ciclo: {formatPrice(subtotal)}
-        {discountPercent > 0 ? <> · <strong>{discountPercent}% de descuento por llevar {totalQuantity} unidades</strong></> : <> · añade {4 - totalQuantity} unidad{4 - totalQuantity === 1 ? "" : "es"} más para el 5% de descuento</>}
-      </p>
-      <p><strong>Total por ciclo: {formatPrice(total)}</strong></p>
+          <p className="membership-summary__total">
+            <span>Total por ciclo</span>
+            <span>{formatPrice(total)}</span>
+          </p>
 
-      <p>Comprobaremos la capacidad antes de crear la suscripción.</p>
-      <Button type="submit" loading={busy}>Continuar con Stripe</Button>
-      {message ? <Alert variant="error" title="No se ha podido continuar">{message}</Alert> : null}
-    </form>
+          <Button type="button" loading={busy} disabled={!canSubmit} onClick={submit} fullWidth>
+            Continuar con Stripe
+          </Button>
+          {message ? <Alert variant="error" title="No se ha podido continuar">{message}</Alert> : null}
+          <p className="membership-summary__note">Comprobaremos la capacidad antes de crear la suscripción.</p>
+        </div>
+      </aside>
+    </div>
   );
 }
