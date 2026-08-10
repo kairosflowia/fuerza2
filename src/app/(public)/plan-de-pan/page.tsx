@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
-import { EditorialGrid, SectionHeading, ValueCard } from "@/components/public/editorial";
+import { SectionHeading } from "@/components/public/editorial";
 import { PageIntro } from "@/components/public/page-intro";
-import { Card, Container, Section } from "@/components/ui";
+import { CalendarIcon, PackageIcon, WheatIcon } from "@/components/ui/icons";
+import { Container, Section } from "@/components/ui";
 import { FREQUENCY_DESCRIPTIONS_ES, FREQUENCY_LABELS_ES, type SubscriptionFrequency } from "@/lib/subscriptions-domain";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -13,39 +15,54 @@ export const metadata: Metadata = createPageMetadata({
   path: "/plan-de-pan",
 });
 
+const STEPS = [
+  { icon: WheatIcon, title: "Elige tu pan", description: "Monta tu cesta con el pan de masa madre que quieras recibir dentro de Fuerza Habitual." },
+  { icon: CalendarIcon, title: "Define tu frecuencia", description: "Escoge la frecuencia que mejor se adapte a tu rutina: semanal, quincenal, cada 3 semanas o mensual." },
+  { icon: PackageIcon, title: "Recíbelo sin volver a pedir", description: "Tu pan queda reservado automáticamente según tu suscripción. Lo recoges en tu punto habitual, sin tener que reservar cada vez." },
+] as const;
+
 const FREQUENCIES: SubscriptionFrequency[] = ["weekly", "biweekly", "every_3_weeks", "monthly"];
+const FEATURED_FREQUENCY: SubscriptionFrequency = "biweekly";
 
 export default function FuerzaHabitualLanding() {
   return (
     <main id="main-content">
-      <PageIntro
-        eyebrow="Pan fresco en casa, cada semana"
-        title="Fuerza Habitual"
-        description="Suscríbete y recibe pan de masa madre recién horneado, sin tener que reservar cada vez. Simple, cómodo y con un 5% de descuento cuando eliges 4 unidades o más."
-      />
-
       <Section>
         <Container size="wide">
-          <div className="component-row">
-            <Link className="button button--primary" href="/plan-de-pan/membresias">Conocer membresías</Link>
+          <div className="plan-hero">
+            <div className="plan-hero__copy">
+              <PageIntro
+                eyebrow="Fuerza Habitual"
+                title="¿Cómo funciona Fuerza Habitual?"
+                description="Suscríbete a la calidad artesanal. Recibe tu pan favorito con la frecuencia que decidas, sin complicaciones ni pedidos de último minuto."
+              />
+              <Link className="button button--primary plan-hero__cta" href="/plan-de-pan/membresias">Configurar suscripción</Link>
+            </div>
+            <div className="plan-hero__media">
+              <Image
+                src="https://images.unsplash.com/photo-1757606406505-8f7dfe834719?auto=format&fit=crop&w=1280&q=75"
+                alt="Panes de masa madre recién horneados junto a espigas de trigo"
+                width={1280}
+                height={960}
+                priority
+              />
+            </div>
           </div>
         </Container>
       </Section>
 
       <Section tone="sunken">
         <Container size="wide">
-          <SectionHeading eyebrow="Así de simple" title="¿Cómo funciona Fuerza Habitual?" />
-          <EditorialGrid columns={3}>
-            <ValueCard number="01" title="Elige tu pan">
-              Monta tu cesta con el pan de masa madre que quieras recibir dentro de Fuerza Habitual.
-            </ValueCard>
-            <ValueCard number="02" title="Define tu frecuencia">
-              Escoge la frecuencia que mejor se adapte a tu rutina: semanal, quincenal, cada 3 semanas o mensual.
-            </ValueCard>
-            <ValueCard number="03" title="Recíbelo sin volver a pedir">
-              Tu pan queda reservado automáticamente según tu suscripción. Lo recoges en tu punto habitual, sin tener que reservar cada vez.
-            </ValueCard>
-          </EditorialGrid>
+          <SectionHeading eyebrow="Así de simple" title="El proceso artesanal" />
+          <div className="plan-steps">
+            {STEPS.map(({ icon: Icon, title, description }) => (
+              <article key={title} className="plan-step">
+                <span className="plan-step__icon" aria-hidden="true"><Icon /></span>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
           <p>
             <Link href="/donde-estamos">Ver puntos de recogida</Link>
           </p>
@@ -55,14 +72,26 @@ export default function FuerzaHabitualLanding() {
       <Section>
         <Container size="wide">
           <SectionHeading eyebrow="A tu ritmo" title="Elige tu frecuencia ideal" />
-          <EditorialGrid columns={4}>
-            {FREQUENCIES.map((frequency) => (
-              <Card key={frequency}>
-                <h3>{FREQUENCY_LABELS_ES[frequency]}</h3>
-                <p>{FREQUENCY_DESCRIPTIONS_ES[frequency]}</p>
-              </Card>
-            ))}
-          </EditorialGrid>
+          <div className="plan-frequency-grid">
+            {FREQUENCIES.map((frequency) => {
+              const featured = frequency === FEATURED_FREQUENCY;
+              return (
+                <Link
+                  key={frequency}
+                  href={`/plan-de-pan/membresias?frecuencia=${frequency}`}
+                  className={`plan-frequency-card${featured ? " plan-frequency-card--featured" : ""}${frequency === "monthly" ? " plan-frequency-card--wide" : ""}`}
+                >
+                  {featured ? <span className="plan-frequency-card__popular">Popular</span> : null}
+                  <span className="plan-frequency-card__content">
+                    <span className="plan-frequency-card__number" aria-hidden="true">{String(FREQUENCIES.indexOf(frequency) + 1).padStart(2, "0")}</span>
+                    <span className="plan-frequency-card__title">{FREQUENCY_LABELS_ES[frequency]}</span>
+                    <span className="plan-frequency-card__description">{FREQUENCY_DESCRIPTIONS_ES[frequency]}</span>
+                  </span>
+                  <span className="plan-frequency-card__action">Seleccionar</span>
+                </Link>
+              );
+            })}
+          </div>
         </Container>
       </Section>
 

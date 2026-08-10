@@ -346,6 +346,39 @@ p { max-width: 68ch; }
 .value-card__icon--tiempo { background-position: -15.94rem 0; }
 .value-card__icon--comunidad { background-position: -21.56rem 0; }
 .pillars-section .eyebrow { color: #e4572e; letter-spacing: 0.15em; }
+
+/* Fuerza Habitual: landing (/plan-de-pan) */
+.plan-hero { display: grid; gap: var(--space-6); align-items: center; }
+.plan-hero .institutional-hero { max-width: none; margin: 0; padding: 0; border-bottom: none; }
+.plan-hero__cta { display: inline-flex; margin-top: var(--space-5); }
+.plan-hero__media { overflow: hidden; border-radius: var(--radius-3); background: var(--surface-sunken); }
+.plan-hero__media img { display: block; width: 100%; height: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+
+.plan-steps { display: grid; gap: var(--space-4); margin-block: var(--space-5); }
+.plan-step { display: grid; justify-items: start; gap: var(--space-3); padding: var(--space-5); border: 1px solid #e0dbcd; border-radius: var(--radius-3); background: #fdfbf7; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.plan-step:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgb(0 0 0 / 5%); }
+.plan-step h3, .plan-step p { margin: 0; }
+.plan-step h3 { font-family: var(--font-fraunces), serif; font-size: 1.25rem; font-weight: 300; letter-spacing: 0.006em; color: var(--negro); }
+.plan-step p { color: #333; line-height: 1.6; }
+.plan-step__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: rgb(228 87 46 / 12%); color: var(--terracota); }
+
+.plan-frequency-grid { display: grid; gap: var(--space-4); margin-block: var(--space-5); }
+.plan-frequency-card { position: relative; display: grid; padding: var(--space-5); border: 1px solid var(--border-strong); border-radius: var(--radius-3); background: var(--surface); text-decoration: none; color: inherit; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease; }
+.plan-frequency-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgb(0 0 0 / 8%); border-color: var(--foreground); }
+.plan-frequency-card__content { display: grid; gap: var(--space-1); min-width: 0; }
+.plan-frequency-card__number { display: grid; place-items: center; width: 2rem; height: 2rem; margin-bottom: var(--space-2); border-radius: 50%; background: var(--surface-sunken); color: var(--muted-foreground); font-size: 0.8rem; font-weight: 700; }
+.plan-frequency-card__title { display: block; font-family: var(--font-fraunces), serif; font-size: 1.1rem; font-weight: 400; color: var(--negro); }
+.plan-frequency-card__description { display: block; color: var(--muted-foreground); font-size: 0.875rem; line-height: 1.5; }
+.plan-frequency-card__action { display: none; }
+.plan-frequency-card--featured { border-color: var(--negro); background: var(--negro); color: var(--crema); }
+.plan-frequency-card--featured .plan-frequency-card__number { background: rgb(245 241 232 / 14%); color: var(--crema); }
+.plan-frequency-card--featured .plan-frequency-card__title { color: var(--crema); }
+.plan-frequency-card--featured .plan-frequency-card__description { color: rgb(245 241 232 / 72%); }
+.plan-frequency-card--featured:hover { border-color: var(--terracota); }
+.plan-frequency-card__popular { position: absolute; top: var(--space-4); right: var(--space-4); padding: 0.2rem var(--space-2); border-radius: var(--radius-1); background: var(--terracota); color: var(--negro); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.plan-frequency-card--wide { grid-template-columns: 1fr auto; align-items: center; gap: var(--space-4); }
+.plan-frequency-card--wide .plan-frequency-card__action { display: inline-flex; align-items: center; min-height: 2.5rem; padding-inline: var(--space-4); border: 1.5px solid var(--border-strong); border-radius: var(--radius-2); font-weight: 650; font-size: 0.85rem; white-space: nowrap; }
+.plan-frequency-card--wide:hover .plan-frequency-card__action { border-color: var(--foreground); background: var(--negro); color: var(--crema); }
 .text-link { display: inline-flex; min-height: 2.75rem; align-items: center; margin-top: var(--space-4); font-weight: 700; text-decoration-thickness: 1.5px; text-underline-offset: 0.28em; }
 .text-link::after { content: " →"; margin-left: var(--space-2); }
 /* Timeline interactiva de proceso: lista de pasos + visor de imagen dinámico. */
@@ -753,7 +786,6 @@ p { max-width: 68ch; }
   .catalog-toolbar p { grid-column: 1 / -1; }
   .contact-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .contact-form .field:nth-of-type(n + 4), .contact-form .choice, .contact-form .button { grid-column: 1 / -1; }
-  .account-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-user > span { display: inline; }
   .catalog-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .product-detail-grid { grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); }
@@ -761,6 +793,9 @@ p { max-width: 68ch; }
   .category-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .product-information { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .membership-frequency-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .plan-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .plan-frequency-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .plan-frequency-card--wide { grid-column: 1 / -1; }
 }
 
 @media (min-width: 64rem) {
@@ -786,6 +821,7 @@ p { max-width: 68ch; }
   .membership-bread-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .account-shell { grid-template-columns: 20rem minmax(0, 1fr); align-items: start; }
   .account-sidebar { position: sticky; top: calc(6.5rem + var(--space-5)); }
+  .plan-hero { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--space-7); }
 }
 
 @media (min-width: 80rem) { :root { --page-gutter: 4rem; } }

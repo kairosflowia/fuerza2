@@ -55,9 +55,9 @@ function SubscriptionPayment({ subscriptionId }: { subscriptionId: string }) {
   );
 }
 
-export function BasketConfigurator({ variants, pickupPoints }: { variants: VariantOption[]; pickupPoints: PickupPoint[] }) {
+export function BasketConfigurator({ variants, pickupPoints, initialFrequency }: { variants: VariantOption[]; pickupPoints: PickupPoint[]; initialFrequency?: SubscriptionFrequency }) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [frequency, setFrequency] = useState<SubscriptionFrequency>("weekly");
+  const [frequency, setFrequency] = useState<SubscriptionFrequency>(initialFrequency ?? "weekly");
   const [pickupPointId, setPickupPointId] = useState("");
   const [weekday, setWeekday] = useState("");
   const [busy, setBusy] = useState(false);

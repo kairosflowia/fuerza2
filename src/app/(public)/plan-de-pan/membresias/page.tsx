@@ -7,6 +7,7 @@ import { Container, Section } from "@/components/ui";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { createPageMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
+import type { SubscriptionFrequency } from "@/lib/subscriptions-domain";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Membresías Fuerza Habitual",
@@ -14,9 +15,13 @@ export const metadata: Metadata = createPageMetadata({
   path: "/plan-de-pan/membresias",
 });
 
-export default async function MembresiasPage() {
+const VALID_FREQUENCIES: SubscriptionFrequency[] = ["weekly", "biweekly", "every_3_weeks", "monthly"];
+
+export default async function MembresiasPage({ searchParams }: { searchParams: Promise<{ frecuencia?: string }> }) {
   const identity = await getCurrentIdentity();
   if (!identity) redirect("/cuenta/acceder?next=/plan-de-pan/membresias");
+  const { frecuencia } = await searchParams;
+  const initialFrequency = VALID_FREQUENCIES.find((f) => f === frecuencia);
 
   const db: any = await createClient();
   const [{ data: variants }, { data: products }, { data: images }, { data: points }] = await Promise.all([
@@ -48,7 +53,7 @@ export default async function MembresiasPage() {
       />
       <Section>
         <Container size="wide">
-          <BasketConfigurator variants={options} pickupPoints={points ?? []} />
+          <BasketConfigurator variants={options} pickupPoints={points ?? []} initialFrequency={initialFrequency} />
         </Container>
       </Section>
     </main>
