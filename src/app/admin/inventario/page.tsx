@@ -107,35 +107,27 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
           </form>
 
           {visibleTracked.length ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr><th>Producto</th><th>Variante</th><th>Estoque actual</th><th>Publicación</th><th>Acciones</th></tr>
-                </thead>
-                <tbody>
-                  {visibleTracked.map((row) => {
-                    const state = stockBadge(row.stock_quantity);
-                    return (
-                      <tr key={row.id}>
-                        <td>{row.productName}</td>
-                        <td>{row.name}</td>
-                        <td>
-                          <div className="admin-stock-cell">
-                            <Badge variant={state.variant}>{state.label}</Badge>
-                            <span className="admin-stock-cell__value">{row.stock_quantity} unidad{row.stock_quantity === 1 ? "" : "es"}</span>
-                          </div>
-                        </td>
-                        <td><Badge variant={row.status === "active" ? "success" : "neutral"}>{row.status}</Badge></td>
-                        <td className="admin-table__actions">
-                          <StockMovementButton variantId={row.id} productName={row.productName} variantName={row.name} />
-                          <StockTrackingToggle variantId={row.id} enabled={row.stock_tracking} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <ul className="inventory-list">
+              {visibleTracked.map((row) => {
+                const state = stockBadge(row.stock_quantity);
+                return (
+                  <li key={row.id} className="inventory-row">
+                    <div className="inventory-row__main">
+                      <p className="inventory-row__product">{row.productName}</p>
+                      <p className="inventory-row__variant">{row.name} · <Badge variant={row.status === "active" ? "success" : "neutral"}>{row.status}</Badge></p>
+                    </div>
+                    <div className="inventory-row__stock">
+                      <Badge variant={state.variant}>{state.label}</Badge>
+                      <span className="inventory-row__qty">{row.stock_quantity} unidad{row.stock_quantity === 1 ? "" : "es"}</span>
+                    </div>
+                    <div className="inventory-row__actions">
+                      <StockMovementButton variantId={row.id} productName={row.productName} variantName={row.name} />
+                      <StockTrackingToggle variantId={row.id} enabled={row.stock_tracking} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           ) : (
             <EmptyState title="Sin resultados" description="Ningún producto o variante coincide con ese filtro." />
           )}
@@ -151,25 +143,25 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         <h2>Historial de movimientos</h2>
         <p className="field__help">Últimos 20 movimientos registrados, manuales y automáticos (ventas y devoluciones).</p>
         {movements?.length ? (
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead><tr><th>Fecha</th><th>Variante</th><th>Tipo</th><th>Cantidad</th><th>Notas</th><th>Registrado por</th></tr></thead>
-              <tbody>
-                {movements.map((movement) => (
-                  <tr key={movement.id}>
-                    <td>{new Date(movement.created_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}</td>
-                    <td>{variantLabel(movement.product_variant_id)}</td>
-                    <td><Badge variant={MOVEMENT_BADGE_VARIANT[movement.type] ?? "neutral"}>{MOVEMENT_LABELS_ES[movement.type] ?? movement.type}</Badge></td>
-                    <td className={movement.quantity < 0 ? "admin-movement-qty admin-movement-qty--negative" : "admin-movement-qty admin-movement-qty--positive"}>
-                      {movement.quantity > 0 ? `+${movement.quantity}` : movement.quantity}
-                    </td>
-                    <td>{movement.notes ?? "—"}</td>
-                    <td>{actorName(movement.created_by)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="inventory-list">
+            {movements.map((movement) => (
+              <li key={movement.id} className="inventory-row">
+                <div className="inventory-row__main">
+                  <p className="inventory-row__product">{variantLabel(movement.product_variant_id)}</p>
+                  <p className="inventory-row__variant">
+                    {new Date(movement.created_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })} · {actorName(movement.created_by)}
+                  </p>
+                </div>
+                <div className="inventory-row__stock">
+                  <Badge variant={MOVEMENT_BADGE_VARIANT[movement.type] ?? "neutral"}>{MOVEMENT_LABELS_ES[movement.type] ?? movement.type}</Badge>
+                  <span className={movement.quantity < 0 ? "admin-movement-qty admin-movement-qty--negative" : "admin-movement-qty admin-movement-qty--positive"}>
+                    {movement.quantity > 0 ? `+${movement.quantity}` : movement.quantity}
+                  </span>
+                </div>
+                {movement.notes ? <p className="inventory-row__notes">&ldquo;{movement.notes}&rdquo;</p> : null}
+              </li>
+            ))}
+          </ul>
         ) : (
           <p className="field__help">Todavía no se han registrado movimientos de estoque.</p>
         )}
@@ -179,20 +171,19 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         <h2>Variantes sin seguimiento</h2>
         <p className="field__help">El pan de horneado diario normalmente no necesita seguimiento de estoque: su disponibilidad ya la gobierna la capacidad de producción por fecha.</p>
         {untracked.length ? (
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead><tr><th>Producto</th><th>Variante</th><th>Acciones</th></tr></thead>
-              <tbody>
-                {untracked.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.productName}</td>
-                    <td>{row.name}</td>
-                    <td><StockTrackingToggle variantId={row.id} enabled={row.stock_tracking} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="inventory-list">
+            {untracked.map((row) => (
+              <li key={row.id} className="inventory-row">
+                <div className="inventory-row__main">
+                  <p className="inventory-row__product">{row.productName}</p>
+                  <p className="inventory-row__variant">{row.name}</p>
+                </div>
+                <div className="inventory-row__actions">
+                  <StockTrackingToggle variantId={row.id} enabled={row.stock_tracking} />
+                </div>
+              </li>
+            ))}
+          </ul>
         ) : <p className="field__help">No hay más variantes.</p>}
       </section>
     </>
