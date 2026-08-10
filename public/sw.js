@@ -1,4 +1,4 @@
-const CACHE_NAME = "fuerza-static-v2";
+const CACHE_NAME = "fuerza-static-v3";
 const OFFLINE_URL = "/offline";
 const PRECACHE = [OFFLINE_URL, "/fuerza.jpeg", "/manifest.webmanifest", "/icon", "/apple-icon"];
 
