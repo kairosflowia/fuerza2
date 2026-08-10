@@ -493,10 +493,11 @@ p { max-width: 68ch; }
 .admin-product-thumb--placeholder { display:grid; place-items:center; background:var(--surface-sunken); color:var(--muted-foreground); font-size:0.85rem; font-weight:700; text-transform:uppercase; }
 .admin-product-cell__name { margin:0; font-weight:700; }
 .admin-product-cell__family { margin:0; color:var(--muted-foreground); font-size:0.8rem; }
-.admin-stock { display:inline-flex; align-items:center; gap:var(--space-1); font-size:0.85rem; font-weight:600; }
-.admin-stock::before { content:""; width:0.5rem; height:0.5rem; border-radius:50%; background:var(--muted-foreground); }
-.admin-stock--available::before { background:var(--success); }
-.admin-stock--out::before { background:var(--error); }
+.admin-stock-cell { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); }
+.admin-stock-cell__value { color:var(--muted-foreground); font-size:0.85rem; }
+.admin-movement-qty { font-weight:700; }
+.admin-movement-qty--positive { color:var(--success); }
+.admin-movement-qty--negative { color:var(--error); }
 .admin-form { display:grid; gap:var(--space-4); max-width:48rem; }
 .admin-form--product { max-width:60rem; }
 .admin-fieldset { display:grid; gap:var(--space-2); margin:0; padding:var(--space-4); border:1px solid var(--border-strong); }
