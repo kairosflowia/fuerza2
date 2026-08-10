@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { signOutAction, updateNotificationPreferences, updatePushPreferences } from "./actions";
+import { AccountSubscriptionsCard } from "@/components/account/subscriptions-card";
 import { ProfileForm } from "@/components/account/profile-form";
 import { PushNotifications } from "@/components/account/push-notifications";
 import { PageIntro } from "@/components/public/page-intro";
@@ -23,6 +24,8 @@ export default async function AccountPage() {
   const { data: preferences } = await (supabase as any).from("notification_preferences").select("channel,category,enabled").eq("customer_id",identity.user.id);
   const preference = (channel: string, category: string, fallback: boolean) => preferences?.find((item: { channel: string; category: string; enabled: boolean }) => item.channel === channel && item.category === category)?.enabled ?? fallback;
   const { data: pushDevices } = await (supabase as any).from("push_subscription_metadata").select("id,platform,device_name,status,last_used_at,created_at").eq("customer_id",identity.user.id).order("created_at",{ascending:false});
+  const { data: subscriptions } = await (supabase as any).from("subscriptions").select("id,status,frequency,next_collection_date,total_cents,pickup_points(name)").eq("customer_id",identity.user.id).order("created_at",{ascending:false});
+  const subscriptionSummaries = (subscriptions ?? []).map((s: any) => ({ id: s.id, status: s.status, frequency: s.frequency, next_collection_date: s.next_collection_date, total_cents: s.total_cents, pickupPointName: s.pickup_points?.name ?? null }));
 
   return (
     <main id="main-content">
@@ -44,7 +47,7 @@ export default async function AccountPage() {
           {consents?.length ? <ul>{consents.map((consent) => <li key={`${consent.consent_type}-${consent.created_at}`}>{consent.consent_type}: {consent.granted ? "concedido" : "retirado"} · versión {consent.version}</li>)}</ul> : <EmptyState title="Sin consentimientos registrados" description="Los consentimientos aparecerán aquí cuando utilices una función que los requiera." />}
         </Card>
         <Card className="account-card"><h2>Pedidos recientes</h2>{orders?.length?<ul>{orders.map(order=><li key={order.id}><strong>{order.public_code}</strong> · {order.collection_date} · {order.status} · {(order.total_cents/100).toLocaleString("es-ES",{style:"currency",currency:order.currency})}</li>)}</ul>:<EmptyState title="Todavía no hay pedidos" description="Tus pedidos confirmados aparecerán aquí." />}</Card>
-        <Card className="account-card"><EmptyState title="Plan de Pan todavía no disponible" description="Las futuras suscripciones aparecerán aquí cuando el servicio esté estable." /></Card>
+        <Card className="account-card"><h2>Fuerza Habitual</h2><AccountSubscriptionsCard subscriptions={subscriptionSummaries} /></Card>
         <Card className="account-card"><h2>Comunicaciones</h2><p>Las confirmaciones de pedido y los avisos operativos necesarios permanecen activos.</p><form action={updateNotificationPreferences}><label><input type="checkbox" name="subscription" defaultChecked={preference("email","subscription",true)}/> Avisos por email sobre Plan de Pan</label><label><input type="checkbox" name="reminder" defaultChecked={preference("email","reminder",true)}/> Recordatorios de recogida por email</label><label><input type="checkbox" name="marketing" defaultChecked={preference("email","marketing",false)}/> Novedades y promociones</label><Button type="submit">Guardar preferencias</Button></form></Card>
         <Card className="account-card"><PushNotifications initialDevices={pushDevices??[]}/><form action={updatePushPreferences}><p>Elige qué avisos opcionales quieres recibir en tus dispositivos. Los avisos imprescindibles del pedido permanecen activos.</p><label><input type="checkbox" name="push_subscription" defaultChecked={preference("push","subscription",true)}/> Avisos de Plan de Pan</label><label><input type="checkbox" name="push_reminder" defaultChecked={preference("push","reminder",true)}/> Recordatorios de recogida</label><Button type="submit">Guardar avisos push</Button></form></Card>
       </Container></Section>
