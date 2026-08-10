@@ -561,12 +561,6 @@ p { max-width: 68ch; }
 .category-card__chevron { margin-left: auto; color: var(--muted-foreground); font-size: 1.5rem; }
 
 .category-product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-6); }
-.category-product-card { text-decoration: none; color: var(--foreground); }
-.category-product-card__inner { padding: 0; overflow: hidden; }
-.category-product-card__inner img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
-.category-product-card__inner > div { display: grid; gap: var(--space-2); padding: var(--space-3); }
-.category-product-card__name { margin: 0; font-weight: 700; color: var(--terracota); }
-.category-product-card__price { margin: 0; font-weight: 700; }
 
 .product-order-grid { display: grid; gap: var(--space-6); margin-top: var(--space-6); }
 .product-order-figure { margin: 0; }

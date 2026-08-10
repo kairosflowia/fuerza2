@@ -5,30 +5,33 @@ import Link from "next/link";
 
 import { useCart } from "@/components/cart/cart-provider";
 import { Badge } from "@/components/ui/badge";
-import { formatPrice } from "@/lib/catalog-domain";
+import { formatPrice, type StockState } from "@/lib/catalog-domain";
 
-type QuickAddVariant = { id: string; name: string; priceCents: number };
+type QuickAddVariant = { id: string; name: string; priceCents: number; stockTracking?: boolean; stockQuantity?: number };
 
 export function CatalogProductCard({
-  slug,
+  href,
   familyName,
   name,
   imagePath,
   priceCents,
   isSeasonal,
+  stockState,
   variant,
 }: {
-  slug: string;
+  href: string;
   familyName?: string | null;
   name: string;
   imagePath: string | null;
   priceCents: number | null;
   isSeasonal?: boolean;
+  stockState?: StockState | null;
   variant: QuickAddVariant | null;
 }) {
   const cart = useCart();
-  const href = `/pan/${slug}`;
   const quantity = variant ? cart.items.find((item) => item.variantId === variant.id)?.quantity ?? 0 : 0;
+  const outOfStock = stockState === "out_of_stock";
+  const maxQuantity = variant?.stockTracking ? Math.max(0, Math.min(99, variant.stockQuantity ?? 0)) : 99;
 
   return (
     <article className="catalog-product-card" data-selected={quantity > 0 || undefined}>
@@ -42,9 +45,11 @@ export function CatalogProductCard({
       <div className="catalog-product-card__body">
         {familyName ? <p className="catalog-product-card__eyebrow">{familyName}</p> : null}
         {isSeasonal ? <Badge variant="information">De temporada</Badge> : null}
+        {stockState === "out_of_stock" ? <Badge variant="neutral">Agotado</Badge> : null}
+        {stockState === "low_stock" ? <Badge variant="warning">Últimas unidades</Badge> : null}
         <Link href={href} className="catalog-product-card__name">{name}</Link>
         {priceCents !== null ? <p className="catalog-product-card__price">{formatPrice(priceCents)}</p> : null}
-        {variant ? (
+        {variant && !outOfStock ? (
           <div className="stepper stepper--compact catalog-product-card__stepper">
             <button
               type="button"
@@ -63,6 +68,7 @@ export function CatalogProductCard({
               onClick={() =>
                 cart.add({ variantId: variant.id, productName: name, variantName: variant.name, quantity: 1, priceCents: variant.priceCents, image: imagePath ?? undefined })
               }
+              disabled={quantity >= maxQuantity}
             >
               +
             </button>

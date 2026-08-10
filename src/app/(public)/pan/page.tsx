@@ -40,7 +40,7 @@ export default async function PanPage({ searchParams }: { searchParams: Promise<
                 return (
                   <CatalogProductCard
                     key={p.id}
-                    slug={p.slug}
+                    href={`/pan/${p.slug}`}
                     familyName={p.family?.name}
                     name={p.name}
                     imagePath={image?.storage_path ?? null}
