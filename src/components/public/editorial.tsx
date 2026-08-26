@@ -17,7 +17,7 @@ export type PillarIcon = "tradicion" | "ingredientes" | "tiempo" | "comunidad";
 
 export function ValueCard({ number, icon, image, title, children, tone = "plain" }: { number?: string; icon?: PillarIcon; image?: string; title: string; children: ReactNode; tone?: "plain" | "yellow" | "green" | "blue" | "terracotta" }) {
   return (
-    <article className={cn("value-card", `value-card--${tone}`, image && "value-card--image")}>
+    <article className={cn("value-card", `value-card--${tone}`, image && "value-card--image")} tabIndex={image ? 0 : undefined}>
       {image ? (
         <>
           <span className="value-card__illustration">

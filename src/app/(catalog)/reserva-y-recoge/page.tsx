@@ -27,7 +27,7 @@ export default async function ReservaYRecogePage() {
     <main id="main-content" className="catalog-layout">
       <div className="catalog-layout__main">
         <Container>
-          <Image className="reserva-brand" src="/nombre-fuerza.svg" alt="FUERZA" width={280} height={280} priority />
+          <Image className="reserva-brand" src="/nombre-fuerza.svg" alt="FUERZA" width={375} height={205} priority />
           {weeklySpecial ? <WeeklySpecialBanner special={weeklySpecial} /> : null}
           {families.length ? (
             <div className="category-grid">
