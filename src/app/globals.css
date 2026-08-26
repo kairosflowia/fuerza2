@@ -671,11 +671,11 @@ p { max-width: 68ch; }
 .cart-summary-total { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 var(--space-4); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border); font-size: 1.1rem; font-weight: 700; }
 
 /* Reserva y recoge: experiencia "app mode" (sin header/footer globales) */
-.catalog-shell { min-height: 100dvh; display: flex; flex-direction: column; background: var(--background); padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
-.catalog-header { position: sticky; top: 0; z-index: 40; background: var(--background); border-bottom: 1px solid var(--border); }
+.catalog-shell { min-height: 100dvh; display: flex; flex-direction: column; background: #f7ecdd; padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
+.catalog-header { position: sticky; top: 0; z-index: 40; background: #f7ecdd; border-bottom: 1px solid var(--border); }
 .catalog-topbar { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--page-gutter); padding-top: calc(var(--space-2) + env(safe-area-inset-top)); }
 .catalog-topbar__logo { flex: 0 0 auto; display: flex; align-items: center; }
-.catalog-topbar__logo img { display: block; height: 2.25rem; width: auto; border-radius: var(--radius-1); }
+.catalog-topbar__logo img { display: block; height: 3.25rem; width: auto; border-radius: var(--radius-1); }
 .catalog-topbar__pickup { flex: 1 1 auto; min-width: 0; margin-inline: auto; text-align: center; }
 .catalog-topbar__pickup select { width: 100%; max-width: 14rem; min-height: 2.25rem; border: 1px solid var(--border-strong); border-radius: var(--radius-2); background: var(--surface); padding: 0.35rem 0.6rem; color: var(--foreground); font-size: 0.8125rem; text-align: center; }
 .catalog-topbar__cart { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; gap: var(--space-2); min-height: 2.25rem; padding: 0.35rem 0.6rem; border: 1px solid var(--border-strong); border-radius: var(--radius-2); color: var(--foreground); text-decoration: none; }
