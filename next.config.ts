@@ -31,7 +31,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   allowedDevOrigins: ["127.0.0.1"],
   poweredByHeader: false,
-  images: { remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }] },
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
   async headers() { return [{ source: "/:path*", headers: securityHeaders }, { source: "/admin/:path*", headers: [{ key:"Cache-Control",value:"private, no-store" }] }, { source:"/cuenta/:path*",headers:[{key:"Cache-Control",value:"private, no-store"}] }, { source:"/checkout/:path*",headers:[{key:"Cache-Control",value:"private, no-store"}] }]; },
 };
 export default nextConfig;

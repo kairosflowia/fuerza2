@@ -22,7 +22,7 @@ export function PublicHeader() {
     <header className="public-header">
       <div className="container container--wide public-header__inner">
         <Link className="site-logo" href="/" aria-label="FUERZA, inicio">
-          <Image src="/logo_fuerza_principal.png" alt="FUERZA, obrador de masa madre" width={496} height={438} priority />
+          <Image src="/01-fuerza-logo.svg" alt="FUERZA, obrador de masa madre" width={566} height={566} priority />
         </Link>
 
         <nav className="public-nav" aria-label="Navegación principal">

@@ -102,10 +102,10 @@ export default async function Home() {
         <Container size="wide">
           <SectionHeading eyebrow="Lo que nos mueve" title="Cuatro cosas que no negociamos" />
           <EditorialGrid columns={4}>
-            <ValueCard icon="tradicion" title="Tradición que se siente" tone="terracotta">Hacemos pan como se hacía antes de que hubiera prisa. No por nostalgia: porque sale mejor.</ValueCard>
-            <ValueCard icon="ingredientes" title="Ingredientes que cuentan" tone="yellow">Harina, agua, sal y masa madre. Si un ingrediente no hace falta, no está.</ValueCard>
-            <ValueCard icon="tiempo" title="Tiempo que transforma" tone="green">La fermentación lenta no se puede acelerar. Es la parte del trabajo que hace el reloj.</ValueCard>
-            <ValueCard icon="comunidad" title="Comunidad que nos inspira" tone="blue">Un obrador pequeño vive de la gente que vuelve y de quienes trabajan cerca.</ValueCard>
+            <ValueCard image="/05-tradicion-que-se-siente.svg" title="Tradición que se siente" tone="terracotta">Hacemos pan como se hacía antes de que hubiera prisa. No por nostalgia: porque sale mejor.</ValueCard>
+            <ValueCard image="/04-ingredientes-que-cuentan.svg" title="Ingredientes que cuentan" tone="yellow">Harina, agua, sal y masa madre. Si un ingrediente no hace falta, no está.</ValueCard>
+            <ValueCard image="/03-tiempo-que-transforma.svg" title="Tiempo que transforma" tone="green">La fermentación lenta no se puede acelerar. Es la parte del trabajo que hace el reloj.</ValueCard>
+            <ValueCard image="/02-comunidad-que-nos-inspira.svg" title="Comunidad que nos inspira" tone="blue">Un obrador pequeño vive de la gente que vuelve y de quienes trabajan cerca.</ValueCard>
           </EditorialGrid>
         </Container>
       </Section>
