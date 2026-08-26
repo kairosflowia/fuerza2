@@ -7,6 +7,8 @@ import { formatPrice } from "@/lib/catalog-domain";
 import { createClient } from "@/lib/supabase/server";
 
 const CHANNEL_LABELS_ES: Record<string, string> = { web: "Web", whatsapp: "WhatsApp", phone: "Teléfono", in_person: "Presencial" };
+const ORDER_STATUS_LABELS_ES: Record<string, string> = { draft: "Borrador", pending_payment: "Pendiente de pago", payment_processing: "Procesando pago", confirmed: "Confirmado", ready: "Listo para recoger", collected: "Recogido", cancelled: "Cancelado", refunded: "Reembolsado", partially_refunded: "Reembolsado parcialmente" };
+const PAYMENT_STATUS_LABELS_ES: Record<string, string> = { not_started: "No iniciado", pending: "Pendiente", processing: "Procesando", paid: "Pagado", failed: "Fallido", cancelled: "Cancelado", refunded: "Reembolsado", partially_refunded: "Reembolsado parcialmente" };
 const MOVEMENT_LABELS_ES: Record<string, string> = { entrada: "Entrada", produccion: "Producción", venta: "Venta", merma: "Merma", ajuste: "Ajuste", devolucion: "Cancelación" };
 const MOVEMENT_BADGE_VARIANT: Record<string, "success" | "information" | "error" | "warning" | "primary"> = { entrada: "success", produccion: "success", venta: "information", merma: "error", ajuste: "warning", devolucion: "primary" };
 const RESERVATION_LABELS_ES: Record<string, string> = { active: "Activa", expired: "Expirada", released: "Liberada", converted: "Convertida en venta" };
@@ -35,8 +37,8 @@ export default async function OrderAdmin({ params }: { params: Promise<{ id: str
         description={`Confirmado ${order.confirmed_at ? new Date(order.confirmed_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" }) : "—"} · canal ${CHANNEL_LABELS_ES[order.channel] ?? order.channel}`}
         actions={
           <div className="admin-action-group">
-            <Badge variant={order.status === "cancelled" ? "error" : order.status === "collected" ? "success" : "neutral"}>{order.status}</Badge>
-            <Badge variant={order.payment_status === "paid" ? "success" : order.payment_status === "failed" ? "error" : "warning"}>{order.payment_status}</Badge>
+            <Badge variant={order.status === "cancelled" ? "error" : order.status === "collected" ? "success" : "neutral"}>{ORDER_STATUS_LABELS_ES[order.status] ?? order.status}</Badge>
+            <Badge variant={order.payment_status === "paid" ? "success" : order.payment_status === "failed" ? "error" : "warning"}>{PAYMENT_STATUS_LABELS_ES[order.payment_status] ?? order.payment_status}</Badge>
           </div>
         }
       />
@@ -148,6 +150,7 @@ export default async function OrderAdmin({ params }: { params: Promise<{ id: str
           <input type="hidden" name="id" value={id} />
           <Input id="reason" name="reason" label="Nota operativa" optional />
           <div className="component-row">
+            {order.payment_status !== "paid" ? <Button type="submit" name="status" value="paid_manual">Marcar pagado en efectivo</Button> : null}
             <Button type="submit" name="status" value="ready">Marcar preparado</Button>
             <Button type="submit" name="status" value="collected">Marcar recogido</Button>
             <Button type="submit" name="status" value="cancelled" variant="destructive">Cancelar operativamente</Button>

@@ -87,6 +87,7 @@ export interface Database {
       extend_stock_reservation: { Args: { p_token: string }; Returns: { ok: boolean; reason: string; expires_at: string | null }[] };
       convert_reservation_to_order: { Args: { p_token: string; p_guest_email?: string | null; p_guest_phone?: string | null }; Returns: { ok: boolean; reason: string; order_id: string | null; public_code: string | null }[] };
       cancel_order: { Args: { p_order_id: string; p_reason?: string | null }; Returns: { ok: boolean; reason: string }[] };
+      mark_order_paid_manually: { Args: { p_order_id: string; p_reason?: string | null }; Returns: { ok: boolean; reason: string }[] };
       create_staff_order: { Args: { p_items: Json; p_pickup_point_id: string; p_collection_date: string; p_customer_name: string; p_customer_phone: string; p_customer_email?: string | null; p_channel?: string; p_payment_status?: string; p_notes?: string | null }; Returns: { ok: boolean; reason: string; order_id: string | null; public_code: string | null; total_cents: number | null }[] };
       request_order_cancellation: { Args: { p_public_code: string; p_lookup_hash: string; p_reason?: string | null }; Returns: { ok: boolean; reason: string; resolution: string | null; voucher_code: string | null }[] };
       set_production_date_status: { Args: { p_id: string; p_status: ProductionDateStatus }; Returns: { ok: boolean; reason: string }[] };

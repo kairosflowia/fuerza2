@@ -26,6 +26,8 @@ const PAYMENT_BADGE_VARIANT: Record<string, "success" | "warning" | "error" | "n
   refunded: "neutral",
   partially_refunded: "neutral",
 };
+const ORDER_STATUS_LABELS_ES: Record<string, string> = { draft: "Borrador", pending_payment: "Pendiente de pago", payment_processing: "Procesando pago", confirmed: "Confirmado", ready: "Listo para recoger", collected: "Recogido", cancelled: "Cancelado", refunded: "Reembolsado", partially_refunded: "Reembolsado parcialmente" };
+const PAYMENT_STATUS_LABELS_ES: Record<string, string> = { not_started: "No iniciado", pending: "Pendiente", processing: "Procesando", paid: "Pagado", failed: "Fallido", cancelled: "Cancelado", refunded: "Reembolsado", partially_refunded: "Reembolsado parcialmente" };
 
 export default async function OrdersAdmin({ searchParams }: { searchParams: Promise<{ q?: string; estado?: string }> }) {
   const { q = "", estado = "todos" } = await searchParams;
@@ -68,8 +70,8 @@ export default async function OrdersAdmin({ searchParams }: { searchParams: Prom
                 <p className="inventory-row__variant">{o.customer_name} · {CHANNEL_LABELS_ES[o.channel] ?? o.channel} · recoge {o.collection_date}</p>
               </div>
               <div className="inventory-row__stock">
-                <Badge variant={STATUS_BADGE_VARIANT[o.status] ?? "neutral"}>{o.status}</Badge>
-                <Badge variant={PAYMENT_BADGE_VARIANT[o.payment_status] ?? "neutral"}>{o.payment_status}</Badge>
+                <Badge variant={STATUS_BADGE_VARIANT[o.status] ?? "neutral"}>{ORDER_STATUS_LABELS_ES[o.status] ?? o.status}</Badge>
+                <Badge variant={PAYMENT_BADGE_VARIANT[o.payment_status] ?? "neutral"}>{PAYMENT_STATUS_LABELS_ES[o.payment_status] ?? o.payment_status}</Badge>
                 <span className="inventory-row__qty">{formatPrice(o.total_cents)}</span>
               </div>
               <div className="inventory-row__actions">
