@@ -76,16 +76,7 @@ function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { 
           }
         } catch (err) {
           console.error("checkout confirmPayment failed", err);
-          let detail = String(err);
-          if (err instanceof Error) detail = err.message;
-          else if (err && typeof err === "object") {
-            try {
-              detail = JSON.stringify(err, Object.getOwnPropertyNames(err));
-            } catch {
-              detail = String(err);
-            }
-          }
-          setError(`Ha ocurrido un error inesperado: ${detail}`);
+          setError("Ha ocurrido un error inesperado. Inténtalo de nuevo.");
         } finally {
           setBusy(false);
         }

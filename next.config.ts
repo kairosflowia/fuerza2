@@ -7,11 +7,17 @@ const csp = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  `script-src 'self' 'unsafe-inline'${production ? "" : " 'unsafe-eval'"} https://js.stripe.com`,
+  `script-src 'self' 'unsafe-inline'${production ? "" : " 'unsafe-eval'"} https://js.stripe.com https://*.js.stripe.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com",
   "font-src 'self' data:",
-  "frame-src https://js.stripe.com https://hooks.stripe.com",
+  // *.js.stripe.com (con comodín) es imprescindible, no solo el dominio
+  // exacto: Stripe.js abre iframes internos desde subdominios variables por
+  // rendimiento (documentado en la guía oficial de CSP de Stripe). Sin el
+  // comodín, confirmPayment() fallaba con "Could not retrieve elements
+  // store due to unexpected error" -- un bloqueo de CSP silencioso, nunca
+  // detectado antes porque hasta ahora nunca hubo claves reales de Stripe.
+  "frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com",
   "connect-src 'self' https://api.stripe.com https://*.supabase.co wss://*.supabase.co https://api.resend.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
