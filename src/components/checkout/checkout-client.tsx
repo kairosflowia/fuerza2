@@ -112,7 +112,7 @@ function ContactForm({ initialName, initialEmail, initialPhone, selection, onRea
         label={<>Acepto las <a href="/condiciones-de-compra" target="_blank" rel="noreferrer">condiciones de compra</a> y la <a href="/privacidad" target="_blank" rel="noreferrer">política de privacidad</a>.</>}
       />
       <Checkbox id="marketing" name="marketing" label="Quiero recibir novedades de FUERZA." />
-      <Button type="submit" fullWidth loading={busy} loadingLabel="Reservando…" disabled={!selection}>Continuar al pago</Button>
+      <Button type="submit" fullWidth loading={busy} loadingLabel="Reservando…" disabled={!selection}>Pagar ahora</Button>
       {error ? <Alert variant="error" title="No se ha podido continuar">{error}</Alert> : null}
     </form>
   );
