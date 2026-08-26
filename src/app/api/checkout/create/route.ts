@@ -22,7 +22,13 @@ export async function POST(request: Request) {
     const result = data?.[0];
     if (error || !result?.ok) return NextResponse.json({ error: result?.reason ?? "checkout_invalid" }, { status: 400 });
     const { data: order } = await db.from("orders").select("reservation_id").eq("id", result.order_id).single();
-    const intent = await getStripe().paymentIntents.create({ amount: result.total_cents, currency: "eur", automatic_payment_methods: { enabled: true }, receipt_email: body.email, metadata: { order_id: result.order_id, reservation_id: order?.reservation_id ?? "" } }, { idempotencyKey: `order-${result.order_id}` });
+    // payment_method_types explícito a solo "card" (no automatic_payment_methods):
+    // Apple Pay y Google Pay siguen apareciendo como carteras sobre el propio
+    // método "card", sin necesidad de nada más. automatic_payment_methods
+    // abriría también Klarna/PayPal/Amazon Pay/Link, que necesitan cargar
+    // scripts de dominios que la CSP del sitio no permite (solo js.stripe.com) --
+    // eso dejaba el botón de pago colgado en "Procesando" sin ningún error visible.
+    const intent = await getStripe().paymentIntents.create({ amount: result.total_cents, currency: "eur", payment_method_types: ["card"], receipt_email: body.email, metadata: { order_id: result.order_id, reservation_id: order?.reservation_id ?? "" } }, { idempotencyKey: `order-${result.order_id}` });
     await db.from("orders").update({ stripe_payment_intent_id: intent.id }).eq("id", result.order_id);
     return NextResponse.json({ clientSecret: intent.client_secret, publicCode: result.public_code, lookupToken: lookup, expiresAt: result.expires_at });
   } catch { return NextResponse.json({ error: "payment_unavailable" }, { status: 503 }); }

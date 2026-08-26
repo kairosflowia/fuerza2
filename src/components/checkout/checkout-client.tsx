@@ -32,44 +32,51 @@ function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { 
         setBusy(true);
         setError("");
 
-        const { error: submitError } = await elements.submit();
-        if (submitError) {
-          setError(submitError.message ?? "Revisa los datos de pago.");
-          setBusy(false);
-          return;
-        }
+        // Cualquier fallo inesperado (red caída, JSON inválido, una excepción
+        // real del SDK de Stripe) tiene que dejar el botón utilizable de
+        // nuevo -- sin este try/catch/finally, una excepción no controlada
+        // dejaba "Procesando…" colgado para siempre, sin ningún error visible.
+        try {
+          const { error: submitError } = await elements.submit();
+          if (submitError) {
+            setError(submitError.message ?? "Revisa los datos de pago.");
+            return;
+          }
 
-        const f = new FormData(e.currentTarget);
-        const response = await fetch("/api/checkout/create", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            items: cart.items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
-            pickupPointId: selection.point,
-            collectionDate: selection.date,
-            sessionKey: selection.key,
-            name: f.get("name"),
-            email: f.get("email"),
-            phone: f.get("phone"),
-            terms: f.get("consent") === "on",
-            privacy: f.get("consent") === "on",
-            marketing: f.get("marketing") === "on",
-          }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          setError("No hemos podido reservar la disponibilidad. Revisa los datos e inténtalo de nuevo.");
-          setBusy(false);
-          return;
-        }
+          const f = new FormData(e.currentTarget);
+          const response = await fetch("/api/checkout/create", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              items: cart.items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
+              pickupPointId: selection.point,
+              collectionDate: selection.date,
+              sessionKey: selection.key,
+              name: f.get("name"),
+              email: f.get("email"),
+              phone: f.get("phone"),
+              terms: f.get("consent") === "on",
+              privacy: f.get("consent") === "on",
+              marketing: f.get("marketing") === "on",
+            }),
+          });
+          const data = await response.json().catch(() => null);
+          if (!response.ok || !data?.clientSecret) {
+            setError("No hemos podido reservar la disponibilidad. Revisa los datos e inténtalo de nuevo.");
+            return;
+          }
 
-        const { error: confirmError } = await stripe.confirmPayment({
-          elements,
-          clientSecret: data.clientSecret,
-          confirmParams: { return_url: `${location.origin}/checkout/pago?pedido=${data.publicCode}&token=${encodeURIComponent(data.lookupToken)}` },
-        });
-        if (confirmError) {
-          setError(confirmError.message ?? "No se pudo completar el pago.");
+          const { error: confirmError } = await stripe.confirmPayment({
+            elements,
+            clientSecret: data.clientSecret,
+            confirmParams: { return_url: `${location.origin}/checkout/pago?pedido=${data.publicCode}&token=${encodeURIComponent(data.lookupToken)}` },
+          });
+          if (confirmError) {
+            setError(confirmError.message ?? "No se pudo completar el pago.");
+          }
+        } catch {
+          setError("Ha ocurrido un error inesperado. Inténtalo de nuevo.");
+        } finally {
           setBusy(false);
         }
       }}
@@ -144,7 +151,7 @@ export function CheckoutClient({ initialName = "", initialEmail = "", initialPho
     <div className="checkout-grid">
       {summary}
       <aside className="checkout-payment-panel">
-        <Elements stripe={stripePromise} options={{ mode: "payment", amount: cart.total, currency: "eur", appearance }}>
+        <Elements stripe={stripePromise} options={{ mode: "payment", amount: cart.total, currency: "eur", paymentMethodTypes: ["card"], appearance }}>
           <CheckoutForm initialName={initialName} initialEmail={initialEmail} initialPhone={initialPhone} selection={selection} />
         </Elements>
       </aside>
