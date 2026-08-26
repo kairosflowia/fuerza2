@@ -74,8 +74,9 @@ function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { 
           if (confirmError) {
             setError(confirmError.message ?? "No se pudo completar el pago.");
           }
-        } catch {
-          setError("Ha ocurrido un error inesperado. Inténtalo de nuevo.");
+        } catch (err) {
+          console.error("checkout confirmPayment failed", err);
+          setError(`Ha ocurrido un error inesperado: ${err instanceof Error ? err.message : String(err)}`);
         } finally {
           setBusy(false);
         }
