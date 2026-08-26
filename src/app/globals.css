@@ -576,7 +576,7 @@ p { max-width: 68ch; }
 .reserva-hero { position: relative; overflow: hidden; }
 .reserva-hero__bg { z-index: 0; opacity: 0.14; pointer-events: none; }
 .reserva-hero > .container { position: relative; z-index: 1; }
-.reserva-brand { display: block; width: clamp(9rem, 28vw, 14rem); height: auto; margin: 0 auto var(--space-6); }
+.reserva-brand { display: block; width: clamp(9rem, 28vw, 14rem); height: auto; margin: 0 auto var(--space-3); }
 .category-grid { display: grid; gap: var(--space-3); margin-top: var(--space-6); }
 .category-card { position: relative; display: flex; align-items: center; gap: var(--space-4); min-height: 5.5rem; padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-3); background: var(--surface); text-decoration: none; color: var(--foreground); }
 .category-card:hover { border-color: var(--foreground); }
