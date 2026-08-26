@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
@@ -13,6 +13,12 @@ const appearance = {
   theme: "stripe" as const,
   variables: { colorPrimary: "#e4572e", colorText: "#171412", borderRadius: "10px", fontFamily: "inherit" },
 };
+// Referencia estable: un array nuevo en cada render (p. ej. un literal
+// inline en el JSX) hace que <Elements> reciba un objeto options distinto
+// en cada re-render (como el que dispara el useEffect de selection nada
+// más montar) -- eso corrompía el estado interno de Stripe.js y era la
+// causa real de "Could not retrieve elements store".
+const PAYMENT_METHOD_TYPES = ["card"];
 
 type Selection = { point: string; pointName?: string; date: string; key: string };
 
@@ -128,6 +134,11 @@ export function CheckoutClient({ initialName = "", initialEmail = "", initialPho
     });
   }, []);
 
+  const elementsOptions = useMemo(
+    () => ({ mode: "payment" as const, amount: cart.total, currency: "eur", paymentMethodTypes: PAYMENT_METHOD_TYPES, appearance }),
+    [cart.total],
+  );
+
   if (!cart.items.length) {
     return <EmptyState title="Tu cesta está vacía" description="Añade un pan publicado antes de continuar." />;
   }
@@ -161,7 +172,7 @@ export function CheckoutClient({ initialName = "", initialEmail = "", initialPho
     <div className="checkout-grid">
       {summary}
       <aside className="checkout-payment-panel">
-        <Elements stripe={stripePromise} options={{ mode: "payment", amount: cart.total, currency: "eur", paymentMethodTypes: ["card"], appearance }}>
+        <Elements stripe={stripePromise} options={elementsOptions}>
           <CheckoutForm initialName={initialName} initialEmail={initialEmail} initialPhone={initialPhone} selection={selection} />
         </Elements>
       </aside>
