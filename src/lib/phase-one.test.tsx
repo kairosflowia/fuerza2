@@ -28,7 +28,10 @@ describe("design system foundations", () => {
 
   it("keeps the approved theme tokens in one stylesheet", () => {
     const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
-    for (const color of ["#f5f1e8", "#000000", "#e4572e", "#f2c14e", "#2e7d67", "#4c78a8"]) {
+    // --crema se actualizó a #fceddc para igualar el tono de fondo real
+    // (matriz-alfa incluida) de los nuevos logos vectoriales (01-fuerza-logo.svg,
+    // nombre-fuerza.svg), a pedido explícito del usuario.
+    for (const color of ["#fceddc", "#000000", "#e4572e", "#f2c14e", "#2e7d67", "#4c78a8"]) {
       expect(css).toContain(color);
     }
     expect(css).toContain("env(safe-area-inset-bottom)");
