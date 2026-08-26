@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { CustomerTabs } from "@/components/admin/customer-tabs";
 import { EmptyState } from "@/components/ui";
 import { formatPrice } from "@/lib/catalog-domain";
 import { canAccessAdminSection } from "@/lib/auth/permissions";
@@ -21,6 +22,7 @@ export default async function CustomersAdminPage({ searchParams }: { searchParam
   return (
     <>
       <AdminPageHeader title={section.label} description={section.description} />
+      <CustomerTabs />
       <form className="admin-filters">
         <label>Buscar<input type="search" name="q" defaultValue={q} placeholder="Nombre, email o teléfono…" /></label>
         <button type="submit" className="button button--primary">Filtrar</button>

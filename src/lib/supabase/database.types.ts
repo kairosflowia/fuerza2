@@ -98,6 +98,13 @@ export interface Database {
       check_variant_availability: { Args: { p_product_variant_id: string; p_pickup_point_id: string; p_collection_date: string }; Returns: { status: "available" | "low_stock" | "sold_out"; reason: string; quantity_available: number | null }[] };
       next_available_date: { Args: { p_product_variant_id: string; p_pickup_point_id: string; p_from_date?: string; p_horizon_days?: number }; Returns: string | null };
       available_pickup_points_for_variant: { Args: { p_product_variant_id: string; p_collection_date: string }; Returns: { pickup_point_id: string; status: "available" | "low_stock" | "sold_out"; reason: string; quantity_available: number | null }[] };
+      newsletter_subscribe: { Args: { p_email: string; p_consent: boolean; p_consent_version: string; p_source: string; p_confirm_token_hash: string; p_token_expires_at: string; p_confirm_url: string }; Returns: { ok: boolean; reason: string; needs_confirmation: boolean }[] };
+      newsletter_confirm: { Args: { p_token_hash: string; p_unsubscribe_token_hash: string; p_unsubscribe_url: string }; Returns: { ok: boolean; reason: string }[] };
+      newsletter_unsubscribe: { Args: { p_token_hash: string; p_reason?: string | null }; Returns: { ok: boolean; reason: string }[] };
+      admin_newsletter_directory: { Args: { p_query?: string | null; p_status?: string | null }; Returns: { id: string; email: string; full_name: string | null; customer_id: string | null; status: "pendiente" | "activo" | "baja" | "bloqueado"; source: string; subscribed_at: string; confirmed_at: string | null; unsubscribed_at: string | null; last_activity_at: string; can_reactivate: boolean }[] };
+      admin_newsletter_resend_confirmation: { Args: { p_subscriber_id: string; p_confirm_token_hash: string; p_token_expires_at: string; p_confirm_url: string }; Returns: { ok: boolean; reason: string }[] };
+      admin_newsletter_set_status: { Args: { p_subscriber_id: string; p_status: string; p_reason?: string | null }; Returns: { ok: boolean; reason: string }[] };
+      admin_newsletter_consent_history: { Args: { p_subscriber_id: string }; Returns: { event_type: string; consent_version: string | null; source: string | null; actor_name: string; created_at: string }[] };
     };
     Enums: { app_role: AppRole };
     CompositeTypes: Record<string, never>;
