@@ -75,9 +75,12 @@ function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { 
       }}
     >
       <div className="checkout-contact-fields">
-        <Input id="checkout-name" name="name" label="Nombre" defaultValue={initialName} required />
-        <Input id="checkout-email" name="email" label="Correo electrónico" type="email" defaultValue={initialEmail} required />
-        <Input id="checkout-phone" name="phone" label="Teléfono" type="tel" defaultValue={initialPhone} required />
+        <p className="checkout-contact-fields__label">¿Quién recoge el pedido?</p>
+        <div className="checkout-contact-fields__row">
+          <Input id="checkout-name" name="name" label="Nombre" defaultValue={initialName} required />
+          <Input id="checkout-email" name="email" label="Correo" type="email" defaultValue={initialEmail} required />
+          <Input id="checkout-phone" name="phone" label="Teléfono" type="tel" defaultValue={initialPhone} required />
+        </div>
       </div>
       <PaymentElement />
       <Checkbox
