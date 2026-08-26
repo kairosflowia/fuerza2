@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
@@ -13,19 +13,47 @@ const appearance = {
   theme: "stripe" as const,
   variables: { colorPrimary: "#e4572e", colorText: "#171412", borderRadius: "10px", fontFamily: "inherit" },
 };
-// Referencia estable: un array nuevo en cada render (p. ej. un literal
-// inline en el JSX) hace que <Elements> reciba un objeto options distinto
-// en cada re-render (como el que dispara el useEffect de selection nada
-// más montar) -- eso corrompía el estado interno de Stripe.js y era la
-// causa real de "Could not retrieve elements store".
-const PAYMENT_METHOD_TYPES = ["card"];
 
 type Selection = { point: string; pointName?: string; date: string; key: string };
+type Payment = { secret: string; code: string; token: string };
 
-function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { initialName: string; initialEmail: string; initialPhone: string; selection: Selection | null }) {
-  const cart = useCart();
+function PayForm({ code, token }: { code: string; token: string }) {
   const stripe = useStripe();
   const elements = useElements();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!stripe || !elements || busy) return;
+        setBusy(true);
+        setError("");
+        try {
+          const { error: confirmError } = await stripe.confirmPayment({
+            elements,
+            confirmParams: { return_url: `${location.origin}/checkout/pago?pedido=${code}&token=${encodeURIComponent(token)}` },
+          });
+          if (confirmError) setError(confirmError.message ?? "No se pudo completar el pago.");
+        } catch (err) {
+          console.error("checkout confirmPayment failed", err);
+          setError("Ha ocurrido un error inesperado. Inténtalo de nuevo.");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <PaymentElement />
+      <Button type="submit" fullWidth loading={busy} loadingLabel="Procesando…" disabled={!stripe}>Pagar ahora</Button>
+      <p className="field__help">No se paga en el punto de recogida.</p>
+      {error ? <Alert variant="error" title="No se ha podido pagar">{error}</Alert> : null}
+    </form>
+  );
+}
+
+function ContactForm({ initialName, initialEmail, initialPhone, selection, onReady }: { initialName: string; initialEmail: string; initialPhone: string; selection: Selection | null; onReady: (p: Payment) => void }) {
+  const cart = useCart();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,21 +62,10 @@ function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { 
       className="checkout-form"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!stripe || !elements || !selection || busy) return;
+        if (!selection || busy) return;
         setBusy(true);
         setError("");
-
-        // Cualquier fallo inesperado (red caída, JSON inválido, una excepción
-        // real del SDK de Stripe) tiene que dejar el botón utilizable de
-        // nuevo -- sin este try/catch/finally, una excepción no controlada
-        // dejaba "Procesando…" colgado para siempre, sin ningún error visible.
         try {
-          const { error: submitError } = await elements.submit();
-          if (submitError) {
-            setError(submitError.message ?? "Revisa los datos de pago.");
-            return;
-          }
-
           const f = new FormData(e.currentTarget);
           const response = await fetch("/api/checkout/create", {
             method: "POST",
@@ -71,27 +88,10 @@ function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { 
             setError("No hemos podido reservar la disponibilidad. Revisa los datos e inténtalo de nuevo.");
             return;
           }
-
-          const { error: confirmError } = await stripe.confirmPayment({
-            elements,
-            clientSecret: data.clientSecret,
-            confirmParams: { return_url: `${location.origin}/checkout/pago?pedido=${data.publicCode}&token=${encodeURIComponent(data.lookupToken)}` },
-          });
-          if (confirmError) {
-            setError(confirmError.message ?? "No se pudo completar el pago.");
-          }
+          onReady({ secret: data.clientSecret, code: data.publicCode, token: data.lookupToken });
         } catch (err) {
-          console.error("checkout confirmPayment failed", err);
-          let detail = String(err);
-          if (err instanceof Error) detail = err.message;
-          else if (err && typeof err === "object") {
-            try {
-              detail = JSON.stringify(err, Object.getOwnPropertyNames(err));
-            } catch {
-              detail = String(err);
-            }
-          }
-          setError(`Ha ocurrido un error inesperado: ${detail}`);
+          console.error("checkout create failed", err);
+          setError("Ha ocurrido un error inesperado. Inténtalo de nuevo.");
         } finally {
           setBusy(false);
         }
@@ -105,7 +105,6 @@ function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { 
           <Input id="checkout-phone" name="phone" label="Teléfono" type="tel" defaultValue={initialPhone} required />
         </div>
       </div>
-      <PaymentElement />
       <Checkbox
         id="consent"
         name="consent"
@@ -113,9 +112,8 @@ function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { 
         label={<>Acepto las <a href="/condiciones-de-compra" target="_blank" rel="noreferrer">condiciones de compra</a> y la <a href="/privacidad" target="_blank" rel="noreferrer">política de privacidad</a>.</>}
       />
       <Checkbox id="marketing" name="marketing" label="Quiero recibir novedades de FUERZA." />
-      <Button type="submit" fullWidth loading={busy} loadingLabel="Procesando…" disabled={!stripe || !selection}>Pagar ahora</Button>
-      <p className="field__help">No se paga en el punto de recogida. Tu disponibilidad se reserva al confirmar el pago.</p>
-      {error ? <Alert variant="error" title="No se ha podido pagar">{error}</Alert> : null}
+      <Button type="submit" fullWidth loading={busy} loadingLabel="Reservando…" disabled={!selection}>Continuar al pago</Button>
+      {error ? <Alert variant="error" title="No se ha podido continuar">{error}</Alert> : null}
     </form>
   );
 }
@@ -123,6 +121,7 @@ function CheckoutForm({ initialName, initialEmail, initialPhone, selection }: { 
 export function CheckoutClient({ initialName = "", initialEmail = "", initialPhone = "" }: { initialName?: string; initialEmail?: string; initialPhone?: string }) {
   const cart = useCart();
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [payment, setPayment] = useState<Payment | null>(null);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -133,11 +132,6 @@ export function CheckoutClient({ initialName = "", initialEmail = "", initialPho
       }
     });
   }, []);
-
-  const elementsOptions = useMemo(
-    () => ({ mode: "payment" as const, amount: cart.total, currency: "eur", paymentMethodTypes: PAYMENT_METHOD_TYPES, appearance }),
-    [cart.total],
-  );
 
   if (!cart.items.length) {
     return <EmptyState title="Tu cesta está vacía" description="Añade un pan publicado antes de continuar." />;
@@ -172,9 +166,13 @@ export function CheckoutClient({ initialName = "", initialEmail = "", initialPho
     <div className="checkout-grid">
       {summary}
       <aside className="checkout-payment-panel">
-        <Elements stripe={stripePromise} options={elementsOptions}>
-          <CheckoutForm initialName={initialName} initialEmail={initialEmail} initialPhone={initialPhone} selection={selection} />
-        </Elements>
+        {payment ? (
+          <Elements stripe={stripePromise} options={{ clientSecret: payment.secret, appearance }}>
+            <PayForm code={payment.code} token={payment.token} />
+          </Elements>
+        ) : (
+          <ContactForm initialName={initialName} initialEmail={initialEmail} initialPhone={initialPhone} selection={selection} onReady={setPayment} />
+        )}
       </aside>
     </div>
   );
