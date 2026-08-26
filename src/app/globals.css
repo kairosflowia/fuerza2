@@ -737,6 +737,13 @@ p { max-width: 68ch; }
 .cart-row__price strong { color: var(--foreground); }
 .cart-summary-total { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 var(--space-4); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border); font-size: 1.1rem; font-weight: 700; }
 
+.checkout-summary { display: grid; gap: var(--space-4); align-content: start; }
+.checkout-summary__items { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.checkout-summary__items li { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+.checkout-summary__pickup { margin: 0; color: var(--muted-foreground); font-size: 0.9rem; }
+.checkout-payment-panel { display: grid; gap: var(--space-4); padding: var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-3); background: var(--surface); align-content: start; }
+.checkout-form { display: grid; gap: var(--space-4); }
+
 /* Reserva y recoge: experiencia "app mode" (sin header/footer globales) */
 .catalog-shell { min-height: 100dvh; display: flex; flex-direction: column; background: var(--background); padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
 .catalog-header { position: sticky; top: 0; z-index: 40; background: var(--background); border-bottom: 1px solid var(--border); }
@@ -904,6 +911,7 @@ p { max-width: 68ch; }
   .catalog-bottom-bar { display: none; }
   .catalog-shell { padding-bottom: 0; }
   .checkout-grid { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; }
+  .checkout-payment-panel { position: sticky; top: calc(6.5rem + var(--space-5)); }
   .membership-builder { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; }
   .membership-summary { position: sticky; top: calc(6.5rem + var(--space-5)); }
   .membership-bread-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }

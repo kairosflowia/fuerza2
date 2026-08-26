@@ -59,7 +59,7 @@ export function CartPageClient({ points }: { points: { id: string; name: string 
         </Select>
         <Input id="date" label="Fecha de recogida" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
         <p>Todos los artículos se recogerán en el mismo punto y fecha. El precio final y la disponibilidad se confirman en el pago.</p>
-        <Button disabled={!point || !date} onClick={() => { sessionStorage.setItem("fuerza-checkout", JSON.stringify({ point, date, key: crypto.randomUUID() })); router.push("/checkout"); }}>
+        <Button disabled={!point || !date} onClick={() => { const pointName = points.find((p) => p.id === point)?.name ?? ""; sessionStorage.setItem("fuerza-checkout", JSON.stringify({ point, pointName, date, key: crypto.randomUUID() })); router.push("/checkout"); }}>
           Continuar al pago
         </Button>
       </aside>
