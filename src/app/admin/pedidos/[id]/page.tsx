@@ -150,7 +150,7 @@ export default async function OrderAdmin({ params }: { params: Promise<{ id: str
           <input type="hidden" name="id" value={id} />
           <Input id="reason" name="reason" label="Nota operativa" optional />
           <div className="component-row">
-            {order.payment_status !== "paid" ? <Button type="submit" name="status" value="paid_manual">Marcar pagado en efectivo</Button> : null}
+            {order.payment_status !== "paid" ? <Button type="submit" name="status" value="paid_manual">Marcar pagado</Button> : null}
             <Button type="submit" name="status" value="ready">Marcar preparado</Button>
             <Button type="submit" name="status" value="collected">Marcar recogido</Button>
             <Button type="submit" name="status" value="cancelled" variant="destructive">Cancelar operativamente</Button>
