@@ -13,8 +13,9 @@ async function authorized() {
   return createClient();
 }
 
-function refresh() {
+function refresh(productId?: string) {
   revalidatePath("/admin/inventario");
+  if (productId) revalidatePath(`/admin/productos/${productId}/editar`);
 }
 
 export async function toggleStockTrackingAction(formData: FormData) {
@@ -22,12 +23,12 @@ export async function toggleStockTrackingAction(formData: FormData) {
   const variantId = text(formData, "variant_id");
   const enabled = text(formData, "enabled") === "true";
   await db.from("product_variants").update({ stock_tracking: enabled }).eq("id", variantId);
-  refresh();
+  refresh(text(formData, "product_id") || undefined);
 }
 
 export async function registerStockMovementAction(_state: StockActionState, formData: FormData): Promise<StockActionState> {
   const variantId = text(formData, "variant_id");
-  const type = text(formData, "type") as "entrada" | "merma" | "ajuste";
+  const type = text(formData, "type") as "entrada" | "produccion" | "merma" | "ajuste";
   const quantityRaw = text(formData, "quantity");
   const notes = text(formData, "notes") || null;
   const quantity = Number.parseInt(quantityRaw, 10);
@@ -35,7 +36,7 @@ export async function registerStockMovementAction(_state: StockActionState, form
   if (!Number.isInteger(quantity) || quantity === 0) {
     return { ok: false, errors: { quantity: "Indica una cantidad distinta de 0." } };
   }
-  const signedQuantity = type === "merma" ? -Math.abs(quantity) : type === "entrada" ? Math.abs(quantity) : quantity;
+  const signedQuantity = type === "merma" ? -Math.abs(quantity) : type === "entrada" || type === "produccion" ? Math.abs(quantity) : quantity;
 
   const db = await authorized();
   const { error } = await db.rpc("register_stock_movement", {
@@ -46,6 +47,6 @@ export async function registerStockMovementAction(_state: StockActionState, form
   });
   if (error) return { ok: false, message: "No se ha podido registrar el movimiento." };
 
-  refresh();
+  refresh(text(formData, "product_id") || undefined);
   return { ok: true, message: "Movimiento registrado." };
 }

@@ -1,2 +1,159 @@
-import {notFound} from "next/navigation";import {updateOrderStatus} from "../actions";import {AdminPageHeader} from "@/components/admin/admin-page-header";import {Button,Card,Input} from "@/components/ui";import {createClient} from "@/lib/supabase/server";const CHANNEL_LABELS_ES:Record<string,string>={web:"Web",whatsapp:"WhatsApp",phone:"Teléfono",in_person:"Presencial"};
-export default async function OrderAdmin({params}:{params:Promise<{id:string}>}){const{id}=await params,db=await createClient();const[{data:o},{data:items},{data:history}]=await Promise.all([db.from("orders").select("*").eq("id",id).maybeSingle(),db.from("order_items").select("*").eq("order_id",id),db.from("order_status_history").select("*").eq("order_id",id).order("created_at")]);if(!o)notFound();return <><AdminPageHeader title={`Pedido ${o.public_code}`} description={`${o.status} · pago ${o.payment_status} · canal ${CHANNEL_LABELS_ES[o.channel]??o.channel}`}/><Card><h2>Cliente</h2><p>{o.customer_name}<br/>{o.customer_email}<br/>{o.customer_phone}</p><p>PaymentIntent: {o.stripe_payment_intent_id?`…${o.stripe_payment_intent_id.slice(-8)}`:"pendiente"}</p>{o.internal_note?<p>Nota interna: {o.internal_note}</p>:null}</Card><Card><h2>Productos</h2>{items?.map((i:any)=><p key={i.id}>{i.quantity} × {i.product_name_snapshot} · {i.variant_name_snapshot}</p>)}</Card><Card><h2>Historial</h2>{history?.map((h:any)=><p key={h.id}>{h.created_at}: {h.previous_status??"inicio"} → {h.new_status}</p>)}</Card><form action={updateOrderStatus} className="admin-form"><input type="hidden" name="id" value={id}/><Input id="reason" name="reason" label="Nota operativa" optional/><div className="component-row"><Button name="status" value="ready">Marcar preparado</Button><Button name="status" value="collected">Marcar recogido</Button><Button name="status" value="cancelled" variant="destructive">Cancelar operativamente</Button></div></form></>}
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { updateOrderStatus } from "../actions";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { Badge, Button, Card, Input } from "@/components/ui";
+import { formatPrice } from "@/lib/catalog-domain";
+import { createClient } from "@/lib/supabase/server";
+
+const CHANNEL_LABELS_ES: Record<string, string> = { web: "Web", whatsapp: "WhatsApp", phone: "Teléfono", in_person: "Presencial" };
+const MOVEMENT_LABELS_ES: Record<string, string> = { entrada: "Entrada", produccion: "Producción", venta: "Venta", merma: "Merma", ajuste: "Ajuste", devolucion: "Cancelación" };
+const MOVEMENT_BADGE_VARIANT: Record<string, "success" | "information" | "error" | "warning" | "primary"> = { entrada: "success", produccion: "success", venta: "information", merma: "error", ajuste: "warning", devolucion: "primary" };
+const RESERVATION_LABELS_ES: Record<string, string> = { active: "Activa", expired: "Expirada", released: "Liberada", converted: "Convertida en venta" };
+const RESERVATION_BADGE_VARIANT: Record<string, "success" | "warning" | "neutral" | "information"> = { active: "warning", expired: "neutral", released: "neutral", converted: "success" };
+
+export default async function OrderAdmin({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const db: any = await createClient();
+  const [{ data: order }, { data: items }, { data: history }, { data: movements }] = await Promise.all([
+    db.from("orders").select("*").eq("id", id).maybeSingle(),
+    db.from("order_items").select("*").eq("order_id", id).order("created_at"),
+    db.from("order_status_history").select("*").eq("order_id", id).order("created_at"),
+    db.from("product_stock_movements").select("id,product_variant_id,type,quantity,notes,created_at").eq("order_id", id).order("created_at"),
+  ]);
+  if (!order) notFound();
+
+  const [{ data: pickupPoint }, { data: reservation }] = await Promise.all([
+    order.pickup_point_id ? db.from("pickup_points").select("id,name").eq("id", order.pickup_point_id).maybeSingle() : Promise.resolve({ data: null }),
+    order.reservation_id ? db.from("stock_reservations").select("id,status,quantity,product_variant_id,expires_at").eq("id", order.reservation_id) : Promise.resolve({ data: [] }),
+  ]);
+
+  return (
+    <>
+      <AdminPageHeader
+        title={`Pedido ${order.public_code}`}
+        description={`Confirmado ${order.confirmed_at ? new Date(order.confirmed_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" }) : "—"} · canal ${CHANNEL_LABELS_ES[order.channel] ?? order.channel}`}
+        actions={
+          <div className="admin-action-group">
+            <Badge variant={order.status === "cancelled" ? "error" : order.status === "collected" ? "success" : "neutral"}>{order.status}</Badge>
+            <Badge variant={order.payment_status === "paid" ? "success" : order.payment_status === "failed" ? "error" : "warning"}>{order.payment_status}</Badge>
+          </div>
+        }
+      />
+
+      <div className="admin-dashboard-grid">
+        <Card>
+          <h2>Cliente</h2>
+          <p>{order.customer_name}<br />{order.customer_email}<br />{order.customer_phone}</p>
+          <p>PaymentIntent: {order.stripe_payment_intent_id ? `…${order.stripe_payment_intent_id.slice(-8)}` : "pendiente"}</p>
+          {order.internal_note ? <p>Nota interna: {order.internal_note}</p> : null}
+        </Card>
+
+        <Card>
+          <h2>Recogida</h2>
+          <p>{pickupPoint?.name ?? "Punto no disponible"}<br />{order.collection_date}</p>
+          {order.requires_review ? <Badge variant="error">Requiere revisión</Badge> : null}
+        </Card>
+
+        <Card>
+          <h2>Importe</h2>
+          <p className="inventory-row__qty">Subtotal {formatPrice(order.subtotal_cents)}</p>
+          <p className="inventory-row__qty">IVA {formatPrice(order.tax_cents)}</p>
+          <p><strong>Total {formatPrice(order.total_cents)}</strong></p>
+        </Card>
+      </div>
+
+      <section className="admin-subsection">
+        <h2>Productos</h2>
+        <ul className="inventory-list">
+          {items?.map((item: any) => (
+            <li key={item.id} className="inventory-row">
+              <div className="inventory-row__main">
+                <p className="inventory-row__product">{item.quantity} × {item.product_name_snapshot}</p>
+                <p className="inventory-row__variant">
+                  {item.variant_name_snapshot} · {formatPrice(item.unit_price_cents)} / ud. · IVA {item.vat_rate_snapshot}%
+                </p>
+              </div>
+              <div className="inventory-row__stock">
+                <span className="inventory-row__qty">{formatPrice(item.line_total_cents)}</span>
+              </div>
+              <div className="inventory-row__actions">
+                <Link href={`/admin/productos/${item.product_id}/editar`} className="button button--secondary">Ver producto</Link>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {reservation?.length ? (
+        <section className="admin-subsection">
+          <h2>Reserva original</h2>
+          <ul className="inventory-list">
+            {reservation.map((r: any) => (
+              <li key={r.id} className="inventory-row">
+                <div className="inventory-row__main">
+                  <p className="inventory-row__product">{r.quantity} unidades reservadas</p>
+                  <p className="inventory-row__variant">Expira {new Date(r.expires_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}</p>
+                </div>
+                <div className="inventory-row__stock">
+                  <Badge variant={RESERVATION_BADGE_VARIANT[r.status] ?? "neutral"}>{RESERVATION_LABELS_ES[r.status] ?? r.status}</Badge>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section className="admin-subsection">
+        <h2>Movimientos de estoque</h2>
+        {movements?.length ? (
+          <ul className="inventory-list">
+            {movements.map((m: any) => (
+              <li key={m.id} className="inventory-row">
+                <div className="inventory-row__main">
+                  <p className="inventory-row__product">{new Date(m.created_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}</p>
+                  {m.notes ? <p className="inventory-row__variant">{m.notes}</p> : null}
+                </div>
+                <div className="inventory-row__stock">
+                  <Badge variant={MOVEMENT_BADGE_VARIANT[m.type] ?? "neutral"}>{MOVEMENT_LABELS_ES[m.type] ?? m.type}</Badge>
+                  <span className={m.quantity < 0 ? "admin-movement-qty admin-movement-qty--negative" : "admin-movement-qty admin-movement-qty--positive"}>
+                    {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="field__help">Este pedido no tiene productos con seguimiento de estoque, o todavía no se ha confirmado el pago.</p>
+        )}
+      </section>
+
+      <section className="admin-subsection">
+        <h2>Historial</h2>
+        <ul className="inventory-list">
+          {history?.map((h: any) => (
+            <li key={h.id} className="inventory-row">
+              <div className="inventory-row__main">
+                <p className="inventory-row__product">{h.previous_status ?? "inicio"} → {h.new_status}</p>
+                <p className="inventory-row__variant">{new Date(h.created_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })} · {h.source}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="admin-subsection">
+        <h2>Acciones operativas</h2>
+        <form action={updateOrderStatus} className="admin-form">
+          <input type="hidden" name="id" value={id} />
+          <Input id="reason" name="reason" label="Nota operativa" optional />
+          <div className="component-row">
+            <Button type="submit" name="status" value="ready">Marcar preparado</Button>
+            <Button type="submit" name="status" value="collected">Marcar recogido</Button>
+            <Button type="submit" name="status" value="cancelled" variant="destructive">Cancelar operativamente</Button>
+          </div>
+        </form>
+      </section>
+    </>
+  );
+}

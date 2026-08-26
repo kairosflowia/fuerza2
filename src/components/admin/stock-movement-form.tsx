@@ -2,21 +2,35 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 
 import { registerStockMovementAction, toggleStockTrackingAction, type StockActionState } from "@/app/admin/inventario/actions";
+import { updateLowStockThresholdAction } from "@/app/admin/productos/actions";
 import { Alert, Button, Input, Modal, Select } from "@/components/ui";
 
 const initial: StockActionState = { ok: false };
 
-export function StockTrackingToggle({ variantId, enabled }: { variantId: string; enabled: boolean }) {
+export function StockTrackingToggle({ variantId, enabled, productId }: { variantId: string; enabled: boolean; productId?: string }) {
   return (
     <form action={toggleStockTrackingAction}>
       <input type="hidden" name="variant_id" value={variantId} />
       <input type="hidden" name="enabled" value={(!enabled).toString()} />
+      {productId ? <input type="hidden" name="product_id" value={productId} /> : null}
       <Button type="submit" variant="secondary">{enabled ? "Desactivar seguimiento" : "Activar seguimiento"}</Button>
     </form>
   );
 }
 
-export function StockMovementButton({ variantId, productName, variantName }: { variantId: string; productName: string; variantName: string }) {
+export function LowStockThresholdForm({ variantId, productId, value }: { variantId: string; productId: string; value: number | null }) {
+  return (
+    <form action={updateLowStockThresholdAction} className="inventory-threshold-form">
+      <input type="hidden" name="variant_id" value={variantId} />
+      <input type="hidden" name="product_id" value={productId} />
+      <label className="inventory-threshold-form__label" htmlFor={`threshold-${variantId}`}>Stock mínimo</label>
+      <input id={`threshold-${variantId}`} className="inventory-threshold-form__input" type="number" name="low_stock_threshold" min={0} defaultValue={value ?? ""} placeholder="Global" />
+      <Button type="submit" variant="secondary">Guardar</Button>
+    </form>
+  );
+}
+
+export function StockMovementButton({ variantId, productName, variantName, productId }: { variantId: string; productName: string; variantName: string; productId?: string }) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(registerStockMovementAction, initial);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -29,11 +43,13 @@ export function StockMovementButton({ variantId, productName, variantName }: { v
 
   return (
     <>
-      <Button ref={triggerRef} type="button" variant="secondary" onClick={() => setOpen(true)}>Movimiento</Button>
+      <Button ref={triggerRef} type="button" variant="secondary" onClick={() => setOpen(true)}>Actualizar stock</Button>
       <Modal open={open} onClose={() => setOpen(false)} title={`Movimiento de estoque · ${productName} — ${variantName}`} returnFocusRef={triggerRef}>
         <form action={action} className="admin-form">
           <input type="hidden" name="variant_id" value={variantId} />
-          <Select id={`stock-type-${variantId}`} name="type" label="Tipo" defaultValue="entrada">
+          {productId ? <input type="hidden" name="product_id" value={productId} /> : null}
+          <Select id={`stock-type-${variantId}`} name="type" label="Tipo" defaultValue="produccion">
+            <option value="produccion">Producción</option>
             <option value="entrada">Entrada</option>
             <option value="merma">Merma</option>
             <option value="ajuste">Ajuste (positivo o negativo)</option>
