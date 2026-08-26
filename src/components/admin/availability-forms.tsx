@@ -91,7 +91,7 @@ export function StatusActions({ id, status, canCancel }: { id: string; status: s
 }
 
 type PickupPoint = { id: string; name: string };
-type Override = { id: string; productVariantId: string; pickupPointId: string | null; availabilityDate: string; capacityOverride: number; reason: string | null };
+type Override = { id: string; productVariantId: string; pickupPointId: string | null; availabilityDate: string; capacityOverride: number; reason: string | null; pointName: string };
 
 export function OverrideForm({ variants, points }: { variants: Variant[]; points: PickupPoint[] }) {
   const [state, action, pending] = useActionState(createAvailabilityOverrideAction, initial);
@@ -114,13 +114,13 @@ export function OverrideForm({ variants, points }: { variants: Variant[]; points
   );
 }
 
-export function OverrideList({ overrides, pointName }: { overrides: Override[]; pointName: (id: string | null) => string }) {
+export function OverrideList({ overrides }: { overrides: Override[] }) {
   if (!overrides.length) return <p className="field__help">No hay ajustes de capacidad puntuales.</p>;
   return (
     <ul className="admin-exception-list">
       {overrides.map((o) => (
         <li key={o.id}>
-          <span>{o.availabilityDate} · {pointName(o.pickupPointId)} · {o.capacityOverride} u.{o.reason ? ` · ${o.reason}` : ""}</span>
+          <span>{o.availabilityDate} · {o.pointName} · {o.capacityOverride} u.{o.reason ? ` · ${o.reason}` : ""}</span>
           <form action={deleteAvailabilityOverrideAction}>
             <input type="hidden" name="id" value={o.id} />
             <Button type="submit" variant="destructive">Eliminar</Button>

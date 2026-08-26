@@ -218,7 +218,7 @@ export default async function AvailabilityAdminPage({ searchParams }: { searchPa
           <h2>Ajustes puntuales de capacidad (variante × punto × fecha)</h2>
           <p className="field__help">Solo para casos excepcionales: limitar una variante concreta en un punto concreto por debajo de lo que la producción y el punto permitirían en general.</p>
           <OverrideForm variants={variants} points={pickupPoints ?? []} />
-          <OverrideList overrides={(overrides ?? []).map((o) => ({ id: o.id, productVariantId: o.product_variant_id, pickupPointId: o.pickup_point_id, availabilityDate: o.availability_date, capacityOverride: o.capacity_override, reason: o.reason }))} pointName={pointName} />
+          <OverrideList overrides={(overrides ?? []).map((o) => ({ id: o.id, productVariantId: o.product_variant_id, pickupPointId: o.pickup_point_id, availabilityDate: o.availability_date, capacityOverride: o.capacity_override, reason: o.reason, pointName: pointName(o.pickup_point_id) }))} />
         </Card>
       ) : null}
     </>
