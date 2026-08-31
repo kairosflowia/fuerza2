@@ -1,23 +1,12 @@
-import { CheckoutClient } from "@/components/checkout/checkout-client";
-import { Container, Section } from "@/components/ui";
-import { getCurrentIdentity } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
+// La cesta y el pago se unificaron en /carrito (menos fricción: un solo
+// paso en vez de cesta -> checkout). Se mantiene esta ruta como redirect
+// por si queda algún enlace o marcador antiguo. force-dynamic para que el
+// redirect se emita en cada petición (una redirect estática prerenderizada
+// no se sirve como 307 real en este Next.js).
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Pago | FUERZA" };
 
-export default async function CheckoutPage() {
-  const identity = await getCurrentIdentity();
-  return (
-    <main id="main-content">
-      <Section>
-        <Container>
-          <CheckoutClient
-            initialName={identity?.profile?.full_name ?? ""}
-            initialEmail={identity?.user.email ?? ""}
-            initialPhone={identity?.profile?.phone ?? ""}
-          />
-        </Container>
-      </Section>
-    </main>
-  );
+export default function CheckoutRedirect() {
+  redirect("/carrito");
 }

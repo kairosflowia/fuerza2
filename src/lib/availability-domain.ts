@@ -28,6 +28,7 @@ export const AVAILABILITY_REASON_LABELS_ES: Record<string, string> = {
   invalid_payment_status: "Indica un estado de pago válido",
   invalid_customer: "Indica nombre y teléfono del cliente",
   invalid_checkout: "Añade al menos un artículo con cantidad válida",
+  invalid_email: "Revisa el correo electrónico: no parece válido",
   variant_unavailable: "Esta variante no está publicada o no tiene precio",
   reserved_for_subscribers: "Reservado por ahora para quienes tienen Fuerza Habitual. Pronto se abre para todo el mundo.",
 };

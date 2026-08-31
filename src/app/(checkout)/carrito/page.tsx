@@ -2,18 +2,21 @@ import { cookies } from "next/headers";
 
 import { CartPageClient } from "@/components/cart/cart-page";
 import { Container, Section } from "@/components/ui";
+import { getCurrentIdentity } from "@/lib/auth/session";
 import { earliestBookableDate } from "@/lib/order-cutoff";
 import { getCutoffConfig } from "@/lib/order-cutoff-server";
 import { getPublicPickupPoints } from "@/lib/pickup-points";
 import { PICKUP_DATE_COOKIE, PICKUP_POINT_COOKIE } from "@/lib/pickup-selection";
 
-export const metadata = { title: "Cesta | FUERZA" };
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Cesta y pago | FUERZA" };
 
 export default async function CartPage() {
-  const [cutoffConfig, { points: allPoints }, cookieStore] = await Promise.all([
+  const [cutoffConfig, { points: allPoints }, cookieStore, identity] = await Promise.all([
     getCutoffConfig(),
     getPublicPickupPoints(),
     cookies(),
+    getCurrentIdentity(),
   ]);
 
   const minDateIso = (earliestBookableDate(cutoffConfig) ?? new Date()).toISOString().slice(0, 10);
@@ -33,7 +36,15 @@ export default async function CartPage() {
       <Section>
         <Container>
           <h1>Tu Cesta</h1>
-          <CartPageClient points={points} initialPoint={initialPoint} initialDate={initialDate} minDate={minDateIso} />
+          <CartPageClient
+            points={points}
+            initialPoint={initialPoint}
+            initialDate={initialDate}
+            minDate={minDateIso}
+            initialName={identity?.profile?.full_name ?? ""}
+            initialEmail={identity?.user.email ?? ""}
+            initialPhone={identity?.profile?.phone ?? ""}
+          />
         </Container>
       </Section>
     </main>
