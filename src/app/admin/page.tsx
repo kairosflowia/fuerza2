@@ -4,6 +4,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Metric } from "@/components/admin/analytics-view";
 import { Badge, EmptyState } from "@/components/ui";
 import { Alert } from "@/components/ui/alert";
+import { euro } from "@/lib/analytics";
 import { formatPrice } from "@/lib/catalog-domain";
 import { integer } from "@/lib/analytics";
 import { loadAnalytics } from "@/lib/admin-analytics";
@@ -92,9 +93,16 @@ export default async function AdminHomePage() {
         actions={<Link href="/admin/analitica" className="button button--secondary">Ver analítica completa</Link>}
       />
 
-      <div className="production-metrics" aria-label="Resumen del día">
-        <Metric label="Pedidos de hoy" value={integer(orders.length)} icon="pedidos" tone="primary" />
-        <Metric label="Unidades a producir" value={integer(data.production_today)} icon="produccion" tone="primary" />
+      <p className="field__help">Actividad recibida hoy</p>
+      <div className="production-metrics" aria-label="Actividad recibida hoy">
+        <Metric label="Ventas de hoy" value={euro(data.financial?.today_paid_cents ?? 0)} icon="pagos" tone="primary" />
+        <Metric label="Pedidos recibidos hoy" value={integer(receivedToday.length)} icon="pedidos" tone="primary" />
+      </div>
+
+      <p className="field__help">Lo que hay que tener listo hoy (recogidas de hoy, no pedidos de hoy)</p>
+      <div className="production-metrics" aria-label="Recogidas de hoy">
+        <Metric label="Recogidas de hoy" value={integer(orders.length)} icon="pedidos" tone="neutral" />
+        <Metric label="Unidades a producir" value={integer(data.production_today)} icon="produccion" tone="neutral" />
         <Metric label="Pendientes" value={integer(pendingCount)} icon="reloj" tone="warning" />
         <Metric label="Listos" value={integer(readyCount)} icon="listo" tone="success" />
       </div>
