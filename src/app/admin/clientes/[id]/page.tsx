@@ -7,7 +7,7 @@ import { Badge, Card, EmptyState } from "@/components/ui";
 import { canAccessAdminSection } from "@/lib/auth/permissions";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { formatPrice } from "@/lib/catalog-domain";
-import { formatDateEs } from "@/lib/order-cutoff";
+import { formatDateEs, formatTime, isoWeekday } from "@/lib/order-cutoff";
 import { ORDER_STATUS_BADGE_VARIANT, PAYMENT_STATUS_BADGE_VARIANT, orderStatusLabel, paymentStatusLabel } from "@/lib/order-status-domain";
 import { FREQUENCY_LABELS_ES, SUBSCRIPTION_STATUS_BADGE_VARIANT, subscriptionStatusLabel } from "@/lib/subscriptions-domain";
 import { isoToday } from "@/lib/production-date";
@@ -16,6 +16,12 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 const UPCOMING_STATUSES = ["confirmed", "ready"];
+
+function pickupTimeRange(order: any): string | null {
+  const windows = order.pickup_points?.pickup_point_collection_windows ?? [];
+  const window = windows.find((w: any) => w.is_active && w.weekday === isoWeekday(order.collection_date));
+  return window ? `${formatTime(window.starts_at)}–${formatTime(window.ends_at)}` : null;
+}
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -34,7 +40,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const [{ data: orders }, { data: subscriptions }] = await Promise.all([
     db
       .from("orders")
-      .select("id,public_code,status,payment_status,total_cents,collection_date,created_at,channel,pickup_point_id,pickup_points(name),order_items(product_name_snapshot,quantity)")
+      .select("id,public_code,status,payment_status,total_cents,collection_date,created_at,channel,pickup_point_id,pickup_points(name,pickup_point_collection_windows(weekday,starts_at,ends_at,is_active)),order_items(product_name_snapshot,quantity)")
       .eq("customer_id", id)
       .order("created_at", { ascending: false }),
     db
@@ -75,7 +81,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     <>
       <AdminPageHeader
         title={customer.full_name || "Cliente sin nombre"}
-        description={`${customer.email}${customer.phone ? ` · ${customer.phone}` : ""} · Cliente desde ${formatDateEs(customer.created_at.slice(0, 10))}`}
+        description={`${customer.email}${customer.phone ? ` · ${customer.phone}` : ""} · Cliente desde ${new Date(customer.created_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })}`}
         actions={
           <div className="admin-action-group">
             {isHabitual ? <Badge variant="primary">Fuerza Habitual</Badge> : null}
@@ -87,7 +93,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       <div className="analytics-metrics">
         <Metric label="Pedidos pagados" value={String(customer.orders_count)} icon="pedidos" tone="primary" />
         <Metric label="Gasto total" value={formatPrice(customer.total_spent_cents ?? 0)} icon="pagos" tone="primary" />
-        <Metric label="Último pedido" value={customer.last_order_at ? formatDateEs(customer.last_order_at.slice(0, 10)) : "—"} icon="reloj" tone="neutral" />
+        <Metric label="Último pedido" value={customer.last_order_at ? new Date(customer.last_order_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" }) : "—"} icon="reloj" tone="neutral" />
       </div>
 
       <section className="admin-subsection">
@@ -97,7 +103,9 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             <li className="inventory-row">
               <div className="inventory-row__main">
                 <p className="inventory-row__product"><Link href={`/admin/pedidos/${upcoming.id}`}>{upcoming.public_code}</Link></p>
-                <p className="inventory-row__variant">{formatDateEs(upcoming.collection_date)} · {upcoming.pickup_points?.name ?? "Punto de recogida"}</p>
+                <p className="inventory-row__variant">
+                  {formatDateEs(upcoming.collection_date)}{pickupTimeRange(upcoming) ? ` · ${pickupTimeRange(upcoming)}` : ""} · {upcoming.pickup_points?.name ?? "Punto de recogida"}
+                </p>
               </div>
               <div className="inventory-row__stock">
                 <Badge variant={ORDER_STATUS_BADGE_VARIANT[upcoming.status] ?? "neutral"}>{orderStatusLabel(upcoming.status)}</Badge>
@@ -153,7 +161,9 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               <li key={order.id} className="inventory-row">
                 <div className="inventory-row__main">
                   <p className="inventory-row__product"><Link href={`/admin/pedidos/${order.id}`}>{order.public_code}</Link></p>
-                  <p className="inventory-row__variant">{formatDateEs(order.collection_date)} · {order.pickup_points?.name ?? "Punto de recogida"}</p>
+                  <p className="inventory-row__variant">
+                    Pedido el {new Date(order.created_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })} · Recogida {formatDateEs(order.collection_date)}{pickupTimeRange(order) ? ` ${pickupTimeRange(order)}` : ""} · {order.pickup_points?.name ?? "Punto de recogida"}
+                  </p>
                 </div>
                 <div className="inventory-row__stock">
                   <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status] ?? "neutral"}>{orderStatusLabel(order.status)}</Badge>

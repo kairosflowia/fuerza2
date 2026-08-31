@@ -36,3 +36,14 @@ export function formatLeadTimeLabel(config: CutoffConfig): string {
   if (!config) return "Reservas con antelación mínima";
   return `Reservas con mínimo ${config.daysBefore} día${config.daysBefore === 1 ? "" : "s"} de antelación`;
 }
+
+/** Lunes=1 ... domingo=7 (ISO 8601), igual que pickup_point_collection_windows.weekday. */
+export function isoWeekday(dateIso: string): number {
+  const day = new Date(`${dateIso}T00:00:00Z`).getUTCDay();
+  return day === 0 ? 7 : day;
+}
+
+/** "10:00:00" -> "10:00" */
+export function formatTime(value: string): string {
+  return value.slice(0, 5);
+}

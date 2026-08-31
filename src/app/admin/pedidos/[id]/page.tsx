@@ -7,6 +7,7 @@ import { Badge, Button, Card } from "@/components/ui";
 import { canAccessAdminSection } from "@/lib/auth/permissions";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { formatPrice } from "@/lib/catalog-domain";
+import { formatDateEs, formatTime, isoWeekday } from "@/lib/order-cutoff";
 import { ORDER_NEXT_ACTION, ORDER_STATUS_BADGE_VARIANT, PAYMENT_STATUS_BADGE_VARIANT, orderStatusLabel, paymentStatusLabel } from "@/lib/order-status-domain";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,9 +32,14 @@ export default async function OrderAdmin({ params }: { params: Promise<{ id: str
   if (!order) notFound();
 
   const [{ data: pickupPoint }, { data: reservation }] = await Promise.all([
-    order.pickup_point_id ? db.from("pickup_points").select("id,name").eq("id", order.pickup_point_id).maybeSingle() : Promise.resolve({ data: null }),
+    order.pickup_point_id
+      ? db.from("pickup_points").select("id,name,pickup_point_collection_windows(weekday,starts_at,ends_at,is_active)").eq("id", order.pickup_point_id).maybeSingle()
+      : Promise.resolve({ data: null }),
     order.reservation_id ? db.from("stock_reservations").select("id,status,quantity,product_variant_id,expires_at").eq("id", order.reservation_id) : Promise.resolve({ data: [] }),
   ]);
+  const pickupWindow = pickupPoint?.pickup_point_collection_windows?.find(
+    (w: any) => w.is_active && w.weekday === isoWeekday(order.collection_date),
+  );
 
   return (
     <>
@@ -58,7 +64,10 @@ export default async function OrderAdmin({ params }: { params: Promise<{ id: str
 
         <Card>
           <h2>Recogida</h2>
-          <p>{pickupPoint?.name ?? "Punto no disponible"}<br />{order.collection_date}</p>
+          <p>
+            {pickupPoint?.name ?? "Punto no disponible"}<br />
+            {formatDateEs(order.collection_date)}{pickupWindow ? ` · ${formatTime(pickupWindow.starts_at)}–${formatTime(pickupWindow.ends_at)}` : ""}
+          </p>
           {order.requires_review ? <Badge variant="error">Requiere revisión</Badge> : null}
         </Card>
 

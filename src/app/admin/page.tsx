@@ -7,7 +7,7 @@ import { Alert } from "@/components/ui/alert";
 import { formatPrice } from "@/lib/catalog-domain";
 import { integer } from "@/lib/analytics";
 import { loadAnalytics } from "@/lib/admin-analytics";
-import { formatDateEs } from "@/lib/order-cutoff";
+import { formatDateEs, formatTime, isoWeekday } from "@/lib/order-cutoff";
 import { ORDER_STATUS_BADGE_VARIANT, orderStatusLabel } from "@/lib/order-status-domain";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,24 +18,47 @@ const timeFormatter = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madri
 const REAL_ORDER_STATUSES = ["confirmed", "ready", "collected"];
 const UPCOMING_ORDER_STATUSES = ["confirmed", "ready"];
 
+function pickupTimeRange(order: any, dateIso: string): string | null {
+  const windows = order.pickup_points?.pickup_point_collection_windows ?? [];
+  const window = windows.find((w: any) => w.is_active && w.weekday === isoWeekday(dateIso));
+  return window ? `${formatTime(window.starts_at)}–${formatTime(window.ends_at)}` : null;
+}
+
 export default async function AdminHomePage() {
   const db: any = await createClient();
-  const [{ data, error }, { data: inventoryAlertsRows }, { data: todayOrders }, { data: productionRows }] = await Promise.all([
+  const todayIso = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid" }).format(new Date());
+  const since36h = new Date();
+  since36h.setHours(since36h.getHours() - 36);
+  const [{ data, error }, { data: inventoryAlertsRows }, { data: todayOrders }, { data: productionRows }, { data: receivedTodayRows }] = await Promise.all([
     loadAnalytics({}),
     db.rpc("inventory_dashboard_alerts"),
     db
       .from("orders")
-      .select("id,public_code,customer_name,status,payment_status,total_cents,created_at,pickup_points(name)")
-      .eq("collection_date", (new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid" }).format(new Date())))
+      .select("id,public_code,customer_name,status,payment_status,total_cents,created_at,pickup_points(name,pickup_point_collection_windows(weekday,starts_at,ends_at,is_active))")
+      .eq("collection_date", todayIso)
       .eq("payment_status", "paid")
       .in("status", REAL_ORDER_STATUSES)
       .order("created_at", { ascending: true }),
     db
       .from("production_batches")
       .select("planned_quantity,produced_quantity,product_variants(name,products(name))")
-      .eq("production_date", (new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid" }).format(new Date())))
+      .eq("production_date", todayIso)
       .order("created_at", { ascending: true }),
+    // Pedidos recibidos hoy, sin importar la fecha de recogida (con la
+    // antelación mínima de 48h, nunca coinciden con "collection_date=hoy" el
+    // mismo día): visibilidad de la actividad comercial del día, separada
+    // del panel operativo de recogidas/producción de hoy. Se pide un margen
+    // de 24h de más y se filtra en JS por fecha local de Madrid, para no
+    // depender de aritmética de zona horaria sobre un timestamptz en SQL.
+    db
+      .from("orders")
+      .select("id,public_code,customer_name,status,payment_status,total_cents,created_at,collection_date")
+      .gte("created_at", since36h.toISOString())
+      .eq("payment_status", "paid")
+      .order("created_at", { ascending: false }),
   ]);
+  const madridDateFormatter = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid" });
+  const receivedToday = (receivedTodayRows ?? []).filter((order: any) => madridDateFormatter.format(new Date(order.created_at)) === todayIso);
 
   if (error) {
     return (
@@ -95,7 +118,9 @@ export default async function AdminHomePage() {
               <li key={order.id} className="inventory-row">
                 <div className="inventory-row__main">
                   <p className="inventory-row__product"><Link href={`/admin/pedidos/${order.id}`}>{order.customer_name ?? "Cliente"}</Link></p>
-                  <p className="inventory-row__variant">{timeFormatter.format(new Date(order.created_at))} · {order.pickup_points?.name ?? "Punto de recogida"} · {order.public_code}</p>
+                  <p className="inventory-row__variant">
+                    {pickupTimeRange(order, todayIso) ?? timeFormatter.format(new Date(order.created_at))} · {order.pickup_points?.name ?? "Punto de recogida"} · {order.public_code}
+                  </p>
                 </div>
                 <div className="inventory-row__stock">
                   <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status] ?? "neutral"}>{orderStatusLabel(order.status)}</Badge>
@@ -106,6 +131,29 @@ export default async function AdminHomePage() {
           </ul>
         ) : (
           <EmptyState title="No hay recogidas pendientes hoy" description="Los pedidos confirmados o listos para hoy aparecerán aquí." />
+        )}
+      </section>
+
+      <section className="admin-subsection">
+        <h2>Pedidos recibidos hoy</h2>
+        <p className="field__help">Pedidos pagados hoy, sea cual sea su fecha de recogida.</p>
+        {receivedToday.length ? (
+          <ul className="inventory-list">
+            {receivedToday.map((order: any) => (
+              <li key={order.id} className="inventory-row">
+                <div className="inventory-row__main">
+                  <p className="inventory-row__product"><Link href={`/admin/pedidos/${order.id}`}>{order.customer_name ?? "Cliente"}</Link></p>
+                  <p className="inventory-row__variant">{timeFormatter.format(new Date(order.created_at))} · Recogida {formatDateEs(order.collection_date)} · {order.public_code}</p>
+                </div>
+                <div className="inventory-row__stock">
+                  <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status] ?? "neutral"}>{orderStatusLabel(order.status)}</Badge>
+                  <span className="inventory-row__qty">{formatPrice(order.total_cents)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState title="Todavía no se ha recibido ningún pedido hoy" description="Los pedidos pagados a través del sitio o registrados a mano aparecerán aquí en cuanto lleguen." />
         )}
       </section>
 

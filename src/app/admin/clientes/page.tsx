@@ -43,11 +43,14 @@ export default async function CustomersAdminPage({ searchParams }: { searchParam
                   <Link href={`/admin/clientes/${c.customer_id}`}>{c.full_name || "Sin nombre"}</Link>
                   {habitualIds.has(c.customer_id) ? <Badge variant="primary">Fuerza Habitual</Badge> : null}
                 </p>
-                <p className="inventory-row__variant">{c.email}{c.phone ? ` · ${c.phone}` : ""}</p>
+                <p className="inventory-row__variant">
+                  {c.email}{c.phone ? ` · ${c.phone}` : ""}
+                  {c.created_at ? ` · Cliente desde ${new Date(c.created_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })}` : ""}
+                </p>
               </div>
               <div className="inventory-row__stock">
                 <span className="inventory-row__qty">{c.orders_count} pedido{c.orders_count === 1 ? "" : "s"} pagado{c.orders_count === 1 ? "" : "s"} · {formatPrice(c.total_spent_cents ?? 0)}</span>
-                <span className="inventory-row__qty">{c.last_order_at ? `Último pedido ${new Date(c.last_order_at).toLocaleDateString("es-ES", { dateStyle: "medium" })}` : "Sin pedidos todavía"}</span>
+                <span className="inventory-row__qty">{c.last_order_at ? `Último pedido ${new Date(c.last_order_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })}` : "Sin pedidos todavía"}</span>
               </div>
               <div className="inventory-row__actions">
                 <Link href={`/admin/clientes/${c.customer_id}`} className="button button--secondary">Ver ficha</Link>

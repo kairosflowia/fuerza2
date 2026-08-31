@@ -7,6 +7,7 @@ import { Badge, Button, EmptyState } from "@/components/ui";
 import { canAccessAdminSection } from "@/lib/auth/permissions";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { formatPrice } from "@/lib/catalog-domain";
+import { formatDateEs, formatTime, isoWeekday } from "@/lib/order-cutoff";
 import { ORDER_NEXT_ACTION, ORDER_STATUS_BADGE_VARIANT, orderStatusLabel } from "@/lib/order-status-domain";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,6 +34,12 @@ function itemsSummary(items: { product_name_snapshot: string; quantity: number }
   return items.length > 2 ? `${shown} +${items.length - 2} más` : shown;
 }
 
+function pickupTimeRange(order: any): string | null {
+  const windows = order.pickup_points?.pickup_point_collection_windows ?? [];
+  const window = windows.find((w: any) => w.is_active && w.weekday === isoWeekday(order.collection_date));
+  return window ? `${formatTime(window.starts_at)}–${formatTime(window.ends_at)}` : null;
+}
+
 export default async function OrdersAdmin({ searchParams }: { searchParams: Promise<{ q?: string; estado?: string; fecha?: string; punto?: string }> }) {
   const identity = await getCurrentIdentity();
   if (!identity || !canAccessAdminSection(identity.roles, "pedidos")) redirect("/cuenta/acceso-denegado");
@@ -45,7 +52,7 @@ export default async function OrdersAdmin({ searchParams }: { searchParams: Prom
     (() => {
       let query = db
         .from("orders")
-        .select("id,public_code,customer_name,collection_date,total_cents,status,payment_status,channel,created_at,pickup_point_id,order_items(product_name_snapshot,quantity)")
+        .select("id,public_code,customer_name,collection_date,total_cents,status,payment_status,channel,created_at,pickup_point_id,pickup_points(name,pickup_point_collection_windows(weekday,starts_at,ends_at,is_active)),order_items(product_name_snapshot,quantity)")
         .order("created_at", { ascending: false })
         .limit(100);
       if (estado === "incidencias") query = query.in("status", ["cancelled", "refunded"]);
@@ -114,7 +121,7 @@ export default async function OrdersAdmin({ searchParams }: { searchParams: Prom
                     <Link href={`/admin/pedidos/${o.id}`}>{o.public_code}</Link> · {timeFormatter.format(new Date(o.created_at))}
                   </p>
                   <p className="inventory-row__variant">
-                    {o.customer_name ?? "Sin nombre"} · {itemsSummary(o.order_items ?? [])} · {CHANNEL_LABELS_ES[o.channel] ?? o.channel} · recoge {o.collection_date}
+                    {o.customer_name ?? "Sin nombre"} · {itemsSummary(o.order_items ?? [])} · {CHANNEL_LABELS_ES[o.channel] ?? o.channel} · recoge {formatDateEs(o.collection_date)}{pickupTimeRange(o) ? ` ${pickupTimeRange(o)}` : ""}
                   </p>
                 </div>
                 <div className="inventory-row__stock">

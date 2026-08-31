@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Button, EmptyState, Input, Select } from "@/components/ui";
 import { TrashIcon } from "@/components/ui/icons";
 import { formatPrice } from "@/lib/catalog-domain";
+import { formatTime, isoWeekday } from "@/lib/order-cutoff";
 import { PICKUP_DATE_COOKIE, PICKUP_POINT_COOKIE } from "@/lib/pickup-selection";
 
 import { useCart } from "./cart-provider";
@@ -16,13 +17,15 @@ function setCookie(name: string, value: string) {
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=15552000; SameSite=Lax${secure}`;
 }
 
+type PickupPoint = { id: string; name: string; collectionWindows: { weekday: number; startsAt: string | null; endsAt: string | null }[] };
+
 export function CartPageClient({
   points,
   initialPoint,
   initialDate,
   minDate,
 }: {
-  points: { id: string; name: string }[];
+  points: PickupPoint[];
   initialPoint: string;
   initialDate: string;
   minDate: string;
@@ -31,6 +34,13 @@ export function CartPageClient({
   const router = useRouter();
   const [point, setPoint] = useState(initialPoint);
   const [date, setDate] = useState(initialDate);
+  const selectedPoint = points.find((p) => p.id === point);
+  const activeWindow = selectedPoint?.collectionWindows.find((w) => w.weekday === isoWeekday(date));
+  const pickupTimeHelp = activeWindow?.startsAt && activeWindow.endsAt
+    ? `Recogida de ${formatTime(activeWindow.startsAt)} a ${formatTime(activeWindow.endsAt)}. Pedidos con un mínimo de 48 horas de antelación.`
+    : selectedPoint
+      ? "Este punto no recoge pedidos ese día. Elige otra fecha para ver la franja horaria."
+      : "Selecciona un punto de recogida para ver la franja horaria.";
 
   if (!cart.items.length) {
     return <EmptyState title="Tu cesta está vacía" description="Añade un pan publicado antes de continuar." action={<Link href="/reserva-y-recoge">Ver el catálogo</Link>} />;
@@ -86,7 +96,7 @@ export function CartPageClient({
           min={minDate}
           value={date}
           onChange={(e) => { if (!e.target.value) return; setDate(e.target.value); setCookie(PICKUP_DATE_COOKIE, e.target.value); }}
-          helpText="Recogida de 10:00 a 14:30. Pedidos con un mínimo de 48 horas de antelación."
+          helpText={pickupTimeHelp}
           required
         />
         <p>Todos los artículos se recogerán en el mismo punto y fecha. El precio final y la disponibilidad se confirman en el pago.</p>

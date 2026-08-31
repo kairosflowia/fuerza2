@@ -6,7 +6,7 @@ import { useCart } from "@/components/cart/cart-provider";
 import { Alert, Badge, Button } from "@/components/ui";
 import { Textarea } from "@/components/ui/fields";
 import { formatPrice } from "@/lib/catalog-domain";
-import { formatDateEs } from "@/lib/order-cutoff";
+import { formatDateEs, formatTime, isoWeekday } from "@/lib/order-cutoff";
 import { ORDER_STATUS_BADGE_VARIANT, PAYMENT_STATUS_BADGE_VARIANT, orderStatusLabel, paymentStatusLabel } from "@/lib/order-status-domain";
 
 const CANCELLABLE_STATUSES = ["pending_payment", "payment_processing", "confirmed"];
@@ -15,10 +15,18 @@ const MAX_POLL_ATTEMPTS = 12;
 
 type CancelResult = { resolution: "cancelled_unpaid" | "refund_due" | "voucher_issued"; voucherCode: string | null } | null;
 
-function pickupPointName(data: any): string | null {
+function pickupPoint(data: any): any {
   const point = data.pickup_points;
   if (!point) return null;
-  return Array.isArray(point) ? (point[0]?.name ?? null) : point.name;
+  return Array.isArray(point) ? (point[0] ?? null) : point;
+}
+
+function pickupTimeRange(data: any): string | null {
+  const point = pickupPoint(data);
+  if (!point || !data.collection_date) return null;
+  const windows = point.pickup_point_collection_windows ?? [];
+  const window = windows.find((w: any) => w.is_active && w.weekday === isoWeekday(data.collection_date));
+  return window ? `${formatTime(window.starts_at)} – ${formatTime(window.ends_at)}` : null;
 }
 
 export function OrderStatusClient({ code, token }: { code: string; token: string }) {
@@ -77,7 +85,8 @@ export function OrderStatusClient({ code, token }: { code: string; token: string
   }
 
   const canCancel = !cancelResult && CANCELLABLE_STATUSES.includes(data.status);
-  const point = pickupPointName(data);
+  const point = pickupPoint(data)?.name ?? null;
+  const timeRange = pickupTimeRange(data);
   const stillProcessing = POLLING_STATUSES.includes(data.payment_status);
   const failed = data.payment_status === "failed" || data.status === "cancelled";
   const confirmed = data.payment_status === "paid" && !failed;
@@ -145,7 +154,12 @@ export function OrderStatusClient({ code, token }: { code: string; token: string
       <section className="order-status__section">
         <h2>Recogida</h2>
         <p className="catalog-sidebar__pickup">{point ?? "Punto de recogida"}</p>
-        {data.collection_date ? <p className="catalog-sidebar__date">{formatDateEs(data.collection_date)}</p> : null}
+        {data.collection_date ? (
+          <p className="catalog-sidebar__date">
+            {formatDateEs(data.collection_date)}
+            {timeRange ? ` · ${timeRange}` : ""}
+          </p>
+        ) : null}
         <p>No necesitas pagar en el punto de recogida.</p>
       </section>
 
