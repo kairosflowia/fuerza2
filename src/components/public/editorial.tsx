@@ -7,8 +7,6 @@ import { formatPrice } from "@/lib/catalog-domain";
 
 import { cn } from "@/lib/cn";
 
-import { Badge } from "../ui/badge";
-
 export function EditorialGrid({ children, columns = 3 }: { children: ReactNode; columns?: 2 | 3 | 4 }) {
   return <div className={cn("editorial-grid", `editorial-grid--${columns}`)}>{children}</div>;
 }
@@ -37,23 +35,9 @@ export function ValueCard({ number, icon, image, title, children, tone = "plain"
   );
 }
 
-export function EditorialProductCard({ index }: { index: number }) {
+export function EditorialProductPreview({ href, name, description, imagePath, imageAlt, priceCents }: { href: string; name: string; description: string | null; imagePath: string | null; imageAlt: string; priceCents: number | null }) {
   return (
-    <article className="editorial-product">
-      <div className="editorial-product__placeholder" aria-hidden="true">
-        <span>{String(index).padStart(2, "0")}</span>
-      </div>
-      <Badge variant="information">Contenido provisional</Badge>
-      <h3>Producto pendiente de alta</h3>
-      <p>Este espacio recibirá nombre, ingredientes y fotografía cuando el catálogo esté aprobado.</p>
-      <span className="editorial-product__pending">Sin precio ni disponibilidad</span>
-    </article>
-  );
-}
-
-export function EditorialProductPreview({ slug, name, description, imagePath, imageAlt, priceCents }: { slug: string; name: string; description: string | null; imagePath: string | null; imageAlt: string; priceCents: number | null }) {
-  return (
-    <Link href={`/pan/${slug}`} className="editorial-product">
+    <Link href={href} className="editorial-product">
       {imagePath ? (
         <span className="editorial-product__image">
           <Image src={`/api/product-images/${imagePath}`} alt={imageAlt} width={480} height={360} />

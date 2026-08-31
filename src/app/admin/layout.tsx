@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <>
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
-      <AdminShell email={identity.user.email ?? "Usuario"} roles={identity.roles}>{children}</AdminShell>
+      <AdminShell email={identity.user.email ?? "Usuario"} fullName={identity.profile?.full_name ?? null} roles={identity.roles}>{children}</AdminShell>
     </>
   );
 }

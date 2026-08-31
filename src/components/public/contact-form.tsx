@@ -1,55 +1,52 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useActionState } from "react";
 
+import { submitContactAction, type ContactActionState } from "@/app/(public)/contacto/actions";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/choice";
 import { Input, Select, Textarea } from "@/components/ui/fields";
 
-const isDevelopment = process.env.NODE_ENV === "development";
+const initialState: ContactActionState = { status: "idle" };
 
 export function ContactForm() {
-  const [showDevelopmentNotice, setShowDevelopmentNotice] = useState(false);
+  const [state, formAction, pending] = useActionState(submitContactAction, initialState);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (isDevelopment) setShowDevelopmentNotice(true);
+  if (state.status === "success") {
+    return (
+      <div className="contact-form-shell">
+        <Alert variant="success" title="Mensaje enviado">{state.message}</Alert>
+      </div>
+    );
   }
 
   return (
     <div className="contact-form-shell">
-      <form aria-describedby="contact-form-status" className="contact-form" onSubmit={handleSubmit}>
-        <Input id="contact-name" label="Nombre" name="name" autoComplete="name" required disabled={!isDevelopment} />
-        <Input id="contact-email" label="Correo electrónico" name="email" type="email" autoComplete="email" required disabled={!isDevelopment} />
-        <Input id="contact-phone" label="Teléfono" optional name="phone" type="tel" autoComplete="tel" disabled={!isDevelopment} />
-        <Select id="contact-reason" label="Motivo" name="reason" required disabled={!isDevelopment} defaultValue="">
+      <form action={formAction} aria-describedby="contact-form-status" className="contact-form">
+        <Input id="contact-name" label="Nombre" name="name" autoComplete="name" required />
+        <Input id="contact-email" label="Correo electrónico" name="email" type="email" autoComplete="email" required />
+        <Input id="contact-phone" label="Teléfono" optional name="phone" type="tel" autoComplete="tel" />
+        <Select id="contact-reason" label="Motivo" name="reason" required defaultValue="">
           <option value="" disabled>Selecciona un motivo</option>
           <option value="general">Consulta general</option>
           <option value="recogida">Reserva y recogida</option>
           <option value="colaboracion">Colaboración</option>
         </Select>
-        <Textarea id="contact-message" label="Mensaje" name="message" required rows={6} disabled={!isDevelopment} />
+        <Textarea id="contact-message" label="Mensaje" name="message" required rows={6} maxLength={4000} />
         <Checkbox
           label="He leído la información sobre privacidad y acepto que mis datos se utilicen para responder a esta consulta."
           name="consent"
           id="contact-consent"
           required
-          disabled={!isDevelopment}
         />
-        <Button type="submit" disabled={!isDevelopment}>Enviar mensaje</Button>
+        <Button type="submit" loading={pending} loadingLabel="Enviando…">Enviar mensaje</Button>
       </form>
       <div id="contact-form-status" aria-live="polite">
-        {showDevelopmentNotice ? (
-          <Alert variant="information" title="Envío no disponible">
-            El formulario es una demostración visual. No se ha enviado ningún dato.
-          </Alert>
+        {state.status === "error" ? (
+          <Alert variant="error" title="No se ha podido enviar">{state.message}</Alert>
         ) : (
-          <p className="form-note">
-            {isDevelopment
-              ? "El envío está desactivado en esta fase y ningún dato saldrá del navegador."
-              : "El formulario estará disponible cuando podamos atender y proteger correctamente cada consulta."}
-          </p>
+          <p className="form-note">Respondemos en un plazo de 1 a 2 días hábiles.</p>
         )}
       </div>
     </div>

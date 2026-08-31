@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 
 import { useCart } from "@/components/cart/cart-provider";
 import { Textarea } from "@/components/ui/fields";
-import { formatPrice, stockStateFor } from "@/lib/catalog-domain";
+import { availabilityReasonLabel, type VariantAvailability } from "@/lib/availability-domain";
+import { formatPrice } from "@/lib/catalog-domain";
+import { formatDateEs } from "@/lib/order-cutoff";
 
-type Variant = { id: string; name: string; priceCents: number; stockTracking: boolean; stockQuantity: number };
+type Variant = { id: string; name: string; priceCents: number; availability: VariantAvailability | null; nextAvailableDate: string | null };
 
 export function ProductOrderForm({ productName, variants, image }: { productName: string; variants: Variant[]; image?: string }) {
   const cart = useCart();
@@ -17,9 +19,9 @@ export function ProductOrderForm({ productName, variants, image }: { productName
   const [added, setAdded] = useState(false);
   const variant = variants.find((v) => v.id === variantId) ?? variants[0];
   const total = useMemo(() => (variant ? variant.priceCents * quantity : 0), [variant, quantity]);
-  const stockState = variant ? stockStateFor({ stock_tracking: variant.stockTracking, stock_quantity: variant.stockQuantity }) : null;
-  const outOfStock = stockState === "out_of_stock";
-  const maxQuantity = variant?.stockTracking ? Math.max(0, Math.min(99, variant.stockQuantity)) : 99;
+  const availability = variant?.availability;
+  const soldOut = availability?.status === "sold_out";
+  const maxQuantity = availability?.status === "low_stock" && availability.quantityAvailable !== null ? availability.quantityAvailable : 99;
 
   if (!variant) return null;
 
@@ -41,10 +43,13 @@ export function ProductOrderForm({ productName, variants, image }: { productName
         </div>
       ) : null}
 
-      {stockState === "out_of_stock" ? (
-        <p className="product-order-form__stock product-order-form__stock--out">Agotado</p>
-      ) : stockState === "low_stock" ? (
-        <p className="product-order-form__stock product-order-form__stock--low">¡Últimas unidades! Quedan {variant.stockQuantity}.</p>
+      {availability?.status === "sold_out" ? (
+        <div className="product-order-form__stock product-order-form__stock--out">
+          <p>{availabilityReasonLabel(availability.reason)}</p>
+          {variant.nextAvailableDate ? <p>Próxima disponibilidad: {formatDateEs(variant.nextAvailableDate)}.</p> : null}
+        </div>
+      ) : availability?.status === "low_stock" ? (
+        <p className="product-order-form__stock product-order-form__stock--low">¡Últimas unidades! Quedan {availability.quantityAvailable}.</p>
       ) : null}
 
       <Textarea
@@ -57,7 +62,7 @@ export function ProductOrderForm({ productName, variants, image }: { productName
         placeholder="Ej: sin gluten, corte fino…"
       />
 
-      {!outOfStock ? (
+      {!soldOut ? (
         <div className="product-order-form__quantity">
           <span className="product-order-form__quantity-label">Número de unidades</span>
           <div className="stepper">
@@ -71,9 +76,9 @@ export function ProductOrderForm({ productName, variants, image }: { productName
       <button
         type="button"
         className="product-order-form__submit"
-        disabled={outOfStock}
+        disabled={soldOut}
         onClick={() => {
-          if (outOfStock) return;
+          if (soldOut) return;
           cart.add({ variantId: variant.id, productName, variantName: variant.name, quantity, priceCents: variant.priceCents, image, note: note.trim() || undefined });
           setAdded(true);
           setQuantity(1);
@@ -81,8 +86,8 @@ export function ProductOrderForm({ productName, variants, image }: { productName
           setTimeout(() => router.push("/reserva-y-recoge"), 500);
         }}
       >
-        <span>{outOfStock ? "Agotado" : added ? "Añadido ✓" : "Añadir a la cesta"}</span>
-        {!outOfStock ? <span>{formatPrice(total)}</span> : null}
+        <span>{soldOut ? "Agotado" : added ? "Añadido ✓" : "Añadir a la cesta"}</span>
+        {!soldOut ? <span>{formatPrice(total)}</span> : null}
       </button>
     </div>
   );

@@ -6,7 +6,9 @@ import { loadStripe } from "@stripe/stripe-js";
 
 import { useCart } from "@/components/cart/cart-provider";
 import { Alert, Button, Checkbox, EmptyState, Input } from "@/components/ui";
+import { availabilityReasonLabel } from "@/lib/availability-domain";
 import { formatPrice } from "@/lib/catalog-domain";
+import { formatDateEs } from "@/lib/order-cutoff";
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
 const appearance = {
@@ -15,13 +17,28 @@ const appearance = {
 };
 
 type Selection = { point: string; pointName?: string; date: string; key: string };
-type Payment = { secret: string; code: string; token: string };
+type Payment = { secret: string; code: string; token: string; expiresAt: string | null };
 
-function PayForm({ code, token }: { code: string; token: string }) {
+/** Minutos restantes antes de que expire la reserva de estoque (15 min desde que se creó el pedido). Si ya expiró, un pago que llegue igualmente se revisa a mano en vez de perderse (Fase 4). */
+function useMinutesLeft(expiresAt: string | null) {
+  const [minutesLeft, setMinutesLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (!expiresAt) return;
+    const target = new Date(expiresAt).getTime();
+    const tick = () => setMinutesLeft(Math.max(0, Math.ceil((target - Date.now()) / 60000)));
+    tick();
+    const id = setInterval(tick, 15000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return minutesLeft;
+}
+
+function PayForm({ code, token, expiresAt }: { code: string; token: string; expiresAt: string | null }) {
   const stripe = useStripe();
   const elements = useElements();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const minutesLeft = useMinutesLeft(expiresAt);
 
   return (
     <form
@@ -47,6 +64,9 @@ function PayForm({ code, token }: { code: string; token: string }) {
       <PaymentElement />
       <Button type="submit" fullWidth loading={busy} loadingLabel="Procesando…" disabled={!stripe}>Pagar ahora</Button>
       <p className="field__help">No se paga en el punto de recogida.</p>
+      {minutesLeft !== null && minutesLeft > 0 ? (
+        <p className="field__help">Te reservamos el pan durante {minutesLeft} min. Si tarda más, no te preocupes: revisamos el pago a mano en cuanto llegue.</p>
+      ) : null}
       {error ? <Alert variant="error" title="No se ha podido pagar">{error}</Alert> : null}
     </form>
   );
@@ -85,10 +105,10 @@ function ContactForm({ initialName, initialEmail, initialPhone, selection, onRea
           });
           const data = await response.json().catch(() => null);
           if (!response.ok || !data?.clientSecret) {
-            setError("No hemos podido reservar la disponibilidad. Revisa los datos e inténtalo de nuevo.");
+            setError(data?.error ? availabilityReasonLabel(data.error) : "No hemos podido reservar la disponibilidad. Inténtalo de nuevo.");
             return;
           }
-          onReady({ secret: data.clientSecret, code: data.publicCode, token: data.lookupToken });
+          onReady({ secret: data.clientSecret, code: data.publicCode, token: data.lookupToken, expiresAt: data.expiresAt ?? null });
         } catch (err) {
           console.error("checkout create failed", err);
           setError("Ha ocurrido un error inesperado. Inténtalo de nuevo.");
@@ -153,7 +173,7 @@ export function CheckoutClient({ initialName = "", initialEmail = "", initialPho
       </ul>
       {selection ? (
         <p className="checkout-summary__pickup">
-          Recogida en <strong>{selection.pointName || "el punto seleccionado"}</strong> el {selection.date}
+          Recogida en <strong>{selection.pointName || "el punto seleccionado"}</strong> el {formatDateEs(selection.date)}
         </p>
       ) : (
         <Alert variant="warning" title="Falta el punto de recogida">Vuelve a la cesta para elegir dónde y cuándo recoger tu pedido.</Alert>
@@ -168,7 +188,7 @@ export function CheckoutClient({ initialName = "", initialEmail = "", initialPho
       <aside className="checkout-payment-panel">
         {payment ? (
           <Elements stripe={stripePromise} options={{ clientSecret: payment.secret, appearance }}>
-            <PayForm code={payment.code} token={payment.token} />
+            <PayForm code={payment.code} token={payment.token} expiresAt={payment.expiresAt} />
           </Elements>
         ) : (
           <ContactForm initialName={initialName} initialEmail={initialEmail} initialPhone={initialPhone} selection={selection} onReady={setPayment} />

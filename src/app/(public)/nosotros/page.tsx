@@ -39,7 +39,7 @@ export default function NosotrosPage() {
           <ValueCard title="Comunidad que nos inspira" tone="blue">Un obrador pequeño existe por la gente que trabaja y vuelve cerca.</ValueCard>
         </EditorialGrid>
       </Container></Section>
-      <Section tone="inverse"><Container size="wide" className="cta-band"><div><p className="eyebrow">Pequeño obrador</p><h2>Somos un obrador pequeño, pero con mucha fuerza.</h2><p>No queremos hacer más de lo que podemos hacer bien.</p></div><div className="hero-actions"><Link className="button button--primary" href="/pan">Ver el pan</Link><Link className="button button--secondary button--inverse" href="/donde-estamos">Dónde estamos</Link></div></Container></Section>
+      <Section tone="inverse"><Container size="wide" className="cta-band"><div><p className="eyebrow">Pequeño obrador</p><h2>Somos un obrador pequeño, pero con mucha fuerza.</h2><p>No queremos hacer más de lo que podemos hacer bien.</p></div><div className="hero-actions"><Link className="button button--primary" href="/reserva-y-recoge">Ver el pan</Link><Link className="button button--secondary button--inverse" href="/donde-estamos">Dónde estamos</Link></div></Container></Section>
     </main>
   );
 }

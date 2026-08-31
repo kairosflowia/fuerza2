@@ -1,8 +1,9 @@
 import Link from "next/link";
 
-import { CapacityForm, CreateProductionDateForm, OverrideForm, OverrideList, StatusActions } from "@/components/admin/availability-forms";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { Badge, Card } from "@/components/ui";
+import { OverrideForm, OverrideList } from "@/components/admin/availability-forms";
+import { ProductionCalendar, type DayInfo } from "@/components/admin/production-calendar";
+import { Card } from "@/components/ui";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { canManageAvailability } from "@/lib/auth/permissions";
 import { isoWeekday, WEEKDAY_LABELS_ES } from "@/lib/pickup-points-domain";
@@ -32,11 +33,12 @@ export default async function AvailabilityAdminPage({ searchParams }: { searchPa
   const monthEnd = `${month}-${String(daysInMonth).padStart(2, "0")}`;
 
   const db = await createClient();
-  const [{ data: variantsRaw }, { data: products }, { data: pickupPoints }, { data: productionWeekdays }] = await Promise.all([
+  const [{ data: variantsRaw }, { data: products }, { data: pickupPoints }, { data: productionWeekdays }, { data: cutoffRows }] = await Promise.all([
     db.from("product_variants").select("id, product_id, name, status").eq("status", "active"),
     db.from("products").select("id, name").order("display_order"),
     db.from("pickup_points").select("id, name").eq("status", "active").order("display_order"),
     db.from("product_production_weekdays").select("weekday, is_active, product_id"),
+    db.from("app_settings").select("key,value").in("key", ["availability.cutoff_days_before", "availability.cutoff_time"]),
   ]);
 
   const productNameById = new Map((products ?? []).map((p) => [p.id, p.name]));
@@ -45,6 +47,9 @@ export default async function AvailabilityAdminPage({ searchParams }: { searchPa
   const selectedProductId = variants.find((v) => v.id === selectedVariantId)?.productId;
 
   const pointName = (id: string | null) => (id ? (pickupPoints ?? []).find((p) => p.id === id)?.name ?? "Punto" : "Todos los puntos");
+  const cutoffDays = cutoffRows?.find((r) => r.key === "availability.cutoff_days_before")?.value;
+  const cutoffTime = cutoffRows?.find((r) => r.key === "availability.cutoff_time")?.value;
+  const cutoffConfigured = typeof cutoffDays === "number" && typeof cutoffTime === "string";
 
   const [{ data: productionDates }, { data: overrides }, { data: closures }] = await Promise.all([
     db.from("production_dates").select("*").eq("product_variant_id", selectedVariantId).gte("production_date", monthStart).lte("production_date", monthEnd),
@@ -97,34 +102,49 @@ export default async function AvailabilityAdminPage({ searchParams }: { searchPa
     (productionWeekdays ?? []).filter((w) => w.is_active && w.product_id === selectedProductId).map((w) => w.weekday),
   );
 
-  const cells: { day: number; date: string }[] = [];
-  for (let day = 1; day <= daysInMonth; day++) cells.push({ day, date: `${month}-${String(day).padStart(2, "0")}` });
-  const firstWeekday = isoWeekday(`${month}-01`);
-  const padded: ({ day: number; date: string } | null)[] = Array(firstWeekday - 1).fill(null);
-  padded.push(...cells);
-
-  function dayState(date: string) {
+  function dayInfo(day: number, date: string): DayInfo {
     const isClosed = (closures ?? []).some((c) => date >= c.starts_on && date <= c.ends_on);
-    if (isClosed) return { label: "Cierre global", variant: "error" as const };
+    if (isClosed) return { date, day, dot: "closed", reason: "Cierre global de toda la actividad ese día." };
     const production = productionByDate.get(date);
     const weekday = isoWeekday(date);
-    if (!producedWeekdays.has(weekday)) return { label: "Sin producción", variant: "neutral" as const };
-    if (!production) return { label: "Sin configurar", variant: "neutral" as const };
-    if (production.status === "cancelled") return { label: "Cancelada", variant: "neutral" as const };
-    if (production.status === "closed") return { label: "Cerrada", variant: "warning" as const };
-    if (production.status === "draft") return { label: "Borrador", variant: "neutral" as const };
+    if (!producedWeekdays.has(weekday)) return { date, day, dot: null, reason: "Este producto no se produce ese día de la semana." };
+    if (!production) return { date, day, dot: "unset", reason: "Todavía no hay una fecha de producción creada para este día." };
+    if (production.status === "cancelled") return { date, day, dot: "closed", reason: "Fecha de producción cancelada." };
+    if (production.status === "closed") return { date, day, dot: "closed", reason: "Cerrada manualmente por el equipo: no admite más reservas." };
+    if (production.status === "draft") {
+      return {
+        date, day, dot: "unset", reason: "Creada en borrador: todavía no está abierta a reservas.",
+        production: { id: production.id, status: production.status, totalCapacity: production.total_capacity, reservedForSubscriptions: production.reserved_for_subscriptions, confirmed: confirmedByDate.get(date) ?? 0, held: heldByDate.get(date) ?? 0, allocations: allocByDate.get(date) ?? 0, remaining: 0 },
+      };
+    }
     const confirmed = confirmedByDate.get(date) ?? 0;
     const held = heldByDate.get(date) ?? 0;
     const alloc = allocByDate.get(date) ?? 0;
     const remaining = Math.max(production.total_capacity - production.reserved_for_subscriptions - alloc - confirmed - held, 0);
-    if (remaining <= 0) return { label: "Agotado", variant: "error" as const };
-    if (remaining <= 5) return { label: `Quedan ${remaining}`, variant: "warning" as const };
-    return { label: "Abierto", variant: "success" as const };
+    const dot = remaining <= 0 ? "sold-out" : remaining <= 5 ? "low" : "open";
+    const reason = remaining <= 0 ? "Sin unidades disponibles: capacidad agotada." : remaining <= 5 ? `Quedan ${remaining} unidades disponibles.` : "Abierta, con capacidad disponible.";
+    return {
+      date, day, dot, reason,
+      production: { id: production.id, status: production.status, totalCapacity: production.total_capacity, reservedForSubscriptions: production.reserved_for_subscriptions, confirmed, held, allocations: alloc, remaining },
+    };
   }
+
+  const cells: (DayInfo | null)[] = [];
+  for (let day = 1; day <= daysInMonth; day++) cells.push(dayInfo(day, `${month}-${String(day).padStart(2, "0")}`));
+  const firstWeekday = isoWeekday(`${month}-01`);
+  const padded: (DayInfo | null)[] = Array(firstWeekday - 1).fill(null);
+  padded.push(...cells);
+  const weeks: (DayInfo | null)[][] = [];
+  for (let i = 0; i < padded.length; i += 7) weeks.push(padded.slice(i, i + 7));
 
   return (
     <>
       <AdminPageHeader title="Disponibilidad" description="Capacidad de producción por variante y fecha, y su relación con la capacidad del punto." />
+
+      <p className="field__help">
+        Antelación mínima de reserva: {cutoffConfigured ? `${cutoffDays} día${cutoffDays === 1 ? "" : "s"} antes de las ${String(cutoffTime).slice(0, 5)}` : "sin configurar"}.{" "}
+        <Link href="/admin/configuracion/reservas">Ajustar</Link>
+      </p>
 
       <form className="admin-form" style={{ maxWidth: "24rem" }}>
         <label className="field__label" htmlFor="variant-select">Variante</label>
@@ -141,73 +161,11 @@ export default async function AvailabilityAdminPage({ searchParams }: { searchPa
         <Link className="button button--secondary" href={`/admin/disponibilidad?variant=${selectedVariantId}&month=${shiftMonth(month, 1)}`}>Mes siguiente →</Link>
       </div>
 
-      <Card>
-        <table className="admin-table admin-calendar">
-          <thead><tr>{WEEKDAY_LABELS_ES.map((label) => <th key={label}>{label.slice(0, 2)}</th>)}</tr></thead>
-          <tbody>
-            {Array.from({ length: Math.ceil(padded.length / 7) }, (_, week) => (
-              <tr key={week}>
-                {padded.slice(week * 7, week * 7 + 7).map((cell, i) => {
-                  if (!cell) return <td key={i} />;
-                  const state = dayState(cell.date);
-                  return (
-                    <td key={i} className="admin-calendar__day">
-                      <strong>{cell.day}</strong>
-                      <Badge variant={state.variant}>{state.label}</Badge>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-
-      <Card>
-        <h2>Fechas de producción del mes</h2>
-        {(productionDates ?? []).length ? (
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th><th>Capacidad</th><th>Reservado suscripciones</th><th>Confirmado</th><th>Retenido</th><th>Restante</th><th>Estado</th>{canManage ? <th>Ajustar</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {(productionDates ?? []).sort((a, b) => a.production_date.localeCompare(b.production_date)).map((p) => {
-                  const confirmed = confirmedByDate.get(p.production_date) ?? 0;
-                  const held = heldByDate.get(p.production_date) ?? 0;
-                  const alloc = allocByDate.get(p.production_date) ?? 0;
-                  const remaining = Math.max(p.total_capacity - p.reserved_for_subscriptions - alloc - confirmed - held, 0);
-                  return (
-                    <tr key={p.id}>
-                      <td>{p.production_date}</td>
-                      <td>{p.total_capacity}</td>
-                      <td>{p.reserved_for_subscriptions}{alloc ? ` (+${alloc} asignado)` : ""}</td>
-                      <td>{confirmed}</td>
-                      <td>{held}</td>
-                      <td>{remaining}</td>
-                      <td><StatusActions id={p.id} status={p.status} canCancel={canManage} /></td>
-                      {canManage ? <td><details><summary>Capacidad</summary><CapacityForm row={{ id: p.id, totalCapacity: p.total_capacity, reservedForSubscriptions: p.reserved_for_subscriptions, status: p.status, confirmed, held, allocations: alloc }} /></details></td> : null}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : <p className="field__help">No hay fechas de producción configuradas este mes para esta variante.</p>}
-      </Card>
-
-      {canManage ? (
-        <Card>
-          <h2>Crear fecha de producción</h2>
-          <CreateProductionDateForm variants={variants} />
-        </Card>
-      ) : null}
+      <ProductionCalendar weeks={weeks} weekdayLabels={WEEKDAY_LABELS_ES} variantId={selectedVariantId} canManage={canManage} />
 
       <Card>
         <h2>Puntos de recogida — capacidad habitual</h2>
-        <p className="field__help">Referencia rápida de la capacidad logística configurada por punto (Fase 5). No sustituye a la capacidad de producción de arriba: la disponibilidad final es siempre el mínimo entre ambas.</p>
+        <p className="field__help">Referencia rápida de la capacidad logística configurada por punto. No sustituye a la capacidad de producción de arriba: la disponibilidad final es siempre el mínimo entre ambas.</p>
         <ul className="admin-exception-list">
           {(pickupPoints ?? []).map((p) => <li key={p.id}><span>{p.name}</span><Link href={`/admin/puntos-de-recogida/${p.id}`}>Ver capacidad</Link></li>)}
         </ul>

@@ -32,7 +32,7 @@ export default function ObradorPage() {
         <article><h2>Por qué hay una cantidad limitada</h2><p>No es una estrategia. Es que tenemos un horno, unas manos y unas horas.</p><p>Cada día podemos hacer una cantidad concreta. Hacer de más por si acaso acaba en pan tirado. Reservar nos permitirá hornear exactamente el pan que hace falta.</p></article>
         <article><h2>Lo que no se tira</h2><p>El pan no dura para siempre, y eso es normal en un pan sin conservantes. Lo que no queremos es tirarlo.</p><p>La producción limitada y el pago al reservar harán que cada pieza tenga destino antes de encender el horno.</p></article>
       </Container></Section>
-      <Section tone="inverse"><Container size="wide" className="cta-band"><div><p className="eyebrow">Hecho con tiempo y fuerza</p><h2>El pan empieza antes de que abra la puerta.</h2></div><Link className="button button--primary" href="/pan">Ver la estructura del pan</Link></Container></Section>
+      <Section tone="inverse"><Container size="wide" className="cta-band"><div><p className="eyebrow">Hecho con tiempo y fuerza</p><h2>El pan empieza antes de que abra la puerta.</h2></div><Link className="button button--primary" href="/reserva-y-recoge">Ver la estructura del pan</Link></Container></Section>
     </main>
   );
 }

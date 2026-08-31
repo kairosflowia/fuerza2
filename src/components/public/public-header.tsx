@@ -26,7 +26,7 @@ export function PublicHeader() {
         </Link>
 
         <nav className="public-nav" aria-label="Navegación principal">
-          {publicNavigation.slice(0, -1).map((item) => (
+          {publicNavigation.map((item) => (
             <Link
               href={item.href}
               key={item.href}

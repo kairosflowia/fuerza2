@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { type RefObject, useEffect, useState } from "react";
 
-import { Badge, Button, Drawer } from "@/components/ui";
+import { Badge, Drawer } from "@/components/ui";
 
 type MovementRow = {
   occurred_at: string;
@@ -39,25 +39,36 @@ const TYPE_VARIANT: Record<string, "success" | "information" | "error" | "warnin
   liberacion: "neutral",
 };
 
-export function VariantMovementsDrawer({ variantId, variantName }: { variantId: string; variantName: string }) {
-  const [open, setOpen] = useState(false);
+/**
+ * Controlado desde fuera (open/onOpenChange) en vez de llevar su propio
+ * disparador: cuando vive dentro de un ActionMenu, este solo desmonta sus
+ * children al cerrarse, así que un trigger+Drawer anidados ahí perderían su
+ * estado en el mismo clic que los abre (Fase 11 del Plano Mestre).
+ */
+export function VariantMovementsDrawer({ variantId, variantName, open, onOpenChange, returnFocusRef }: {
+  variantId: string; variantName: string; open: boolean; onOpenChange: (open: boolean) => void; returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
   const [rows, setRows] = useState<MovementRow[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
 
-  async function handleOpen() {
-    setOpen(true);
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
     setLoading(true);
-    const response = await fetch(`/api/admin/inventario/movimientos?variantId=${variantId}`);
-    const data = await response.json();
-    setRows(response.ok ? data.rows : []);
-    setLoading(false);
-  }
+    fetch(`/api/admin/inventario/movimientos?variantId=${variantId}`)
+      .then((response) => response.ok ? response.json() : { rows: [] })
+      .then((data) => { if (!cancelled) setRows(data.rows); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [open, variantId]);
 
   return (
-    <>
-      <Button ref={triggerRef} type="button" variant="secondary" onClick={handleOpen}>Ver movimientos</Button>
-      <Drawer open={open} onClose={() => setOpen(false)} title={`Movimientos · ${variantName}`} returnFocusRef={triggerRef}>
+    <Drawer
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={`Movimientos · ${variantName}`}
+      returnFocusRef={returnFocusRef}
+    >
         {loading ? <p className="field__help">Cargando…</p> : null}
         {!loading && rows?.length === 0 ? <p className="field__help">Todavía no hay movimientos para esta variante.</p> : null}
         {rows?.length ? (
@@ -82,7 +93,7 @@ export function VariantMovementsDrawer({ variantId, variantName }: { variantId: 
                 </div>
                 {row.order_id ? (
                   <div className="inventory-row__actions">
-                    <Link href={`/admin/pedidos/${row.order_id}`} className="button button--secondary" onClick={() => setOpen(false)}>
+                    <Link href={`/admin/pedidos/${row.order_id}`} className="button button--secondary" onClick={() => onOpenChange(false)}>
                       Ver pedido
                     </Link>
                   </div>
@@ -91,7 +102,6 @@ export function VariantMovementsDrawer({ variantId, variantName }: { variantId: 
             ))}
           </ul>
         ) : null}
-      </Drawer>
-    </>
+    </Drawer>
   );
 }

@@ -28,6 +28,34 @@ export function stripeRecurringInterval(frequency: SubscriptionFrequency): { int
   }
 }
 
+export const SUBSCRIPTION_STATUS_LABELS_ES: Record<string, string> = {
+  incomplete: "Incompleta",
+  trialing: "En prueba",
+  active: "Activa",
+  past_due: "Pago pendiente",
+  paused: "Pausada",
+  cancel_pending: "Se cancela al final del ciclo",
+  cancelled: "Cancelada",
+  unpaid: "Impago",
+  requires_attention: "Requiere atención",
+};
+
+export const SUBSCRIPTION_STATUS_BADGE_VARIANT: Record<string, "success" | "warning" | "error" | "neutral" | "information"> = {
+  active: "success",
+  trialing: "success",
+  paused: "warning",
+  cancel_pending: "warning",
+  past_due: "error",
+  unpaid: "error",
+  requires_attention: "error",
+  cancelled: "neutral",
+  incomplete: "neutral",
+};
+
+export function subscriptionStatusLabel(status: string): string {
+  return SUBSCRIPTION_STATUS_LABELS_ES[status] ?? status;
+}
+
 export const SUBSCRIPTION_DISCOUNT_THRESHOLD_UNITS = 4;
 export const SUBSCRIPTION_DISCOUNT_PERCENT = 5;
 

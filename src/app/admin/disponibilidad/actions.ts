@@ -18,7 +18,7 @@ async function authorized() {
 function refresh(date?: string) {
   revalidateTag("catalog", "max");
   revalidatePath("/admin/disponibilidad");
-  revalidatePath("/pan");
+  revalidatePath("/reserva-y-recoge", "layout");
   if (date) revalidatePath(`/admin/disponibilidad/${date}`);
 }
 

@@ -1,6 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+
+import { PICKUP_DATE_COOKIE, PICKUP_POINT_COOKIE } from "@/lib/pickup-selection";
 
 export type PickupPointOption = { id: string; name: string };
 
@@ -9,32 +12,63 @@ type PickupPointState = {
   selectedId: string;
   selected: PickupPointOption | null;
   select: (id: string) => void;
+  date: string;
+  minDate: string;
+  setDate: (date: string) => void;
 };
 
 const Context = createContext<PickupPointState | null>(null);
 
-export function PickupPointProvider({ points, children }: { points: PickupPointOption[]; children: ReactNode }) {
-  const [selectedId, setSelectedId] = useState("");
+function setCookie(name: string, value: string) {
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=15552000; SameSite=Lax${secure}`;
+}
 
-  useEffect(() => {
-    // Same mount-time hydration from localStorage as CartProvider: reads a
-    // browser-only API, so it cannot run during the initial (server) render.
-    const stored = localStorage.getItem("fuerza-pickup-point") ?? "";
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from a client-only external source (localStorage), not deriving from props/state.
-    setSelectedId(points.some((p) => p.id === stored) ? stored : (points[0]?.id ?? ""));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- points is a static server-fetched prop; only the mount-time localStorage read matters here.
-  }, []);
+/**
+ * El punto y la fecha de recogida se guardan en cookies (no solo
+ * localStorage) para que las páginas de servidor puedan leer la misma
+ * selección con cookies() y calcular disponibilidad real sin depender de un
+ * fetch adicional en el cliente (Fase 3 del Plano Mestre UX/UI).
+ */
+export function PickupPointProvider({
+  points,
+  initialPointId,
+  initialDate,
+  minDate,
+  children,
+}: {
+  points: PickupPointOption[];
+  initialPointId: string;
+  initialDate: string;
+  minDate: string;
+  children: ReactNode;
+}) {
+  const router = useRouter();
+  const [selectedId, setSelectedId] = useState(initialPointId);
+  const [date, setDateState] = useState(initialDate);
 
-  useEffect(() => {
-    if (selectedId) localStorage.setItem("fuerza-pickup-point", selectedId);
-  }, [selectedId]);
+  const select = (id: string) => {
+    setSelectedId(id);
+    setCookie(PICKUP_POINT_COOKIE, id);
+    router.refresh();
+  };
+
+  const setDate = (value: string) => {
+    setDateState(value);
+    setCookie(PICKUP_DATE_COOKIE, value);
+    router.refresh();
+  };
 
   const value = useMemo<PickupPointState>(() => ({
     points,
     selectedId,
     selected: points.find((p) => p.id === selectedId) ?? null,
-    select: setSelectedId,
-  }), [points, selectedId]);
+    select,
+    date,
+    minDate,
+    setDate,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- select/setDate son estables entre renders (no dependen de props/estado fuera de este cierre).
+  }), [points, selectedId, date, minDate]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

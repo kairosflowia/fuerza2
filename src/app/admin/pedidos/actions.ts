@@ -8,10 +8,27 @@
 // botón parecía "no hacer nada". Para esas dos ramas hace falta el cliente
 // normal, atado a la sesión real del miembro del equipo.
 export async function updateOrderStatus(form:FormData){const identity=await getCurrentIdentity();if(!identity||!canAccessAdminSection(identity.roles,"pedidos"))throw new Error("forbidden");const id=String(form.get("id")),status=String(form.get("status"));if(!["ready","collected","cancelled","paid_manual"].includes(status))throw new Error("invalid_status");if((status==="cancelled"||status==="paid_manual")&&!identity.roles.some(r=>r==="owner"||r==="admin"))throw new Error("forbidden");
-  if(status==="cancelled"){const db=await createClient();const{error}=await db.rpc("cancel_order",{p_order_id:id,p_reason:String(form.get("reason")??"Cancelación operativa")});if(error)throw new Error(error.message);revalidatePath(`/admin/pedidos/${id}`);return}
-  if(status==="paid_manual"){const db=await createClient();const{error}=await db.rpc("mark_order_paid_manually",{p_order_id:id,p_reason:String(form.get("reason")??"")||null});if(error)throw new Error(error.message);revalidatePath(`/admin/pedidos/${id}`);return}
+  if(status==="cancelled"){const db=await createClient();const{error}=await db.rpc("cancel_order",{p_order_id:id,p_reason:String(form.get("reason")??"Cancelación operativa")});if(error)throw new Error(error.message);revalidatePath(`/admin/pedidos/${id}`);revalidatePath("/admin/pedidos");return}
+  if(status==="paid_manual"){const db=await createClient();const{error}=await db.rpc("mark_order_paid_manually",{p_order_id:id,p_reason:String(form.get("reason")??"")||null});if(error)throw new Error(error.message);revalidatePath(`/admin/pedidos/${id}`);revalidatePath("/admin/pedidos");return}
   const db=createAdminClient() as any;
-  const{data:old}=await db.from("orders").select("status").eq("id",id).single();await db.from("orders").update({status}).eq("id",id);await db.from("order_status_history").insert({order_id:id,previous_status:old?.status,new_status:status,actor_id:identity.user.id,source:identity.roles.includes("operator")?"operator":"admin",reason:String(form.get("reason")??"")});await db.from("audit_logs").insert({actor_id:identity.user.id,action:`order.${status}`,entity_type:"orders",entity_id:id});revalidatePath(`/admin/pedidos/${id}`)}
+  const{data:old}=await db.from("orders").select("status").eq("id",id).single();await db.from("orders").update({status}).eq("id",id);await db.from("order_status_history").insert({order_id:id,previous_status:old?.status,new_status:status,actor_id:identity.user.id,source:identity.roles.includes("operator")?"operator":"admin",reason:String(form.get("reason")??"")});await db.from("audit_logs").insert({actor_id:identity.user.id,action:`order.${status}`,entity_type:"orders",entity_id:id});revalidatePath(`/admin/pedidos/${id}`);revalidatePath("/admin/pedidos")}
+
+export type StaffCustomerMatch = { customer_id: string; email: string | null; full_name: string | null; phone: string | null; orders_count: number };
+
+// admin_customer_directory exige owner/admin (ver su migración): a diferencia
+// de create_staff_order, no admite operator. Aquí se degrada en silencio a
+// "sin resultados" en vez de lanzar, porque el asistente de pedido manual
+// debe seguir funcionando para operator sin la búsqueda rápida de cliente.
+export async function searchStaffOrderCustomers(query: string): Promise<StaffCustomerMatch[]> {
+  const identity = await getCurrentIdentity();
+  if (!identity || !identity.roles.some((r) => r === "owner" || r === "admin")) return [];
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+  const db = (await createClient()) as any;
+  const { data, error } = await db.rpc("admin_customer_directory", { p_query: trimmed });
+  if (error) return [];
+  return (data ?? []).slice(0, 6);
+}
 
 export type StaffOrderState = { ok: boolean; message?: string };
 

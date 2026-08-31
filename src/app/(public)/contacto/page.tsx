@@ -15,16 +15,16 @@ export default function ContactoPage() {
       <PageIntro
         eyebrow="Hablemos"
         title="Contacto"
-        description="Estamos preparando una vía de contacto que nos permita responder con atención y cuidar tus datos."
+        description="Escríbenos para consultas generales, recogidas o colaboraciones. Te respondemos por correo."
       />
       <Section>
         <Container className="institutional-grid">
           <div className="prose-block">
             <h2>Una pregunta cada vez</h2>
             <p>
-              El formulario aún no envía mensajes. Cuando esté activo, podrás utilizarlo para consultas generales, recogidas y colaboraciones.
+              Rellena el formulario con tu consulta y te contestaremos al correo que nos indiques. También puedes escribirnos directamente a{" "}
+              <a href="mailto:hola@fuerza.com">hola@fuerza.com</a>.
             </p>
-            <p>No publicaremos datos de contacto hasta que estén confirmados.</p>
           </div>
           <ContactForm />
         </Container>

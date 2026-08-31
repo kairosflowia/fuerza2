@@ -1,12 +1,10 @@
 export const publicNavigation = [
-  { label: "Catálogo", href: "/pan" },
+  { label: "Pan", href: "/reserva-y-recoge" },
   { label: "Dónde estamos", href: "/donde-estamos" },
-  { label: "Reserva y recoge", href: "/reserva-y-recoge" },
 ] as const;
 
 export const publicRoutes = [
   "/",
-  "/pan",
   "/obrador",
   "/nosotros",
   "/plan-de-pan",
@@ -35,27 +33,30 @@ export const accountRoutes = [
 ] as const;
 
 export const adminNavigationGroups = [
-  { key: "operaciones", label: "Operaciones" },
-  { key: "ventas", label: "Ventas & clientes" },
-  { key: "sistema", label: "Sistema" },
+  { key: "operacion", label: "Operación" },
+  { key: "catalogo", label: "Catálogo" },
+  { key: "clientes", label: "Clientes" },
+  { key: "negocio", label: "Negocio" },
+  { key: "configuracion", label: "Configuración" },
 ] as const;
 
 export const adminNavigation = [
-  { slug: "produccion", label: "Producción", shortLabel: "Producción", description: "Organiza el trabajo del obrador por fecha y punto.", group: "operaciones", icon: "oven" },
-  { slug: "pedidos", label: "Pedidos", shortLabel: "Pedidos", description: "Consulta y prepara los pedidos confirmados.", group: "operaciones", icon: "clipboard" },
-  { slug: "productos", label: "Productos", shortLabel: "Productos", description: "Gestiona productos, familias, variantes e información asociada.", group: "operaciones", icon: "package" },
-  { slug: "inventario", label: "Inventario", shortLabel: "Estoque", description: "Registra entradas, mermas y ajustes de estoque por variante.", group: "operaciones", icon: "boxes" },
-  { slug: "disponibilidad", label: "Disponibilidad", shortLabel: "Disponible", description: "Configura capacidad, días de producción y disponibilidad.", group: "operaciones", icon: "calendar" },
-  { slug: "puntos-de-recogida", label: "Puntos de recogida", shortLabel: "Puntos", description: "Gestiona puntos, horarios, cierres y reglas de recogida.", group: "operaciones", icon: "pin" },
-  { slug: "clientes", label: "Clientes", shortLabel: "Clientes", description: "Consulta la información necesaria para atender a clientes.", group: "ventas", icon: "user" },
-  { slug: "pagos", label: "Pagos", shortLabel: "Pagos", description: "Revisa pagos, incidencias y reembolsos.", group: "ventas", icon: "card" },
-  { slug: "suscripciones", label: "Suscripciones", shortLabel: "Planes", description: "Gestiona el futuro Plan de Pan y sus entregas.", group: "ventas", icon: "repeat" },
-  { slug: "analitica/productos", label: "Analítica", shortLabel: "Métricas", description: "Consulta ventas, producción, clientes, planes y puntos.", group: "ventas", icon: "chart" },
-  { slug: "contenido", label: "Contenido", shortLabel: "Contenido", description: "Mantén los textos e imágenes institucionales permitidos.", group: "sistema", icon: "document" },
-  { slug: "comunicaciones", label: "Comunicaciones", shortLabel: "Mensajes", description: "Consulta la cola, entregas y fallos transaccionales.", group: "sistema", icon: "mail" },
-  { slug: "usuarios", label: "Usuarios", shortLabel: "Usuarios", description: "Gestiona usuarios y permisos del equipo.", group: "sistema", icon: "users" },
-  { slug: "configuracion", label: "Configuración", shortLabel: "Ajustes", description: "Ajusta las reglas generales y datos del portal.", group: "sistema", icon: "gear" },
-  { slug: "auditoria", label: "Auditoría", shortLabel: "Auditoría", description: "Consulta el historial de acciones relevantes.", group: "sistema", icon: "shield" },
+  { slug: "produccion", label: "Producción", shortLabel: "Producción", description: "Organiza el trabajo del obrador por fecha y punto.", group: "operacion", icon: "oven" },
+  { slug: "disponibilidad", label: "Disponibilidad", shortLabel: "Disponible", description: "Configura capacidad, días de producción y disponibilidad.", group: "operacion", icon: "calendar" },
+  { slug: "pedidos", label: "Pedidos", shortLabel: "Pedidos", description: "Consulta y prepara los pedidos confirmados.", group: "operacion", icon: "clipboard" },
+  { slug: "puntos-de-recogida", label: "Recogidas", shortLabel: "Recogidas", description: "Puntos, horarios, calendario de cierres y excepciones: un mismo sistema de recogida.", group: "operacion", icon: "pin" },
+  { slug: "inventario", label: "Inventario", shortLabel: "Estoque", description: "Registra entradas, mermas y ajustes de estoque por variante.", group: "operacion", icon: "boxes" },
+  { slug: "productos", label: "Productos", shortLabel: "Productos", description: "Gestiona productos, familias, variantes e información asociada.", group: "catalogo", icon: "package" },
+  { slug: "clientes", label: "Clientes", shortLabel: "Clientes", description: "Consulta la información necesaria para atender a clientes.", group: "clientes", icon: "user" },
+  { slug: "analitica", label: "Analítica", shortLabel: "Métricas", description: "Consulta ventas, producción, clientes, planes y puntos.", group: "negocio", icon: "chart" },
+  { slug: "pagos", label: "Pagos", shortLabel: "Pagos", description: "Revisa pagos, incidencias y reembolsos.", group: "negocio", icon: "card" },
+  { slug: "suscripciones", label: "Suscripciones", shortLabel: "Planes", description: "Gestiona el Plan de Pan y sus entregas.", group: "negocio", icon: "repeat" },
+  { slug: "mensajes", label: "Mensajes", shortLabel: "Mensajes", description: "Consultas recibidas desde el formulario de contacto.", group: "negocio", icon: "mail" },
+  { slug: "comunicaciones", label: "Comunicaciones", shortLabel: "Avisos", description: "Consulta la cola, entregas y fallos transaccionales.", group: "negocio", icon: "mail" },
+  { slug: "contenido", label: "Contenido", shortLabel: "Contenido", description: "Mantén los textos e imágenes institucionales permitidos.", group: "configuracion", icon: "document" },
+  { slug: "usuarios", label: "Usuarios", shortLabel: "Usuarios", description: "Gestiona usuarios y permisos del equipo.", group: "configuracion", icon: "users" },
+  { slug: "configuracion", label: "Configuración", shortLabel: "Ajustes", description: "Ajusta las reglas generales y datos del portal.", group: "configuracion", icon: "gear" },
+  { slug: "auditoria", label: "Auditoría", shortLabel: "Auditoría", description: "Consulta el historial de acciones relevantes.", group: "configuracion", icon: "shield" },
 ] as const;
 
 export type AdminSection = (typeof adminNavigation)[number];

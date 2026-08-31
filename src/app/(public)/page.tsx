@@ -31,7 +31,7 @@ const processSteps: ProcessStep[] = [
 
 export default async function Home() {
   const [catalog, weeklySpecial] = await Promise.all([getPublicCatalog(), getCurrentWeeklySpecial()]);
-  const rusticBreads = catalog.filter((p) => p.family?.slug === "hogazas-artesanas").slice(0, 3);
+  const dailyBreads = catalog.filter((p) => p.family?.slug === "panes-diarios").slice(0, 6);
 
   return (
     <main id="main-content">
@@ -47,22 +47,15 @@ export default async function Home() {
 
       <Section>
         <Container size="wide">
-          <SectionHeading eyebrow="Por dentro" title="Anatomía de nuestra hogaza" description="Pasa el cursor o toca cada punto para saber qué hace que este pan sea distinto." />
-          <BreadAnatomy />
-        </Container>
-      </Section>
-
-      <Section>
-        <Container size="wide">
-          <SectionHeading eyebrow="Lo que sale del horno" title="El catálogo empieza aquí" description="Pan rústico de fermentación lenta, horneado en cantidad limitada cada día." />
-          <EditorialGrid>
-            {rusticBreads.map((product) => {
+          <SectionHeading eyebrow="Lo que sale del horno" title="El catálogo empieza aquí" description="Pan de fermentación lenta, horneado en cantidad limitada cada día." />
+          <EditorialGrid columns={dailyBreads.length > 3 ? 4 : 3}>
+            {dailyBreads.map((product) => {
               const image = product.images.find((i) => i.is_primary) ?? product.images[0];
               const prices = product.variants.flatMap((v) => (v.price_cents === null ? [] : [v.price_cents]));
               return (
                 <EditorialProductPreview
                   key={product.id}
-                  slug={product.slug}
+                  href={`/reserva-y-recoge/${product.family?.slug}/${product.slug}`}
                   name={product.name}
                   description={product.short_description}
                   imagePath={image?.storage_path ?? null}
@@ -72,7 +65,14 @@ export default async function Home() {
               );
             })}
           </EditorialGrid>
-          <TextLink href="/pan">Ver la estructura del pan</TextLink>
+          <TextLink href="/reserva-y-recoge">Ver todo el pan</TextLink>
+        </Container>
+      </Section>
+
+      <Section>
+        <Container size="wide">
+          <SectionHeading eyebrow="Por dentro" title="Anatomía de nuestra hogaza" description="Pasa el cursor o toca cada punto para saber qué hace que este pan sea distinto." />
+          <BreadAnatomy />
         </Container>
       </Section>
 
@@ -112,7 +112,7 @@ export default async function Home() {
 
       <HeroVideo videoSrc="/videos/harina-masa.mp4" poster="/videos/harina-masa-poster.jpg" posterAlt="Manos trabajando una masa de pan espolvoreada con harina.">
         <div><p className="eyebrow">Asturias</p><h2>Harina de aquí</h2></div>
-        <div><p>Asturias tiene cereal, molinos y gente que sabe de esto. La producción local mantiene el pan cerca de su origen y del lugar donde se comparte.</p><p>Publicaremos cada procedencia cuando estén confirmados los datos de productores e ingredientes.</p></div>
+        <div><p>Asturias tiene cereal, molinos y gente que sabe de esto. La producción local mantiene el pan cerca de su origen y del lugar donde se comparte.</p></div>
       </HeroVideo>
 
       <Section tone="sunken"><Container size="wide"><Newsletter /></Container></Section>

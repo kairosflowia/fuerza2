@@ -53,7 +53,7 @@ describe("centralized administrative permissions", () => {
 
   it("shows only permitted navigation and reserves role management for owner", () => {
     const operatorSections = visibleAdminSections(["operator"], adminNavigation).map(({ slug }) => slug);
-    expect(operatorSections).toEqual(["produccion", "pedidos", "inventario", "disponibilidad", "puntos-de-recogida"]);
+    expect(operatorSections).toEqual(["produccion", "disponibilidad", "pedidos", "puntos-de-recogida", "inventario"]);
     expect(canManageRole(["admin"], "operator")).toBe(false);
     expect(canManageRole(["owner"], "admin")).toBe(true);
     expect(adminPermissions.owner).toEqual(["*"]);

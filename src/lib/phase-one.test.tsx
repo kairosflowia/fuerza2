@@ -42,15 +42,15 @@ describe("design system foundations", () => {
 describe("navigation contracts", () => {
   it("defines the approved public navigation", () => {
     expect(publicNavigation.map(({ label }) => label)).toEqual([
-      "Catálogo", "Dónde estamos", "Reserva y recoge",
+      "Pan", "Dónde estamos",
     ]);
   });
 
   it("defines every structural admin route without invented records", () => {
-    expect(adminNavigation).toHaveLength(15);
+    expect(adminNavigation).toHaveLength(16);
     expect(adminNavigation.map(({ slug }) => slug)).toContain("produccion");
     expect(adminNavigation.map(({ slug }) => slug)).toContain("auditoria");
-    expect(adminNavigation.map(({ slug }) => slug)).toContain("analitica/productos");
+    expect(adminNavigation.map(({ slug }) => slug)).toContain("analitica");
   });
 });
 

@@ -1,10 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { toggleProductStatusAction } from "./actions";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { FamilyManager } from "@/components/admin/family-manager";
-import { Badge, Button, EmptyState } from "@/components/ui";
-import { EditIcon, EyeIcon, EyeOffIcon } from "@/components/ui/icons";
+import { ProductRowActions } from "@/components/admin/product-row-actions";
+import { Badge, EmptyState } from "@/components/ui";
 import { formatPrice } from "@/lib/catalog";
 import { createClient } from "@/lib/supabase/server";
 
@@ -108,23 +107,11 @@ export default async function ProductsAdminPage({ searchParams }: { searchParams
                     <Badge variant={STATUS_VARIANT[p.status]}>{STATUS_LABEL[p.status]}</Badge>
                   </div>
                   <div className="product-row__actions">
-                    <Link className="button button--icon" href={`/admin/productos/${p.id}/editar`} aria-label={`Editar ${p.name}`} title="Editar">
-                      <EditIcon />
+                    <Link className="button button--secondary" href={`/admin/productos/${p.id}/editar`}>
+                      Editar
                     </Link>
-                    {p.status === "active" || p.status === "draft" ? (
-                      <form action={toggleProductStatusAction}>
-                        <input type="hidden" name="id" value={p.id} />
-                        <input type="hidden" name="slug" value={p.slug} />
-                        <input type="hidden" name="next" value={p.status === "active" ? "draft" : "active"} />
-                        <Button
-                          type="submit"
-                          variant="icon"
-                          aria-label={p.status === "active" ? `Pasar ${p.name} a borrador` : `Publicar ${p.name}`}
-                          title={p.status === "active" ? "Ocultar" : "Publicar"}
-                        >
-                          {p.status === "active" ? <EyeOffIcon /> : <EyeIcon />}
-                        </Button>
-                      </form>
+                    {p.status !== "discontinued" ? (
+                      <ProductRowActions productId={p.id} productSlug={p.slug} productName={p.name} status={p.status} />
                     ) : null}
                   </div>
                 </li>

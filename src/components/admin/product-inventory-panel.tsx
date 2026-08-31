@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui";
-import { LowStockThresholdForm, StockMovementButton, StockTrackingToggle } from "./stock-movement-form";
-import { VariantMovementsDrawer } from "./variant-movements-drawer";
+import { InventoryRowActions } from "./inventory-row-actions";
+import { StockMovementButton } from "./stock-movement-form";
 
 type Variant = { id: string; name: string; stock_tracking: boolean; low_stock_threshold: number | null };
 type StockStatus = { variant_id: string; stock_quantity: number; reserved_quantity: number; available_quantity: number; stock_state: string };
@@ -30,12 +30,11 @@ export function ProductInventoryPanel({ productId, productName, variants, stockS
               </div>
               <div className="inventory-row__stock">
                 {status ? <Badge variant={STOCK_VARIANT[status.stock_state]}>{STOCK_LABEL[status.stock_state]}</Badge> : null}
-                <StockTrackingToggle variantId={variant.id} enabled={variant.stock_tracking} productId={productId} />
-                <LowStockThresholdForm variantId={variant.id} productId={productId} value={variant.low_stock_threshold} />
+                <span className="inventory-row__qty">mín. {variant.low_stock_threshold ?? "global"}</span>
               </div>
               <div className="inventory-row__actions">
                 <StockMovementButton variantId={variant.id} productName={productName} variantName={variant.name} productId={productId} />
-                <VariantMovementsDrawer variantId={variant.id} variantName={variant.name} />
+                <InventoryRowActions variantId={variant.id} variantName={variant.name} productId={productId} enabled={variant.stock_tracking} threshold={variant.low_stock_threshold} />
               </div>
             </li>
           );

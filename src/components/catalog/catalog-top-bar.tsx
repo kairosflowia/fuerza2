@@ -10,7 +10,7 @@ import { formatPrice } from "@/lib/catalog-domain";
 import { usePickupPoint } from "./pickup-point-provider";
 
 export function CatalogTopBar() {
-  const { points, selectedId, select } = usePickupPoint();
+  const { points, selectedId, select, date, minDate, setDate } = usePickupPoint();
   const cart = useCart();
 
   return (
@@ -20,12 +20,18 @@ export function CatalogTopBar() {
       </Link>
 
       {points.length ? (
-        <label className="catalog-topbar__pickup">
-          <span className="sr-only">Punto de recogida</span>
-          <select value={selectedId} onChange={(event) => select(event.target.value)}>
-            {points.map((point) => <option key={point.id} value={point.id}>{point.name}</option>)}
-          </select>
-        </label>
+        <div className="catalog-topbar__pickup">
+          <label>
+            <span className="sr-only">Punto de recogida</span>
+            <select value={selectedId} onChange={(event) => select(event.target.value)}>
+              {points.map((point) => <option key={point.id} value={point.id}>{point.name}</option>)}
+            </select>
+          </label>
+          <label>
+            <span className="sr-only">Día de recogida</span>
+            <input type="date" value={date} min={minDate} onChange={(event) => event.target.value && setDate(event.target.value)} />
+          </label>
+        </div>
       ) : null}
 
       <Link href="/carrito" className="catalog-topbar__cart" aria-label={`Cesta, ${cart.count} artículos, ${formatPrice(cart.total)}`}>

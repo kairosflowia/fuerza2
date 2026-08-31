@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { quickSetStatusAction } from "./actions";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { RecogidasTabs } from "@/components/admin/recogidas-tabs";
 import { Badge, Button, EmptyState } from "@/components/ui";
 import { PICKUP_POINT_STATUS_LABELS_ES, WEEKDAY_LABELS_ES } from "@/lib/pickup-points";
 import { createClient } from "@/lib/supabase/server";
@@ -19,10 +20,10 @@ export default async function PickupPointsAdminPage() {
 
   return (
     <>
-      <AdminPageHeader title="Puntos de recogida" description="Obrador principal, puntos externos, horarios, ventanas y capacidad." />
+      <AdminPageHeader title="Recogidas" description="Puntos de recogida, cierres globales y excepciones: un mismo sistema de capacidad y recogida." />
+      <RecogidasTabs />
       <div className="admin-actions">
         <Link className="button button--primary" href="/admin/puntos-de-recogida/nuevo">Nuevo punto</Link>
-        <Link className="button button--secondary" href="/admin/configuracion/calendario">Calendario operativo</Link>
       </div>
 
       {points?.length ? (

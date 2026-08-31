@@ -1,14 +1,16 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { updateOrderStatus } from "../actions";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { Badge, Button, Card, Input } from "@/components/ui";
+import { OrderCancelButton } from "@/components/admin/order-cancel-button";
+import { Badge, Button, Card } from "@/components/ui";
+import { canAccessAdminSection } from "@/lib/auth/permissions";
+import { getCurrentIdentity } from "@/lib/auth/session";
 import { formatPrice } from "@/lib/catalog-domain";
+import { ORDER_NEXT_ACTION, ORDER_STATUS_BADGE_VARIANT, PAYMENT_STATUS_BADGE_VARIANT, orderStatusLabel, paymentStatusLabel } from "@/lib/order-status-domain";
 import { createClient } from "@/lib/supabase/server";
 
 const CHANNEL_LABELS_ES: Record<string, string> = { web: "Web", whatsapp: "WhatsApp", phone: "Teléfono", in_person: "Presencial" };
-const ORDER_STATUS_LABELS_ES: Record<string, string> = { draft: "Borrador", pending_payment: "Pendiente de pago", payment_processing: "Procesando pago", confirmed: "Confirmado", ready: "Listo para recoger", collected: "Recogido", cancelled: "Cancelado", refunded: "Reembolsado", partially_refunded: "Reembolsado parcialmente" };
-const PAYMENT_STATUS_LABELS_ES: Record<string, string> = { not_started: "No iniciado", pending: "Pendiente", processing: "Procesando", paid: "Pagado", failed: "Fallido", cancelled: "Cancelado", refunded: "Reembolsado", partially_refunded: "Reembolsado parcialmente" };
 const MOVEMENT_LABELS_ES: Record<string, string> = { entrada: "Entrada", produccion: "Producción", venta: "Venta", merma: "Merma", ajuste: "Ajuste", devolucion: "Cancelación" };
 const MOVEMENT_BADGE_VARIANT: Record<string, "success" | "information" | "error" | "warning" | "primary"> = { entrada: "success", produccion: "success", venta: "information", merma: "error", ajuste: "warning", devolucion: "primary" };
 const RESERVATION_LABELS_ES: Record<string, string> = { active: "Activa", expired: "Expirada", released: "Liberada", converted: "Convertida en venta" };
@@ -16,6 +18,9 @@ const RESERVATION_BADGE_VARIANT: Record<string, "success" | "warning" | "neutral
 
 export default async function OrderAdmin({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const identity = await getCurrentIdentity();
+  if (!identity || !canAccessAdminSection(identity.roles, "pedidos")) redirect("/cuenta/acceso-denegado");
+  const canManage = identity.roles.some((r) => r === "owner" || r === "admin");
   const db: any = await createClient();
   const [{ data: order }, { data: items }, { data: history }, { data: movements }] = await Promise.all([
     db.from("orders").select("*").eq("id", id).maybeSingle(),
@@ -37,8 +42,8 @@ export default async function OrderAdmin({ params }: { params: Promise<{ id: str
         description={`Confirmado ${order.confirmed_at ? new Date(order.confirmed_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" }) : "—"} · canal ${CHANNEL_LABELS_ES[order.channel] ?? order.channel}`}
         actions={
           <div className="admin-action-group">
-            <Badge variant={order.status === "cancelled" ? "error" : order.status === "collected" ? "success" : "neutral"}>{ORDER_STATUS_LABELS_ES[order.status] ?? order.status}</Badge>
-            <Badge variant={order.payment_status === "paid" ? "success" : order.payment_status === "failed" ? "error" : "warning"}>{PAYMENT_STATUS_LABELS_ES[order.payment_status] ?? order.payment_status}</Badge>
+            <Badge variant={ORDER_STATUS_BADGE_VARIANT[order.status] ?? "neutral"}>{orderStatusLabel(order.status)}</Badge>
+            <Badge variant={PAYMENT_STATUS_BADGE_VARIANT[order.payment_status] ?? "neutral"}>{paymentStatusLabel(order.payment_status)}</Badge>
           </div>
         }
       />
@@ -136,7 +141,7 @@ export default async function OrderAdmin({ params }: { params: Promise<{ id: str
           {history?.map((h: any) => (
             <li key={h.id} className="inventory-row">
               <div className="inventory-row__main">
-                <p className="inventory-row__product">{h.previous_status ?? "inicio"} → {h.new_status}</p>
+                <p className="inventory-row__product">{h.previous_status ? orderStatusLabel(h.previous_status) : "Inicio"} → {orderStatusLabel(h.new_status)}</p>
                 <p className="inventory-row__variant">{new Date(h.created_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })} · {h.source}</p>
               </div>
             </li>
@@ -146,16 +151,20 @@ export default async function OrderAdmin({ params }: { params: Promise<{ id: str
 
       <section className="admin-subsection">
         <h2>Acciones operativas</h2>
-        <form action={updateOrderStatus} className="admin-form">
-          <input type="hidden" name="id" value={id} />
-          <Input id="reason" name="reason" label="Nota operativa" optional />
-          <div className="component-row">
-            {order.payment_status !== "paid" ? <Button type="submit" name="status" value="paid_manual">Marcar pagado</Button> : null}
-            <Button type="submit" name="status" value="ready">Marcar preparado</Button>
-            <Button type="submit" name="status" value="collected">Marcar recogido</Button>
-            <Button type="submit" name="status" value="cancelled" variant="destructive">Cancelar operativamente</Button>
-          </div>
-        </form>
+        <div className="component-row">
+          {(() => {
+            const next = ORDER_NEXT_ACTION[order.status];
+            if (!next || (next.needsManage && !canManage)) return null;
+            return (
+              <form action={updateOrderStatus}>
+                <input type="hidden" name="id" value={id} />
+                <Button type="submit" name="status" value={next.status} variant="primary">{next.label}</Button>
+              </form>
+            );
+          })()}
+          {canManage && order.status !== "cancelled" && order.status !== "refunded" ? <OrderCancelButton orderId={id} /> : null}
+        </div>
+        {!ORDER_NEXT_ACTION[order.status] ? <p className="field__help">Este pedido no tiene una acción de siguiente etapa pendiente.</p> : null}
       </section>
     </>
   );

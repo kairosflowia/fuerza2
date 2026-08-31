@@ -1,7 +1,7 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Metric } from "@/components/admin/analytics-view";
+import { InventoryRowActions } from "@/components/admin/inventory-row-actions";
 import { StockMovementButton, StockTrackingToggle } from "@/components/admin/stock-movement-form";
-import { VariantMovementsDrawer } from "@/components/admin/variant-movements-drawer";
 import { Alert, Badge, EmptyState } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,9 +27,13 @@ const MOVEMENT_BADGE_VARIANT: Record<string, "success" | "information" | "error"
 
 const STOCK_LABEL: Record<string, string> = { agotado: "Sin stock", stock_bajo: "Stock bajo", disponible: "Disponible", no_controlado: "No controlado" };
 const STOCK_BADGE_VARIANT: Record<string, "success" | "warning" | "error" | "neutral"> = { agotado: "error", stock_bajo: "warning", disponible: "success", no_controlado: "neutral" };
+// "Alertas com prioridade": agotado siempre antes que stock_bajo, y ambos
+// antes que el resto -- para que el riesgo se vea sin tener que escanear
+// toda la lista (Fase 11 del Plano Mestre).
+const STOCK_PRIORITY: Record<string, number> = { agotado: 0, stock_bajo: 1, disponible: 2, no_controlado: 3 };
 
-export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ q?: string; estado?: string }> }) {
-  const { q = "", estado = "todos" } = await searchParams;
+export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ q?: string; estado?: string; tipo?: string }> }) {
+  const { q = "", estado = "todos", tipo = "todos" } = await searchParams;
   const db: any = await createClient();
   const [{ data: statusRows }, { data: movements }, { data: alertsRows }] = await Promise.all([
     db.rpc("variant_stock_status"),
@@ -49,16 +53,20 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   const totalAvailable = tracked.reduce((sum: number, row: any) => sum + row.available_quantity, 0);
 
   const needle = q.trim().toLowerCase();
-  const visibleTracked = tracked.filter((row: any) => {
-    const matchesQuery = !needle || row.product_name.toLowerCase().includes(needle) || row.variant_name.toLowerCase().includes(needle);
-    const matchesEstado =
-      estado === "todos" ||
-      (estado === "disponible" && row.stock_state === "disponible") ||
-      (estado === "bajo" && row.stock_state === "stock_bajo") ||
-      (estado === "agotado" && row.stock_state === "agotado") ||
-      (estado === "reservado" && row.reserved_quantity > 0);
-    return matchesQuery && matchesEstado;
-  });
+  const visibleTracked = tracked
+    .filter((row: any) => {
+      const matchesQuery = !needle || row.product_name.toLowerCase().includes(needle) || row.variant_name.toLowerCase().includes(needle);
+      const matchesEstado =
+        estado === "todos" ||
+        (estado === "disponible" && row.stock_state === "disponible") ||
+        (estado === "bajo" && row.stock_state === "stock_bajo") ||
+        (estado === "agotado" && row.stock_state === "agotado") ||
+        (estado === "reservado" && row.reserved_quantity > 0);
+      return matchesQuery && matchesEstado;
+    })
+    .sort((a: any, b: any) => (STOCK_PRIORITY[a.stock_state] ?? 9) - (STOCK_PRIORITY[b.stock_state] ?? 9) || a.product_name.localeCompare(b.product_name));
+
+  const visibleMovements = (movements ?? []).filter((m: any) => tipo === "todos" || m.type === tipo);
 
   const variantLabel = (variantId: string) => {
     const row = rows.find((r: any) => r.variant_id === variantId);
@@ -74,12 +82,12 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       <AdminPageHeader title="Inventario" description="Estoque de variantes con seguimiento activo: congelados, envasados y otros productos con inventario físico. El pan de horneado diario sigue gobernado por Producción/Disponibilidad." />
 
       <div className="analytics-metrics">
-        <Metric label="Stock total" value={String(totalUnits)} />
-        <Metric label="Reservado" value={String(totalReserved)} />
-        <Metric label="Disponible" value={String(totalAvailable)} />
-        <Metric label="Stock bajo" value={String(lowStock.length)} />
-        <Metric label="Sin stock" value={String(outOfStock.length)} />
-        <Metric label="Mermas (24h)" value={String(recentMermas)} />
+        <Metric label="Stock total" value={String(totalUnits)} icon="inventario" tone="primary" />
+        <Metric label="Reservado" value={String(totalReserved)} icon="inventario" tone="information" />
+        <Metric label="Disponible" value={String(totalAvailable)} icon="listo" tone="success" />
+        <Metric label="Stock bajo" value={String(lowStock.length)} icon="inventario" tone="warning" />
+        <Metric label="Sin stock" value={String(outOfStock.length)} icon="inventario" tone="error" />
+        <Metric label="Mermas (24h)" value={String(recentMermas)} icon="inventario" tone="error" />
       </div>
 
       {outOfStock.length || lowStock.length ? (
@@ -106,6 +114,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                 <option value="reservado">Reservado</option>
               </select>
             </label>
+            {tipo !== "todos" ? <input type="hidden" name="tipo" value={tipo} /> : null}
             <button className="button button--primary" type="submit">Filtrar</button>
           </form>
 
@@ -115,7 +124,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                 <li key={row.variant_id} className="inventory-row">
                   <div className="inventory-row__main">
                     <p className="inventory-row__product">{row.product_name}</p>
-                    <p className="inventory-row__variant">{row.variant_name} · mín. {row.low_stock_threshold} · último mov. {lastMovementLabel(row.last_movement_at)}</p>
+                    <p className="inventory-row__variant">{row.variant_name} · mín. {row.low_stock_threshold ?? "global"} · último mov. {lastMovementLabel(row.last_movement_at)}</p>
                   </div>
                   <div className="inventory-row__stock">
                     <Badge variant={STOCK_BADGE_VARIANT[row.stock_state]}>{STOCK_LABEL[row.stock_state]}</Badge>
@@ -123,8 +132,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                   </div>
                   <div className="inventory-row__actions">
                     <StockMovementButton variantId={row.variant_id} productName={row.product_name} variantName={row.variant_name} productId={row.product_id} />
-                    <VariantMovementsDrawer variantId={row.variant_id} variantName={row.variant_name} />
-                    <StockTrackingToggle variantId={row.variant_id} enabled={row.stock_tracking} productId={row.product_id} />
+                    <InventoryRowActions variantId={row.variant_id} variantName={`${row.product_name} — ${row.variant_name}`} productId={row.product_id} enabled={row.stock_tracking} threshold={row.low_stock_threshold} />
                   </div>
                 </li>
               ))}
@@ -143,9 +151,21 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       <section className="admin-subsection">
         <h2>Historial de movimientos</h2>
         <p className="field__help">Últimos 20 movimientos registrados, manuales y automáticos (ventas y cancelaciones).</p>
-        {movements?.length ? (
+        <form className="admin-filters">
+          <label>
+            Tipo
+            <select name="tipo" defaultValue={tipo}>
+              <option value="todos">Todos</option>
+              {Object.entries(MOVEMENT_LABELS_ES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
+          {q ? <input type="hidden" name="q" value={q} /> : null}
+          {estado !== "todos" ? <input type="hidden" name="estado" value={estado} /> : null}
+          <button className="button button--secondary" type="submit">Filtrar</button>
+        </form>
+        {visibleMovements.length ? (
           <ul className="inventory-list">
-            {movements.map((movement: any) => (
+            {visibleMovements.map((movement: any) => (
               <li key={movement.id} className="inventory-row">
                 <div className="inventory-row__main">
                   <p className="inventory-row__product">{variantLabel(movement.product_variant_id)}</p>
@@ -164,7 +184,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             ))}
           </ul>
         ) : (
-          <p className="field__help">Todavía no se han registrado movimientos de estoque.</p>
+          <p className="field__help">{tipo === "todos" ? "Todavía no se han registrado movimientos de estoque." : "Ningún movimiento reciente de este tipo."}</p>
         )}
       </section>
 

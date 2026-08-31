@@ -1,7 +1,41 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-const VERSION="2026-08";
-type Consent={necessary:true;preferences:boolean;analytics:boolean;marketing:boolean;version:string};
-function save(value:Consent){localStorage.setItem("fuerza-cookie-consent",JSON.stringify(value));document.cookie=`fuerza_cookie_consent=${encodeURIComponent(JSON.stringify(value))}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol==="https:"?"; Secure":""}`;}
-export function CookieConsent(){const[open,setOpen]=useState(false),[configured,setConfigured]=useState(false),[preferences,setPreferences]=useState(false),[analytics,setAnalytics]=useState(false),[marketing,setMarketing]=useState(false);useEffect(()=>{try{const stored=JSON.parse(localStorage.getItem("fuerza-cookie-consent")??"null");if(!stored||stored.version!==VERSION)setOpen(true);else{setPreferences(Boolean(stored.preferences));setAnalytics(Boolean(stored.analytics));setMarketing(Boolean(stored.marketing));}}catch{setOpen(true)}},[]);const commit=(all?:boolean)=>{save({necessary:true,preferences:all??preferences,analytics:all??analytics,marketing:all??marketing,version:VERSION});setOpen(false);setConfigured(false)};if(!open)return null;return <aside className="cookie-banner" aria-labelledby="cookie-title"><h2 id="cookie-title">Cookies</h2><p>Usamos cookies necesarias para la sesión, la cesta y la seguridad.</p>{configured?<fieldset><legend>Categorías</legend><label><input type="checkbox" checked disabled/> Necesarias</label><label><input type="checkbox" checked={preferences} onChange={event=>setPreferences(event.target.checked)}/> Preferencias</label><label><input type="checkbox" checked={analytics} onChange={event=>setAnalytics(event.target.checked)}/> Analítica futura</label><label><input type="checkbox" checked={marketing} onChange={event=>setMarketing(event.target.checked)}/> Marketing futuro</label></fieldset>:null}<div><Button onClick={()=>commit(true)}>Aceptar</Button><Button variant="secondary" onClick={()=>commit(false)}>Rechazar opcionales</Button>{configured?<Button variant="text" onClick={()=>commit()}>Guardar selección</Button>:<Button variant="text" onClick={()=>setConfigured(true)}>Configurar</Button>}</div></aside>}
+const VERSION = "2026-08";
+type Consent = { necessary: true; version: string };
+function save(value: Consent) {
+  localStorage.setItem("fuerza-cookie-consent", JSON.stringify(value));
+  document.cookie = `fuerza_cookie_consent=${encodeURIComponent(JSON.stringify(value))}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+}
+export function CookieConsent() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("fuerza-cookie-consent") ?? "null");
+      if (!stored || stored.version !== VERSION) setOpen(true);
+    } catch {
+      setOpen(true);
+    }
+  }, []);
+  if (!open) return null;
+  return (
+    <aside className="cookie-banner" aria-labelledby="cookie-title">
+      <h2 id="cookie-title">Cookies</h2>
+      <p>
+        Usamos únicamente cookies necesarias para la sesión, la cesta y la seguridad del sitio. No usamos cookies de analítica ni de publicidad.{" "}
+        <Link href="/cookies">Más información</Link>.
+      </p>
+      <div>
+        <Button
+          onClick={() => {
+            save({ necessary: true, version: VERSION });
+            setOpen(false);
+          }}
+        >
+          Entendido
+        </Button>
+      </div>
+    </aside>
+  );
+}

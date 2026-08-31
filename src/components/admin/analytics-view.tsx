@@ -4,9 +4,72 @@ import { usePathname } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/states";
 import { euro, integer } from "@/lib/analytics";
+import {
+  BoxesIcon,
+  CardIcon,
+  ChartIcon,
+  ClipboardIcon,
+  ClockIcon,
+  MailIcon,
+  OvenIcon,
+  PackageIcon,
+  RepeatIcon,
+  ShieldIcon,
+  UsersIcon,
+} from "@/components/ui/icons";
 
-export function Metric({ label, value, detail }: { label: string; value: string; detail?: string }) {
-  return <Card className="analytics-metric"><p>{label}</p><strong>{value}</strong>{detail ? <small>{detail}</small> : null}</Card>;
+// Los Server Components no pueden pasar referencias a funciones (componentes)
+// a un Client Component -- de ahí un nombre + mapa de búsqueda, igual que
+// NAV_ICONS en admin-navigation.tsx, en vez de aceptar el componente directo.
+const METRIC_ICONS = {
+  pedidos: ClipboardIcon,
+  produccion: OvenIcon,
+  reloj: ClockIcon,
+  listo: PackageIcon,
+  inventario: BoxesIcon,
+  pagos: CardIcon,
+  suscripciones: RepeatIcon,
+  analitica: ChartIcon,
+  mensajes: MailIcon,
+  clientes: UsersIcon,
+  incidencias: ShieldIcon,
+} as const;
+export type MetricIcon = keyof typeof METRIC_ICONS;
+
+type IconBadgeTone = "primary" | "success" | "warning" | "error" | "information" | "neutral";
+
+export function IconBadge({ icon, tone = "neutral" }: { icon: MetricIcon; tone?: IconBadgeTone }) {
+  const Icon = METRIC_ICONS[icon];
+  return (
+    <span className={`icon-badge${tone !== "neutral" ? ` icon-badge--${tone}` : ""}`} aria-hidden="true">
+      <Icon />
+    </span>
+  );
+}
+
+export function Metric({
+  label,
+  value,
+  detail,
+  icon,
+  tone = "primary",
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  icon?: MetricIcon;
+  tone?: IconBadgeTone;
+}) {
+  return (
+    <Card className="analytics-metric">
+      {icon ? <IconBadge icon={icon} tone={tone} /> : null}
+      <div>
+        <p>{label}</p>
+        <strong>{value}</strong>
+        {detail ? <small>{detail}</small> : null}
+      </div>
+    </Card>
+  );
 }
 
 export function AnalyticsFilters({ params, points, products }: { params: Record<string,string|undefined>; points: {id:string;name:string}[]; products: {id:string;name:string}[] }) {
@@ -27,7 +90,7 @@ export function RankedTable({ title, rows, kind }: { title: string; rows: Ranked
 }
 
 const analyticsTabs = [
-  ["/admin", "Resumen"],
+  ["/admin/analitica", "Resumen"],
   ["/admin/analitica/productos", "Productos"],
   ["/admin/analitica/clientes", "Clientes"],
   ["/admin/analitica/suscripciones", "Plan de Pan"],

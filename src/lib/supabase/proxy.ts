@@ -22,7 +22,7 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const pathname = request.nextUrl.pathname;
-  const requiresSession = pathname === "/cuenta" || pathname === "/admin" || pathname.startsWith("/admin/");
+  const requiresSession = pathname === "/cuenta" || pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/modo-produccion";
   if (requiresSession && !data?.claims) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/cuenta/acceder";

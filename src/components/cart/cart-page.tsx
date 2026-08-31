@@ -7,29 +7,30 @@ import { useState } from "react";
 import { Button, EmptyState, Input, Select } from "@/components/ui";
 import { TrashIcon } from "@/components/ui/icons";
 import { formatPrice } from "@/lib/catalog-domain";
+import { PICKUP_DATE_COOKIE, PICKUP_POINT_COOKIE } from "@/lib/pickup-selection";
 
 import { useCart } from "./cart-provider";
 
-// Regla operativa: recogida 10:00-14:30, pedidos con 48h de antelación
-// mínima (availability.cutoff_time / cutoff_days_before en app_settings).
-// Si todavía no son las 10:00 de hoy, el primer día válido es hoy+2; si ya
-// pasaron las 10:00, el corte de hoy ya se cerró y el primer día válido es
-// hoy+3. El servidor (create_checkout_order) sigue siendo quien de verdad
-// impone la regla -- esto es solo para no dejar elegir en el date picker
-// una fecha que el pago rechazaría después.
-function minCollectionDate() {
-  const now = new Date();
-  const daysAhead = now.getHours() < 10 ? 2 : 3;
-  const min = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysAhead);
-  return min.toISOString().slice(0, 10);
+function setCookie(name: string, value: string) {
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=15552000; SameSite=Lax${secure}`;
 }
 
-export function CartPageClient({ points }: { points: { id: string; name: string }[] }) {
+export function CartPageClient({
+  points,
+  initialPoint,
+  initialDate,
+  minDate,
+}: {
+  points: { id: string; name: string }[];
+  initialPoint: string;
+  initialDate: string;
+  minDate: string;
+}) {
   const cart = useCart();
   const router = useRouter();
-  const defaultPoint = points.find((p) => p.name === "Obrador FUERZA")?.id ?? points[0]?.id ?? "";
-  const [point, setPoint] = useState(defaultPoint);
-  const [date, setDate] = useState(minCollectionDate);
+  const [point, setPoint] = useState(initialPoint);
+  const [date, setDate] = useState(initialDate);
 
   if (!cart.items.length) {
     return <EmptyState title="Tu cesta está vacía" description="Añade un pan publicado antes de continuar." action={<Link href="/reserva-y-recoge">Ver el catálogo</Link>} />;
@@ -68,11 +69,26 @@ export function CartPageClient({ points }: { points: { id: string; name: string 
       </div>
       <aside>
         <p className="cart-summary-total"><span>Total estimado</span><strong>{formatPrice(cart.total)}</strong></p>
-        <Select id="pickup" label="Punto de recogida" value={point} onChange={(e) => setPoint(e.target.value)} required>
+        <Select
+          id="pickup"
+          label="Punto de recogida"
+          value={point}
+          onChange={(e) => { setPoint(e.target.value); setCookie(PICKUP_POINT_COOKIE, e.target.value); }}
+          required
+        >
           <option value="">Selecciona</option>
           {points.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </Select>
-        <Input id="date" label="Fecha de recogida" type="date" min={minCollectionDate()} value={date} onChange={(e) => setDate(e.target.value)} helpText="Recogida de 10:00 a 14:30. Pedidos con un mínimo de 48 horas de antelación." required />
+        <Input
+          id="date"
+          label="Fecha de recogida"
+          type="date"
+          min={minDate}
+          value={date}
+          onChange={(e) => { if (!e.target.value) return; setDate(e.target.value); setCookie(PICKUP_DATE_COOKIE, e.target.value); }}
+          helpText="Recogida de 10:00 a 14:30. Pedidos con un mínimo de 48 horas de antelación."
+          required
+        />
         <p>Todos los artículos se recogerán en el mismo punto y fecha. El precio final y la disponibilidad se confirman en el pago.</p>
         <Button disabled={!point || !date} onClick={() => { const pointName = points.find((p) => p.id === point)?.name ?? ""; sessionStorage.setItem("fuerza-checkout", JSON.stringify({ point, pointName, date, key: crypto.randomUUID() })); router.push("/checkout"); }}>
           Continuar al pago

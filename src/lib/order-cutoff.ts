@@ -22,7 +22,13 @@ export function earliestBookableDate(config: CutoffConfig, from: Date = new Date
 
 export function formatEarliestDate(date: Date | null): string {
   if (!date) return "Consulta disponibilidad";
-  const formatted = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" }).format(date);
+  return formatDateEs(date);
+}
+
+/** Formatea una fecha (Date o "aaaa-mm-dd") como "Miércoles, 2 de septiembre". */
+export function formatDateEs(date: Date | string): string {
+  const value = typeof date === "string" ? new Date(`${date}T00:00:00`) : date;
+  const formatted = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" }).format(value);
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 

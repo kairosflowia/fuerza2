@@ -13,6 +13,7 @@ import {
   CardIcon,
   ChartIcon,
   ClipboardIcon,
+  ClockIcon,
   DocumentIcon,
   GearIcon,
   MailIcon,
@@ -27,6 +28,11 @@ import {
 
 import { Button } from "../ui/button";
 import { Drawer } from "../ui/dialog";
+
+// Secciones reservadas para una fase posterior: la ruta y los permisos ya
+// existen, pero todavía no muestran datos reales, así que no deben aparecer
+// en la navegación de producción.
+const SECTIONS_NOT_READY = new Set(["usuarios", "auditoria"]);
 
 const NAV_ICONS: Record<AdminNavIcon, (props: SVGProps<SVGSVGElement>) => ReactElement> = {
   oven: OvenIcon,
@@ -48,10 +54,16 @@ const NAV_ICONS: Record<AdminNavIcon, (props: SVGProps<SVGSVGElement>) => ReactE
 
 function AdminLinks({ roles, onNavigate }: { roles: readonly AppRole[]; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const sections = visibleAdminSections(roles, adminNavigation);
+  const sections = visibleAdminSections(roles, adminNavigation).filter((item) => !SECTIONS_NOT_READY.has(item.slug));
 
   return (
     <nav className="admin-nav" aria-label="Administración">
+      <div className="admin-nav__group">
+        <Link href="/admin" aria-current={pathname === "/admin" ? "page" : undefined} onClick={onNavigate}>
+          <ClockIcon />
+          <span>Hoy</span>
+        </Link>
+      </div>
       {adminNavigationGroups.map((group) => {
         const items = sections.filter((item) => item.group === group.key);
         if (!items.length) return null;
@@ -94,11 +106,14 @@ export function AdminMobileNavigation({ roles }: { roles: readonly AppRole[] }) 
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const primaryItems = visibleAdminSections(roles, adminNavigation).slice(0, 3);
+  const primaryItems = visibleAdminSections(roles, adminNavigation)
+    .filter((item) => !SECTIONS_NOT_READY.has(item.slug))
+    .slice(0, 2);
 
   return (
     <>
       <nav className="admin-mobile-bar" aria-label="Accesos administrativos rápidos">
+        <Link href="/admin" aria-current={pathname === "/admin" ? "page" : undefined}>Hoy</Link>
         {primaryItems.map((item) => {
           const href = `/admin/${item.slug}`;
           return (

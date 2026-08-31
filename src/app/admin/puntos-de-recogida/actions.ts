@@ -24,6 +24,7 @@ function refresh(id?: string) {
   revalidateTag("pickup-points", "max");
   revalidatePath("/donde-estamos");
   revalidatePath("/admin/puntos-de-recogida");
+  revalidatePath("/admin/puntos-de-recogida/calendario");
   if (id) revalidatePath(`/admin/puntos-de-recogida/${id}`);
 }
 
@@ -239,7 +240,7 @@ export async function createGlobalClosureAction(_s: PickupActionState, f: FormDa
   if (result.error) return { ok: false, message: "No se ha guardado el cierre." };
   revalidateTag("pickup-points", "max");
   revalidatePath("/donde-estamos");
-  revalidatePath("/admin/configuracion/calendario");
+  revalidatePath("/admin/puntos-de-recogida/calendario");
   return { ok: true, message: "Cierre global guardado." };
 }
 
@@ -248,7 +249,7 @@ export async function deleteGlobalClosureAction(f: FormData) {
   await db.from("global_closures").delete().eq("id", text(f, "id"));
   revalidateTag("pickup-points", "max");
   revalidatePath("/donde-estamos");
-  revalidatePath("/admin/configuracion/calendario");
+  revalidatePath("/admin/puntos-de-recogida/calendario");
 }
 
 // ---------------------------------------------------------------------------

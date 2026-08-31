@@ -3,11 +3,13 @@
 import { useRef, useState } from "react";
 
 import {
+  ActionMenu,
   Alert,
   Badge,
   Button,
   Card,
   Checkbox,
+  ConfirmDialog,
   Container,
   Drawer,
   EmptyState,
@@ -20,6 +22,8 @@ import {
   Section,
   Select,
   Textarea,
+  ToastProvider,
+  useToast,
 } from "@/components/ui";
 
 const colors = [
@@ -28,10 +32,21 @@ const colors = [
 ] as const;
 
 export function DesignSystemDemo() {
+  return (
+    <ToastProvider>
+      <DesignSystemDemoContent />
+    </ToastProvider>
+  );
+}
+
+function DesignSystemDemoContent() {
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const modalTrigger = useRef<HTMLButtonElement>(null);
   const drawerTrigger = useRef<HTMLButtonElement>(null);
+  const confirmTrigger = useRef<HTMLButtonElement>(null);
+  const { push } = useToast();
 
   return (
     <main id="main-content">
@@ -110,6 +125,13 @@ export function DesignSystemDemo() {
             <div className="component-row">
               <Button ref={modalTrigger} variant="secondary" onClick={() => setModalOpen(true)}>Abrir diálogo</Button>
               <Button ref={drawerTrigger} variant="secondary" onClick={() => setDrawerOpen(true)}>Abrir panel</Button>
+              <Button ref={confirmTrigger} variant="secondary" onClick={() => setConfirmOpen(true)}>Pedir confirmación</Button>
+              <Button variant="secondary" onClick={() => push({ title: "Guardado.", description: "Los cambios ya están aplicados.", variant: "success" })}>Mostrar aviso</Button>
+              <ActionMenu label="Más acciones (demo)">
+                <button type="button" className="menu__item">Editar</button>
+                <button type="button" className="menu__item">Duplicar</button>
+                <button type="button" className="menu__item" data-destructive>Eliminar</button>
+              </ActionMenu>
             </div>
           </div>
         </Container>
@@ -121,6 +143,16 @@ export function DesignSystemDemo() {
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Panel lateral" returnFocusRef={drawerTrigger}>
         <p>La gaveta conserva el foco, responde a Escape y devuelve el foco al activador.</p>
       </Drawer>
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => { setConfirmOpen(false); push({ title: "Confirmado.", variant: "success" }); }}
+        title="¿Seguro que quieres continuar?"
+        confirmLabel="Sí, continuar"
+        returnFocusRef={confirmTrigger}
+      >
+        <p>Reemplaza al confirm() nativo del navegador cuando una acción necesita una decisión explícita.</p>
+      </ConfirmDialog>
     </main>
   );
 }

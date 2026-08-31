@@ -21,7 +21,6 @@ describe("public route architecture", () => {
   it("declares every approved public route", () => {
     expect(publicRoutes).toEqual([
       "/",
-      "/pan",
       "/obrador",
       "/nosotros",
       "/plan-de-pan",
@@ -51,7 +50,7 @@ describe("public route architecture", () => {
       "/admin/contenido/emails/preview",
       "/carrito",
       "/admin/puntos-de-recogida/nuevo",
-      "/admin/configuracion/calendario",
+      "/admin/puntos-de-recogida/calendario",
       "/admin/configuracion/legal",
       "/admin/configuracion/sistema",
       "/admin/configuracion/reservas",
@@ -77,7 +76,7 @@ describe("public route architecture", () => {
   it("gives each institutional page one explicit page heading contract", () => {
     // reserva-y-recoge vive ahora en el grupo de rutas (catalog), con su propio
     // shell de app (sin header/footer globales) en lugar del contrato PageIntro/h1.
-    const pages = ["pan", "obrador", "nosotros", "plan-de-pan", "donde-estamos", "contacto"];
+    const pages = ["obrador", "nosotros", "plan-de-pan", "donde-estamos", "contacto"];
     for (const page of pages) {
       const source = readFileSync(resolve(projectRoot, `src/app/(public)/${page}/page.tsx`), "utf8");
       expect(source).toContain("<PageIntro");
@@ -88,7 +87,7 @@ describe("public route architecture", () => {
 });
 
 describe("public content safeguards", () => {
-  it("keeps legal pages structural and visibly provisional", () => {
+  it("keeps legal pages complete but never fabricates the owner's real identity data", () => {
     expect(Object.keys(legalPages)).toEqual([
       "aviso-legal",
       "privacidad",
@@ -98,9 +97,29 @@ describe("public content safeguards", () => {
       "politica-de-suscripcion",
       "informacion-alergenos",
     ]);
-    const legalPage = readFileSync(resolve(projectRoot, "src/app/(public)/[legal]/page.tsx"), "utf8");
-    expect(legalPage).toContain("Documento no definitivo");
-    expect(legalPage).not.toMatch(/CIF|NIF|domicilio fiscal/i);
+    // Cada página debe tener contenido real (nunca un array vacío ni solo
+    // encabezados de sección sin texto): el "Documento no definitivo" de
+    // fases anteriores quedó retirado en la Fase 16 salvo por el bloque de
+    // titularidad, que sigue pendiente porque el negocio todavía no ha
+    // proporcionado sus datos reales (nombre legal, NIF/CIF, domicilio).
+    for (const page of Object.values(legalPages)) {
+      expect(page.content.length).toBeGreaterThan(0);
+      for (const block of page.content) {
+        const text = "paragraphs" in block ? block.paragraphs.join(" ") : block.note;
+        expect(text.trim().length).toBeGreaterThan(0);
+      }
+    }
+    // Ningún bloque debe contener un NIF/CIF con forma de identificador real
+    // (dígitos + letra de control, u orden inverso) ni un código postal de 5
+    // dígitos: si algún día se fabrica un dato de identidad falso aquí, este
+    // test debe fallar.
+    const fakeIdPattern = /\b\d{8}[A-Z]\b|\b[A-Z]\d{7}[A-Z0-9]\b|\b\d{5}\b/;
+    for (const page of Object.values(legalPages)) {
+      for (const block of page.content) {
+        const text = "paragraphs" in block ? block.paragraphs.join(" ") : block.note;
+        expect(text).not.toMatch(fakeIdPattern);
+      }
+    }
   });
 
   it("keeps the homepage editorial free of reservation controls, while the catalogue allows a quick add to cart", () => {
@@ -109,7 +128,7 @@ describe("public content safeguards", () => {
     const catalogCard = readFileSync(resolve(projectRoot, "src/components/public/catalog-product-card.tsx"), "utf8");
     const editorial = readFileSync(resolve(projectRoot, "src/components/public/editorial.tsx"), "utf8");
     expect((home + heroCarousel).match(/<h1[ >]/g)).toHaveLength(1);
-    expect(editorial).toContain("Sin precio ni disponibilidad");
+    expect(editorial).not.toContain("useCart");
     // El catálogo (/pan) pasó a permitir añadir a la cesta directamente desde
     // la tarjeta (a pedido explícito del usuario), a diferencia de la
     // restricción original de esta fase que lo mantenía solo informativo.

@@ -18,7 +18,7 @@ export function PublicFooter() {
         <div>
           <p className="wordmark">FUERZA</p>
           <p className="footer-manifesto">Pan artesanal de masa madre elaborado con harinas locales y tiempo real.</p>
-          <p>Obrador de masa madre · Asturias · España</p>
+          <p>Obrador de masa madre · Avilés, Asturias</p>
           <a href="mailto:hola@fuerza.com" className="footer-email">hola@fuerza.com</a>
           <div className="footer-social" aria-label="Redes sociales de FUERZA">
             {socialLinks.map(({ label, href, Icon }) => (
@@ -52,7 +52,7 @@ export function PublicFooter() {
         </nav>
       </Container>
       <Container size="wide" className="public-footer__bottom">
-        <small>© FUERZA</small>
+        <small>© {new Date().getFullYear()} FUERZA</small>
       </Container>
     </footer>
   );

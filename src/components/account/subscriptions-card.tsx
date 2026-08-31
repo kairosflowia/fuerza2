@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { Badge, Button, EmptyState } from "@/components/ui";
 import { formatPrice } from "@/lib/catalog-domain";
-import { FREQUENCY_LABELS_ES, type SubscriptionFrequency } from "@/lib/subscriptions-domain";
+import { FREQUENCY_LABELS_ES, SUBSCRIPTION_STATUS_BADGE_VARIANT, subscriptionStatusLabel, type SubscriptionFrequency } from "@/lib/subscriptions-domain";
 
 type Subscription = {
   id: string;
@@ -14,30 +14,6 @@ type Subscription = {
   next_collection_date: string | null;
   total_cents: number;
   pickupPointName: string | null;
-};
-
-const STATUS_LABELS_ES: Record<string, string> = {
-  incomplete: "Incompleta",
-  trialing: "En prueba",
-  active: "Activa",
-  past_due: "Pago pendiente",
-  paused: "Pausada",
-  cancel_pending: "Se cancela al final del ciclo",
-  cancelled: "Cancelada",
-  unpaid: "Impago",
-  requires_attention: "Requiere atención",
-};
-
-const STATUS_BADGE_VARIANT: Record<string, "success" | "warning" | "error" | "neutral"> = {
-  active: "success",
-  trialing: "success",
-  paused: "warning",
-  cancel_pending: "warning",
-  past_due: "error",
-  unpaid: "error",
-  requires_attention: "error",
-  cancelled: "neutral",
-  incomplete: "neutral",
 };
 
 const CANCELLABLE_STATUSES = new Set(["active", "trialing", "paused", "past_due"]);
@@ -88,7 +64,7 @@ export function AccountSubscriptionsCard({ subscriptions }: { subscriptions: Sub
           <li key={s.id} className="account-subscriptions__row">
             <div className="account-subscriptions__info">
               <p className="account-subscriptions__meta">
-                <Badge variant={STATUS_BADGE_VARIANT[s.status] ?? "neutral"}>{STATUS_LABELS_ES[s.status] ?? s.status}</Badge>
+                <Badge variant={SUBSCRIPTION_STATUS_BADGE_VARIANT[s.status] ?? "neutral"}>{subscriptionStatusLabel(s.status)}</Badge>
                 <span>{FREQUENCY_LABELS_ES[s.frequency as SubscriptionFrequency] ?? s.frequency}</span>
                 {s.pickupPointName ? <span> · {s.pickupPointName}</span> : null}
               </p>

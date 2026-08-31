@@ -8,7 +8,7 @@ import { AVAILABILITY_REASON_LABELS_ES, availabilityReasonLabel } from "./availa
 const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260803220000_availability_engine.sql"), "utf8");
 const sw = readFileSync(resolve(process.cwd(), "public/sw.js"), "utf8");
 const vercelConfig = readFileSync(resolve(process.cwd(), "vercel.json"), "utf8");
-const panActions = readFileSync(resolve(process.cwd(), "src/app/(public)/pan/actions.ts"), "utf8");
+const panActions = readFileSync(resolve(process.cwd(), "src/app/(catalog)/reserva-y-recoge/actions.ts"), "utf8");
 
 const REASON_CODES = [
   "available",

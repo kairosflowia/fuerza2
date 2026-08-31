@@ -18,17 +18,28 @@ const DWELL_MS = 7000;
  */
 export function HeroCarousel() {
   const [active, setActive] = useState(0);
+  // El primer slide es prioritario para el LCP; el resto no compite por ancho
+  // de banda en la carga inicial (sobre todo en móvil) -- se montan un poco
+  // más tarde, con margen de sobra antes de que el carrusel los necesite.
+  const [mounted, setMounted] = useState(() => SLIDES.map((_, index) => index === 0));
 
   useEffect(() => {
     const id = window.setInterval(() => setActive((current) => (current + 1) % SLIDES.length), DWELL_MS);
     return () => window.clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setMounted(SLIDES.map(() => true)), 1500);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
   return (
     <section className="hero-carousel" aria-label="FUERZA, obrador de masa madre en Asturias">
       {SLIDES.map((slide, index) => (
         <div key={slide.src} className="hero-carousel__slide" data-active={index === active} aria-hidden="true">
-          <Image src={slide.src} alt={slide.alt} fill priority={index === 0} unoptimized sizes="100vw" style={{ objectFit: "cover" }} />
+          {mounted[index] ? (
+            <Image src={slide.src} alt={slide.alt} fill priority={index === 0} sizes="100vw" style={{ objectFit: "cover" }} />
+          ) : null}
         </div>
       ))}
       <div className="hero-carousel__overlay" aria-hidden="true" />
