@@ -9,7 +9,7 @@ import { ProductOrderForm } from "@/components/public/product-order-form";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, ClockIcon, PinIcon, WheatIcon } from "@/components/ui/icons";
 import { Container, Section } from "@/components/ui/layout";
-import { getNextAvailableDate, getVariantAvailability } from "@/lib/availability";
+import { getNextAvailableDate, getVariantAvailability, getVariantOrderLimit } from "@/lib/availability";
 import { formatPrice, getPublicProduct } from "@/lib/catalog";
 import { earliestBookableDate } from "@/lib/order-cutoff";
 import { getCutoffConfig } from "@/lib/order-cutoff-server";
@@ -59,9 +59,12 @@ export default async function ProductoPage({ params }: { params: Promise<{ famil
 
   const availabilityByVariant = pickupPointId
     ? await Promise.all(activeVariants.map(async (v) => {
-        const availability = await getVariantAvailability(v.id, pickupPointId, collectionDate);
+        const [availability, orderLimit] = await Promise.all([
+          getVariantAvailability(v.id, pickupPointId, collectionDate),
+          getVariantOrderLimit(v.id, pickupPointId, collectionDate),
+        ]);
         const nextAvailableDate = availability?.status === "sold_out" ? await getNextAvailableDate(v.id, pickupPointId, collectionDate) : null;
-        return { variantId: v.id, availability, nextAvailableDate };
+        return { variantId: v.id, availability, maxQuantity: orderLimit?.isAvailable ? orderLimit.maxQuantity : null, nextAvailableDate };
       }))
     : [];
 
@@ -108,7 +111,7 @@ export default async function ProductoPage({ params }: { params: Promise<{ famil
                   productName={product.name}
                   variants={activeVariants.map((v) => {
                     const entry = availabilityByVariant.find((a) => a.variantId === v.id);
-                    return { id: v.id, name: v.name, priceCents: v.price_cents!, availability: entry?.availability ?? null, nextAvailableDate: entry?.nextAvailableDate ?? null };
+                    return { id: v.id, name: v.name, priceCents: v.price_cents!, availability: entry?.availability ?? null, maxQuantity: entry?.maxQuantity ?? null, nextAvailableDate: entry?.nextAvailableDate ?? null };
                   })}
                   image={image?.storage_path}
                 />

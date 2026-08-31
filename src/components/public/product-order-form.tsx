@@ -8,7 +8,7 @@ import { availabilityReasonLabel, type VariantAvailability } from "@/lib/availab
 import { formatPrice } from "@/lib/catalog-domain";
 import { formatDateEs } from "@/lib/order-cutoff";
 
-type Variant = { id: string; name: string; priceCents: number; availability: VariantAvailability | null; nextAvailableDate: string | null };
+type Variant = { id: string; name: string; priceCents: number; availability: VariantAvailability | null; maxQuantity: number | null; nextAvailableDate: string | null };
 
 export function ProductOrderForm({ productName, variants, image }: { productName: string; variants: Variant[]; image?: string }) {
   const cart = useCart();
@@ -21,7 +21,10 @@ export function ProductOrderForm({ productName, variants, image }: { productName
   const total = useMemo(() => (variant ? variant.priceCents * quantity : 0), [variant, quantity]);
   const availability = variant?.availability;
   const soldOut = availability?.status === "sold_out";
-  const maxQuantity = availability?.status === "low_stock" && availability.quantityAvailable !== null ? availability.quantityAvailable : 99;
+  // El límite real (check_variant_order_limit) siempre respeta el estoque de
+  // verdad; availability.quantityAvailable solo se rellena en low_stock (es
+  // el aviso de marketing "últimas unidades", no el tope real).
+  const maxQuantity = typeof variant?.maxQuantity === "number" ? variant.maxQuantity : 99;
 
   if (!variant) return null;
 

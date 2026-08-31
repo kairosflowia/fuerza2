@@ -36,6 +36,31 @@ export async function getVariantAvailability(
   return { status: row.status, reason: row.reason, quantityAvailable: row.quantity_available };
 }
 
+/**
+ * Límite real de unidades que se pueden pedir (a diferencia de
+ * getVariantAvailability, que oculta la cantidad exacta salvo que ya esté
+ * en low_stock, por motivos de marketing). Este número es el que debe
+ * limitar cualquier stepper de cantidad: sin él, un cliente podía añadir a
+ * la cesta más unidades de las que de verdad quedan mientras el estoque no
+ * bajara del umbral de "últimas unidades".
+ */
+export async function getVariantOrderLimit(
+  productVariantId: string,
+  pickupPointId: string,
+  collectionDate: string,
+): Promise<{ isAvailable: boolean; reason: string; maxQuantity: number } | null> {
+  if (!isSupabaseConfigured()) return null;
+  const db = publicClient();
+  const { data, error } = await db.rpc("check_variant_order_limit", {
+    p_product_variant_id: productVariantId,
+    p_pickup_point_id: pickupPointId,
+    p_collection_date: collectionDate,
+  });
+  if (error || !data?.[0]) return null;
+  const row = data[0];
+  return { isAvailable: row.is_available, reason: row.reason, maxQuantity: row.max_quantity };
+}
+
 export async function getNextAvailableDate(
   productVariantId: string,
   pickupPointId: string,

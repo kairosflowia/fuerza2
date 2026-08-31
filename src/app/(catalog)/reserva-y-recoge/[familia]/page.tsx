@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/ui/layout";
 import { CatalogProductCard } from "@/components/public/catalog-product-card";
 import { OrderSummarySidebar } from "@/components/catalog/order-summary-sidebar";
-import { getVariantAvailability } from "@/lib/availability";
+import { getVariantAvailability, getVariantOrderLimit } from "@/lib/availability";
 import { getPublicCatalog } from "@/lib/catalog";
 import { earliestBookableDate } from "@/lib/order-cutoff";
 import { getCutoffConfig } from "@/lib/order-cutoff-server";
@@ -47,9 +47,12 @@ export default async function CategoriaPage({ params }: { params: Promise<{ fami
     return { product, cheapest };
   });
 
-  const availabilities = pickupPointId
-    ? await Promise.all(cheapestByProduct.map(({ cheapest }) => (cheapest ? getVariantAvailability(cheapest.id, pickupPointId, collectionDate) : Promise.resolve(null))))
-    : cheapestByProduct.map(() => null);
+  const [availabilities, orderLimits] = pickupPointId
+    ? await Promise.all([
+        Promise.all(cheapestByProduct.map(({ cheapest }) => (cheapest ? getVariantAvailability(cheapest.id, pickupPointId, collectionDate) : Promise.resolve(null)))),
+        Promise.all(cheapestByProduct.map(({ cheapest }) => (cheapest ? getVariantOrderLimit(cheapest.id, pickupPointId, collectionDate) : Promise.resolve(null)))),
+      ])
+    : [cheapestByProduct.map(() => null), cheapestByProduct.map(() => null)];
 
   return (
     <main id="main-content" className="catalog-layout">
@@ -69,6 +72,7 @@ export default async function CategoriaPage({ params }: { params: Promise<{ fami
                   priceCents={cheapest?.price_cents ?? null}
                   isSeasonal={product.status === "seasonal"}
                   availability={availabilities[index]}
+                  maxQuantity={orderLimits[index]?.isAvailable ? orderLimits[index]!.maxQuantity : null}
                   variant={cheapest ? { id: cheapest.id, name: cheapest.name, priceCents: cheapest.price_cents! } : null}
                 />
               );

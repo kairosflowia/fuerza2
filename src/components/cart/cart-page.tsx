@@ -105,6 +105,47 @@ export function CartPageClient({
   const [payment, setPayment] = useState<Payment | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [stock, setStock] = useState<Record<string, { status: string; quantityAvailable: number | null } | null>>({});
+  const [adjustedNotice, setAdjustedNotice] = useState("");
+
+  const variantIdsKey = cart.items.map((i) => i.variantId).sort().join(",");
+  // Sin esto, el "+" de la cesta no sabía nada del estoque real: subía
+  // hasta 99 aunque solo quedaran, por ejemplo, 4 unidades. La ficha de
+  // producto ya limitaba correctamente al añadir, pero una vez en la
+  // cesta no había ninguna comprobación -- el cliente solo se enteraba al
+  // fallar el pago. Se repite la misma consulta pública que usa la ficha
+  // de producto (check_variant_availability) cada vez que cambian el
+  // punto, la fecha o los artículos.
+  useEffect(() => {
+    if (!point || !date || !variantIdsKey) return;
+    let cancelled = false;
+    fetch("/api/availability/check", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ variantIds: variantIdsKey.split(","), pickupPointId: point, collectionDate: date }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.availability) return;
+        setStock(data.availability);
+        const adjusted: string[] = [];
+        for (const item of cart.items) {
+          const info = data.availability[item.variantId];
+          const max = info?.quantityAvailable;
+          if (typeof max === "number" && item.quantity > max) {
+            cart.setQuantity(item.variantId, max);
+            adjusted.push(item.productName);
+          } else if (info?.status === "sold_out" && item.quantity > 0) {
+            adjusted.push(item.productName);
+          }
+        }
+        if (adjusted.length) setAdjustedNotice(`Hemos ajustado la cantidad de ${adjusted.join(", ")} a lo que queda disponible para ese punto y fecha.`);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [point, date, variantIdsKey]);
 
   const selectedPoint = points.find((p) => p.id === point);
   const activeWindow = selectedPoint?.collectionWindows.find((w) => w.weekday === isoWeekday(date));
@@ -165,9 +206,12 @@ export function CartPageClient({
     </p>
   ) : null;
 
+  const hasSoldOutItem = !payment && cart.items.some((item) => stock[item.variantId]?.status === "sold_out");
+
   return (
     <div className="checkout-grid">
       <div>
+        {adjustedNotice ? <Alert variant="warning" title="Hemos ajustado tu cesta">{adjustedNotice}</Alert> : null}
         {payment ? (
           <ul className="checkout-summary__items">
             {cart.items.map((item) => (
@@ -178,7 +222,11 @@ export function CartPageClient({
             ))}
           </ul>
         ) : (
-          cart.items.map((item) => (
+          cart.items.map((item) => {
+            const info = stock[item.variantId];
+            const soldOut = info?.status === "sold_out";
+            const max = typeof info?.quantityAvailable === "number" ? info.quantityAvailable : 99;
+            return (
               <article key={item.variantId} className="cart-row">
                 <div className="cart-row__header">
                   {item.image ? (
@@ -192,11 +240,16 @@ export function CartPageClient({
                   </div>
                 </div>
                 {item.note ? <p className="cart-row__note">&ldquo;{item.note}&rdquo;</p> : null}
+                {soldOut ? (
+                  <p className="field__help">Agotado para el punto y la fecha elegidos. Elimínalo o cambia de fecha.</p>
+                ) : info?.status === "low_stock" && typeof info.quantityAvailable === "number" ? (
+                  <p className="field__help">Quedan {info.quantityAvailable} unidades para esa fecha.</p>
+                ) : null}
                 <div className="cart-row__quantity">
                   <div className="stepper">
                     <button type="button" className="stepper__button" aria-label="Quitar una unidad" onClick={() => cart.setQuantity(item.variantId, item.quantity - 1)} disabled={item.quantity <= 1}>−</button>
                     <span className="stepper__value" aria-live="polite">{item.quantity}</span>
-                    <button type="button" className="stepper__button" aria-label="Añadir una unidad" onClick={() => cart.setQuantity(item.variantId, Math.min(99, item.quantity + 1))}>+</button>
+                    <button type="button" className="stepper__button" aria-label="Añadir una unidad" onClick={() => cart.setQuantity(item.variantId, Math.min(max, item.quantity + 1))} disabled={soldOut || item.quantity >= max}>+</button>
                   </div>
                   <Button variant="icon" aria-label={`Eliminar ${item.productName} de la cesta`} onClick={() => cart.remove(item.variantId)}>
                     <TrashIcon />
@@ -204,7 +257,8 @@ export function CartPageClient({
                 </div>
                 <p className="cart-row__price">{formatPrice(item.priceCents)} × {item.quantity} = <strong>{formatPrice(item.priceCents * item.quantity)}</strong></p>
               </article>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -269,7 +323,8 @@ export function CartPageClient({
             />
             <Checkbox id="marketing" name="marketing" label="Quiero recibir novedades de FUERZA." />
 
-            <Button type="submit" fullWidth loading={busy} loadingLabel="Reservando…" disabled={!point || !date}>Pagar</Button>
+            <Button type="submit" fullWidth loading={busy} loadingLabel="Reservando…" disabled={!point || !date || hasSoldOutItem}>Pagar</Button>
+            {hasSoldOutItem ? <Alert variant="warning" title="Revisa tu cesta">Hay un artículo agotado para este punto y fecha. Elimínalo o cambia la fecha para continuar.</Alert> : null}
             {error ? <Alert variant="error" title="No se ha podido continuar">{error}</Alert> : null}
           </form>
         )}

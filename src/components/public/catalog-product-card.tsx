@@ -19,6 +19,7 @@ export function CatalogProductCard({
   priceCents,
   isSeasonal,
   availability,
+  maxQuantity: realMaxQuantity,
   variant,
 }: {
   href: string;
@@ -28,12 +29,16 @@ export function CatalogProductCard({
   priceCents: number | null;
   isSeasonal?: boolean;
   availability?: Availability | null;
+  maxQuantity?: number | null;
   variant: QuickAddVariant | null;
 }) {
   const cart = useCart();
   const quantity = variant ? cart.items.find((item) => item.variantId === variant.id)?.quantity ?? 0 : 0;
   const soldOut = availability?.status === "sold_out";
-  const maxQuantity = availability?.status === "low_stock" && availability.quantityAvailable !== null ? availability.quantityAvailable : 99;
+  // El límite real (check_variant_order_limit) siempre respeta el estoque de
+  // verdad; availability.quantityAvailable solo se rellena en low_stock (es
+  // el aviso de marketing "últimas unidades", no el tope real).
+  const maxQuantity = typeof realMaxQuantity === "number" ? realMaxQuantity : 99;
 
   return (
     <article className="catalog-product-card" data-selected={quantity > 0 || undefined}>
