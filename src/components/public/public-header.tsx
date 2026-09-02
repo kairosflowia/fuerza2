@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
@@ -9,7 +8,7 @@ import { publicNavigation } from "@/lib/navigation";
 
 import { Button } from "../ui/button";
 import { Drawer } from "../ui/dialog";
-import { MenuIcon } from "../ui/icons";
+import { MenuIcon, UserIcon } from "../ui/icons";
 import { CartLink } from "../cart/cart-link";
 import { MiniCart } from "../cart/mini-cart";
 
@@ -20,9 +19,9 @@ export function PublicHeader() {
 
   return (
     <header className="public-header">
-      <div className="container container--wide public-header__inner">
+      <div className="container container--home public-header__inner">
         <Link className="site-logo" href="/" aria-label="FUERZA, inicio">
-          <Image src="/01-fuerza-logo.svg" alt="FUERZA, obrador de masa madre" width={566} height={566} priority />
+          FUERZA
         </Link>
 
         <nav className="public-nav" aria-label="Navegación principal">
@@ -38,13 +37,13 @@ export function PublicHeader() {
         </nav>
 
         <div className="public-header__actions">
+          <Link href="/cuenta/acceder" className="header-icon-link" aria-label="Mi cuenta">
+            <UserIcon />
+          </Link>
           <div className="cart-widget">
             <CartLink />
             <MiniCart />
           </div>
-          <Link className="button button--primary header-cta" href="/reserva-y-recoge">
-            Reserva y recoge
-          </Link>
           <Button
             ref={triggerRef}
             variant="icon"

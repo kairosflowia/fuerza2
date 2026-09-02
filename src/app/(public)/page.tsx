@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
-import { BreadAnatomy } from "@/components/public/bread-anatomy";
-import { EditorialGrid, EditorialProductPreview, SectionHeading, TextLink, ValueCard } from "@/components/public/editorial";
+import { EditorialProductPreview, TextLink } from "@/components/public/editorial";
 import { HeroCarousel } from "@/components/public/hero-carousel";
-import { HeroVideo } from "@/components/public/hero-video";
-import { Newsletter } from "@/components/public/newsletter";
-import { ProcessTimeline, type ProcessStep } from "@/components/public/process-timeline";
-import { Container, Section } from "@/components/ui";
 import { WeeklySpecialBanner } from "@/components/public/weekly-special-banner";
+import { CheckIcon } from "@/components/ui/icons";
+import { Container, Section } from "@/components/ui";
+import { formatPrice } from "@/lib/catalog-domain";
 import { getPublicCatalog } from "@/lib/catalog";
 import { createPageMetadata } from "@/lib/seo";
+import { SUBSCRIPTION_DISCOUNT_PERCENT, SUBSCRIPTION_DISCOUNT_THRESHOLD_UNITS } from "@/lib/subscriptions-domain";
 import { getCurrentWeeklySpecial } from "@/lib/weekly-special";
 
 export const metadata: Metadata = createPageMetadata({
@@ -21,34 +21,43 @@ export const metadata: Metadata = createPageMetadata({
   ogDescription: "Reservas el pan antes de que lo horneemos. Nosotros hacemos exactamente el que hace falta.",
 });
 
-const processSteps: ProcessStep[] = [
-  { number: "01", title: "Masa madre", text: "Cada día le damos harina y agua. Sin eso, no hay pan al día siguiente.", image: "https://images.unsplash.com/photo-1595801105145-795f1927c0fc?auto=format&fit=crop&w=1000&q=75" },
-  { number: "02", title: "Amasado", text: "Harina, agua y sal. La masa se trabaja poco y descansa mucho.", image: "https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?auto=format&fit=crop&w=1000&q=75" },
-  { number: "03", title: "Reposo", text: "Aquí no pasa nada visible y pasa todo. El sabor necesita tiempo.", image: "https://images.unsplash.com/photo-1598634549802-dcc558705f19?auto=format&fit=crop&w=1000&q=75" },
-  { number: "04", title: "Horno", text: "Formamos cada pieza a mano. El horno termina lo que empezó el tiempo.", image: "https://images.unsplash.com/photo-1732565729552-994c6af761e3?auto=format&fit=crop&w=1000&q=75" },
-  { number: "05", title: "Recogida", text: "Sale del horno y va al punto donde lo hayas reservado.", image: "https://images.unsplash.com/photo-1612136435571-c97705feadfa?auto=format&fit=crop&w=1000&q=75" },
-];
+const CRAFT_FEATURES = [
+  { icon: "/masa-madre.png", title: "Masa madre viva", text: "Cuidamos nuestra masa madre cada día. Es el corazón de nuestro pan." },
+  { icon: "/fermentacion.png", title: "Fermentación lenta", text: "Largas fermentaciones que desarrollan sabor, mejoran la digestibilidad y conservan lo esencial." },
+  { icon: "/harinas.png", title: "Harinas seleccionadas", text: "Trabajamos con harinas ecológicas de cercanía y moliendas que respetan el grano." },
+  { icon: "/oficio-artesanal.png", title: "Oficio artesanal", text: "Amasado, formado y horneado a mano, en pequeñas tandas, cada día." },
+] as const;
 
 export default async function Home() {
   const [catalog, weeklySpecial] = await Promise.all([getPublicCatalog(), getCurrentWeeklySpecial()]);
-  const dailyBreads = catalog.filter((p) => p.family?.slug === "panes-diarios").slice(0, 6);
+  const dailyBreads = catalog.filter((p) => p.family?.slug === "panes-diarios").slice(0, 4);
+  const dailyBreadPrices = dailyBreads
+    .flatMap((product) => product.variants.filter((v) => v.status === "active" && v.price_cents !== null))
+    .map((v) => v.price_cents!);
+  const cheapestDailyPriceCents = dailyBreadPrices.length ? Math.min(...dailyBreadPrices) : null;
+  const weeklyFromCents = cheapestDailyPriceCents !== null
+    ? Math.round(cheapestDailyPriceCents * SUBSCRIPTION_DISCOUNT_THRESHOLD_UNITS * (1 - SUBSCRIPTION_DISCOUNT_PERCENT / 100))
+    : null;
 
   return (
-    <main id="main-content">
+    <main id="main-content" className="home-theme">
       <HeroCarousel />
 
       {weeklySpecial ? (
         <Section>
-          <Container size="wide">
+          <Container size="wide" className="container--home">
             <WeeklySpecialBanner special={weeklySpecial} />
           </Container>
         </Section>
       ) : null}
 
-      <Section>
-        <Container size="wide">
-          <SectionHeading eyebrow="Lo que sale del horno" title="El catálogo empieza aquí" description="Pan de fermentación lenta, horneado en cantidad limitada cada día." />
-          <EditorialGrid columns={dailyBreads.length > 3 ? 4 : 3}>
+      <Section className="home-section">
+        <Container size="wide" className="container--home">
+          <div className="section-heading-row">
+            <h2>Hoy en FUERZA</h2>
+            <TextLink href="/reserva-y-recoge">Ver todo el pan</TextLink>
+          </div>
+          <div className="editorial-grid editorial-grid--4 hoy-grid">
             {dailyBreads.map((product) => {
               const image = product.images.find((i) => i.is_primary) ?? product.images[0];
               const prices = product.variants.flatMap((v) => (v.price_cents === null ? [] : [v.price_cents]));
@@ -64,58 +73,73 @@ export default async function Home() {
                 />
               );
             })}
-          </EditorialGrid>
-          <TextLink href="/reserva-y-recoge">Ver todo el pan</TextLink>
-        </Container>
-      </Section>
-
-      <Section>
-        <Container size="wide">
-          <SectionHeading eyebrow="Por dentro" title="Anatomía de nuestra hogaza" description="Pasa el cursor o toca cada punto para saber qué hace que este pan sea distinto." />
-          <BreadAnatomy />
-        </Container>
-      </Section>
-
-      <Section tone="sunken">
-        <Container size="wide">
-          <SectionHeading
-            eyebrow="Pan fresco en casa, cada semana"
-            title="Fuerza Habitual"
-            description="Suscríbete y recibe tu pan de masa madre sin tener que reservar cada vez. Con 4 unidades o más en tu cesta, el 5% de descuento se aplica automáticamente."
-          />
-          <div className="component-row">
-            <Link className="button button--primary" href="/plan-de-pan">Conocer Fuerza Habitual</Link>
-            <Link className="button button--secondary" href="/plan-de-pan/membresias">Ver membresías</Link>
           </div>
         </Container>
       </Section>
 
-      <Section>
-        <Container size="wide">
-          <SectionHeading eyebrow="El tiempo que transforma" title="Lo que ocurre antes de abrir el horno" description="Pasa el cursor o toca cada paso para ver qué ocurre en ese momento." />
-          <ProcessTimeline steps={processSteps} />
-          <Link className="button process-cta" href="/obrador">Ver cómo trabajamos <span className="process-cta__arrow" aria-hidden="true">→</span></Link>
+      <Section tone="sunken" className="home-section">
+        <Container size="wide" className="container--home">
+          <div className="craft-section">
+            <div className="craft-section__left">
+              <h2>Así hacemos nuestro pan</h2>
+              <p className="craft-section__lead">Tiempo, respeto y oficio. Nada más, nada menos.</p>
+              <div className="craft-features">
+                {CRAFT_FEATURES.map(({ icon, title, text }) => (
+                  <div key={title} className="craft-feature">
+                    <span className="craft-feature__icon" aria-hidden="true">
+                      <Image src={icon} alt="" width={48} height={48} />
+                    </span>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="craft-section__media">
+              <Image
+                src="https://images.unsplash.com/photo-1595801105145-795f1927c0fc?auto=format&fit=crop&w=800&q=75"
+                alt="Manos amasando una masa de pan espolvoreada con harina"
+                width={800}
+                height={1000}
+              />
+            </div>
+          </div>
         </Container>
       </Section>
 
-      <Section className="pillars-section">
-        <Container size="wide">
-          <SectionHeading eyebrow="Lo que nos mueve" title="Cuatro cosas que no negociamos" />
-          <EditorialGrid columns={4}>
-            <ValueCard image="/05-tradicion-que-se-siente.svg" title="Tradición que se siente" tone="terracotta">Hacemos pan como se hacía antes de que hubiera prisa. No por nostalgia: porque sale mejor.</ValueCard>
-            <ValueCard image="/04-ingredientes-que-cuentan.svg" title="Ingredientes que cuentan" tone="yellow">Harina, agua, sal y masa madre. Si un ingrediente no hace falta, no está.</ValueCard>
-            <ValueCard image="/03-tiempo-que-transforma.svg" title="Tiempo que transforma" tone="green">La fermentación lenta no se puede acelerar. Es la parte del trabajo que hace el reloj.</ValueCard>
-            <ValueCard image="/02-comunidad-que-nos-inspira.svg" title="Comunidad que nos inspira" tone="blue">Un obrador pequeño vive de la gente que vuelve y de quienes trabajan cerca.</ValueCard>
-          </EditorialGrid>
+      <Section className="habitual-section home-section">
+        <Container size="wide" className="container--home">
+          <div className="habitual-banner">
+            <div className="habitual-banner__media">
+              <Image
+                src="/bolsa-fuerza.png"
+                alt="Bolsa de tela FUERZA con hogazas de masa madre"
+                width={1254}
+                height={1254}
+              />
+            </div>
+            <div className="habitual-banner__body">
+              <p className="eyebrow">Fuerza Habitual</p>
+              <h3>Tu pan de cada día, sin que tengas que pensarlo.</h3>
+              <p>Un plan pensado para quienes valoran el tiempo, la constancia y el buen pan.</p>
+              <ul className="habitual-banner__checklist">
+                <li><CheckIcon width={16} height={16} aria-hidden="true" /> Pan reservado cada semana</li>
+                <li><CheckIcon width={16} height={16} aria-hidden="true" /> Recógelo cuando te venga bien</li>
+                <li><CheckIcon width={16} height={16} aria-hidden="true" /> Ahorra y disfruta de ventajas</li>
+              </ul>
+            </div>
+            <div className="habitual-banner__price">
+              <p className="habitual-banner__price-label">Desde</p>
+              {weeklyFromCents !== null ? (
+                <p className="habitual-banner__price-value">{formatPrice(weeklyFromCents)}<span> / semana</span></p>
+              ) : null}
+              <p className="habitual-banner__price-note">Cancela o pausa cuando quieras.</p>
+              <Link className="button button--primary button--full" href="/plan-de-pan/membresias">Quiero mi pan habitual</Link>
+              <Link className="text-link" href="/plan-de-pan">Saber más</Link>
+            </div>
+          </div>
         </Container>
       </Section>
-
-      <HeroVideo videoSrc="/videos/harina-masa.mp4" poster="/videos/harina-masa-poster.jpg" posterAlt="Manos trabajando una masa de pan espolvoreada con harina.">
-        <div><p className="eyebrow">Asturias</p><h2>Harina de aquí</h2></div>
-        <div><p>Asturias tiene cereal, molinos y gente que sabe de esto. La producción local mantiene el pan cerca de su origen y del lugar donde se comparte.</p></div>
-      </HeroVideo>
-
-      <Section tone="sunken"><Container size="wide"><Newsletter /></Container></Section>
     </main>
   );
 }

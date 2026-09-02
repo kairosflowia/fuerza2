@@ -1,6 +1,10 @@
 export const publicNavigation = [
-  { label: "Pan", href: "/reserva-y-recoge" },
+  { label: "Inicio", href: "/" },
+  { label: "Pan", href: "/pan" },
+  { label: "Reserva y recoge", href: "/reserva-y-recoge" },
+  { label: "Fuerza Habitual", href: "/plan-de-pan" },
   { label: "Dónde estamos", href: "/donde-estamos" },
+  { label: "Contacto", href: "/contacto" },
 ] as const;
 
 export const publicRoutes = [
