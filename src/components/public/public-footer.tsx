@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { FacebookIcon, InstagramIcon } from "@/components/ui/icons";
+import { FacebookIcon, InstagramIcon, PinIcon } from "@/components/ui/icons";
 import { Newsletter } from "./newsletter";
 
 import { Container } from "../ui/layout";
@@ -8,6 +8,7 @@ import { Container } from "../ui/layout";
 const socialLinks = [
   { label: "Instagram", href: "#", Icon: InstagramIcon },
   { label: "Facebook", href: "#", Icon: FacebookIcon },
+  { label: "Dónde estamos", href: "/donde-estamos", Icon: PinIcon },
 ] as const;
 
 const panLinks = [
@@ -34,14 +35,19 @@ export function PublicFooter() {
         <div className="public-footer__brand">
           <p className="wordmark">FUERZA</p>
           <p className="footer-manifesto">Pan de masa madre, hecho entre dos manos y el tiempo.</p>
-          <div className="footer-social" aria-label="Redes sociales de FUERZA">
-            {socialLinks.map(({ label, href, Icon }) => (
-              <a key={label} href={href} aria-label={label} className="footer-social__link">
-                <Icon />
-              </a>
-            ))}
+          <div className="footer-social" aria-label="Redes sociales y ubicación de FUERZA">
+            {socialLinks.map(({ label, href, Icon }) =>
+              href.startsWith("/") ? (
+                <Link key={label} href={href} aria-label={label} className="footer-social__link">
+                  <Icon />
+                </Link>
+              ) : (
+                <a key={label} href={href} aria-label={label} className="footer-social__link">
+                  <Icon />
+                </a>
+              )
+            )}
           </div>
-          <p>Obrador de masa madre · Avilés, Asturias</p>
         </div>
         <nav aria-label="Navegación del pie: pan">
           <p className="footer-heading">Pan</p>
@@ -58,7 +64,8 @@ export function PublicFooter() {
         <div>
           <p className="footer-heading">Contacto</p>
           <a href="mailto:hola@fuerza.com" className="footer-email">hola@fuerza.com</a>
-          <p>Martes a sábado<br />Recogida 10:00–14:30</p>
+          <a href="tel:+34697697697" className="footer-email footer-phone">+34 697 697 697</a>
+          <p className="footer-hours">Martes a sábado<br />Recogida 10:00–14:30</p>
         </div>
         <div className="footer-seal" aria-hidden="true">
           <span>Masa madre</span>
@@ -67,7 +74,7 @@ export function PublicFooter() {
         </div>
       </Container>
       <Container size="wide" className="container--home public-footer__bottom">
-        <small>© {new Date().getFullYear()} FUERZA</small>
+        <small>© {new Date().getFullYear()} FUERZA PAN, S.L. Todos los derechos reservados.</small>
         <nav aria-label="Información legal" className="footer-legal">
           <Link href="/aviso-legal">Aviso legal</Link>
           <Link href="/privacidad">Política de privacidad</Link>

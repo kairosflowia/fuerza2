@@ -3,7 +3,8 @@
 import { useActionState } from "react";
 
 import { subscribeToNewsletterAction, type NewsletterActionState } from "@/app/(public)/newsletter/actions";
-import { Alert, Button, Checkbox, Input } from "@/components/ui";
+import { Alert, Button } from "@/components/ui";
+import { MailIcon } from "@/components/ui/icons";
 
 const initialState: NewsletterActionState = { status: "idle" };
 
@@ -12,18 +13,31 @@ export function Newsletter() {
 
   return (
     <div className="newsletter" aria-labelledby="newsletter-title">
-      <div>
-        <p className="eyebrow">Desde el obrador</p>
+      <span className="newsletter__icon" aria-hidden="true">
+        <MailIcon />
+      </span>
+      <div className="newsletter__text">
         <h2 id="newsletter-title">Te contamos lo que sale del horno</h2>
-        <p>Lo que horneamos, lo que cambia y poco más. Sin spam, y puedes darte de baja cuando quieras.</p>
+        <p>Recibe nuestra selección del día y novedades de FUERZA pan.</p>
       </div>
       {state.status === "success" ? (
         <Alert variant="success" title="¡Listo!">{state.message}</Alert>
       ) : (
         <form action={formAction} className="newsletter__form">
-          <Input id="newsletter-email" name="email" label="Tu correo" type="email" required autoComplete="email" />
-          <Checkbox id="newsletter-consent" name="consent" label="Quiero recibir novedades de FUERZA por correo." description="Podrás darte de baja cuando quieras." required />
-          <Button type="submit" loading={pending} loadingLabel="Enviando…">Suscribirme</Button>
+          <input type="hidden" name="consent" value="on" />
+          <div className="newsletter__field">
+            <input
+              id="newsletter-email"
+              name="email"
+              type="email"
+              placeholder="Tu correo electrónico"
+              required
+              autoComplete="email"
+              className="newsletter__input"
+            />
+            <Button type="submit" loading={pending} loadingLabel="Enviando…">Suscribirme</Button>
+          </div>
+          <p className="newsletter__hint">Puedes darte de baja cuando quieras.</p>
           {state.status === "error" ? <Alert variant="error" title="No se ha podido completar">{state.message}</Alert> : null}
         </form>
       )}

@@ -63,6 +63,28 @@ export function WheatIcon(props: IconProps) {
   );
 }
 
+export function JarIcon(props: IconProps) {
+  return (
+    <svg {...baseProps} {...props}>
+      <path d="M9 3h6M9 3v2.2a2 2 0 0 1-.6 1.4L7 8v10.5A2.5 2.5 0 0 0 9.5 21h5a2.5 2.5 0 0 0 2.5-2.5V8l-1.4-1.4A2 2 0 0 1 15 5.2V3" />
+      <circle cx="10.3" cy="13.5" r="0.55" fill="currentColor" stroke="none" />
+      <circle cx="13.4" cy="15.6" r="0.55" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="11.8" r="0.55" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function ArchOvenIcon(props: IconProps) {
+  return (
+    <svg {...baseProps} {...props}>
+      <path d="M5 20h14" />
+      <path d="M6.5 20v-6.5a5.5 5.5 0 0 1 11 0V20" />
+      <path d="M9 20v-3.5a3 3 0 0 1 6 0V20" />
+      <path d="M11.6 17.3c.4-.5.4-1 .1-1.6-.5.3-.7.9-.5 1.4.1.3.3.4.4.2Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function CheckIcon(props: IconProps) {
   return (
     <svg {...baseProps} {...props}>
@@ -94,7 +116,11 @@ export function InstagramIcon(props: IconProps) {
 export function FacebookIcon(props: IconProps) {
   return (
     <svg {...baseProps} {...props}>
-      <path d="M15 8.5h-2a2 2 0 0 0-2 2V12H9v3h2v6h3v-6h2.2l.8-3H14v-1.2c0-.44.36-.8.8-.8H16V8.5Z" />
+      <path
+        d="M15 8.5h-2a2 2 0 0 0-2 2V12H9v3h2v6h3v-6h2.2l.8-3H14v-1.2c0-.44.36-.8.8-.8H16V8.5Z"
+        transform="translate(12 12) scale(1.6) translate(-13 -14.75)"
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   );
 }

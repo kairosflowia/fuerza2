@@ -76,13 +76,21 @@ describe("public route architecture", () => {
   it("gives each institutional page one explicit page heading contract", () => {
     // reserva-y-recoge vive ahora en el grupo de rutas (catalog), con su propio
     // shell de app (sin header/footer globales) en lugar del contrato PageIntro/h1.
-    const pages = ["obrador", "nosotros", "plan-de-pan", "donde-estamos", "contacto"];
+    // obrador pasó a un hero editorial propio (con foto), igual que la home,
+    // pero mantiene su propio h1 único y createPageMetadata (ver el test de abajo).
+    const pages = ["nosotros", "plan-de-pan", "donde-estamos", "contacto"];
     for (const page of pages) {
       const source = readFileSync(resolve(projectRoot, `src/app/(public)/${page}/page.tsx`), "utf8");
       expect(source).toContain("<PageIntro");
       expect(source).not.toMatch(/<h1[ >]/);
       expect(source).toContain("createPageMetadata");
     }
+  });
+
+  it("keeps obrador's own editorial hero to a single page heading", () => {
+    const source = readFileSync(resolve(projectRoot, "src/app/(public)/obrador/page.tsx"), "utf8");
+    expect(source.match(/<h1[ >]/g)).toHaveLength(1);
+    expect(source).toContain("createPageMetadata");
   });
 });
 

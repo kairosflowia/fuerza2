@@ -87,7 +87,7 @@ export default async function Home() {
                 {CRAFT_FEATURES.map(({ icon, title, text }) => (
                   <div key={title} className="craft-feature">
                     <span className="craft-feature__icon" aria-hidden="true">
-                      <Image src={icon} alt="" width={48} height={48} />
+                      <Image src={icon} alt="" width={88} height={88} />
                     </span>
                     <h3>{title}</h3>
                     <p>{text}</p>
