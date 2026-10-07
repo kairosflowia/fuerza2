@@ -43,6 +43,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Experiencia de app: sin zoom por pellizco ni el zoom automático de iOS al enfocar campos.
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
   themeColor: "#F5F1E8",
 };

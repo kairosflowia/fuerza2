@@ -7,7 +7,7 @@ import { CatalogProductCard } from "@/components/public/catalog-product-card";
 import { OrderSummarySidebar } from "@/components/catalog/order-summary-sidebar";
 import { getPublicCatalog } from "@/lib/catalog";
 import { getQuickAddProducts } from "@/lib/catalog-quick-add";
-import { earliestBookableDate } from "@/lib/order-cutoff";
+import { earliestBookableIsoDate, operationalToday } from "@/lib/order-cutoff";
 import { getCutoffConfig } from "@/lib/order-cutoff-server";
 import { getPublicPickupPoints } from "@/lib/pickup-points";
 import { PICKUP_DATE_COOKIE, PICKUP_POINT_COOKIE } from "@/lib/pickup-selection";
@@ -33,8 +33,7 @@ export default async function CategoriaPage({ params }: { params: Promise<{ fami
   if (!products.length) notFound();
   const family = products[0].family!;
 
-  const minDate = earliestBookableDate(cutoffConfig) ?? new Date();
-  const minDateIso = minDate.toISOString().slice(0, 10);
+  const minDateIso = earliestBookableIsoDate(cutoffConfig) ?? operationalToday();
   const dateCookie = cookieStore.get(PICKUP_DATE_COOKIE)?.value;
   const collectionDate = dateCookie && dateCookie >= minDateIso ? dateCookie : minDateIso;
   const activePoints = points.filter((point) => point.status === "active");

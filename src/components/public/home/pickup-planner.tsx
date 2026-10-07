@@ -100,7 +100,8 @@ export function PickupPlanner({ details, closures }: { details: PlannerPoint[]; 
       <div className="fz-planner__col">
         <div className="fz-planner__head">
           <h2 id="planner-title">¿Cuándo quieres recogerlo?</h2>
-          <Link className="fz-link" href="/donde-estamos">
+          {/* La fecha elegida ya está en la cookie de recogida que lee /reserva-y-recoge. */}
+          <Link className="fz-link" href="/reserva-y-recoge">
             <CalendarIcon />
             Ver disponibilidad
             <ArrowRightIcon />

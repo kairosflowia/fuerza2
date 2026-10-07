@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-import { earliestBookableDate, formatEarliestDate, formatLeadTimeLabel, type CutoffConfig } from "@/lib/order-cutoff";
+import { earliestBookableIsoDate, formatEarliestDate, formatLeadTimeLabel, type CutoffConfig } from "@/lib/order-cutoff";
 
 export function CutoffCountdown({ config }: { config: CutoffConfig }) {
   const [label, setLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    const tick = () => setLabel(formatEarliestDate(earliestBookableDate(config)));
+    const tick = () => setLabel(formatEarliestDate(earliestBookableIsoDate(config)));
     tick();
     const id = setInterval(tick, 60000);
     return () => clearInterval(id);

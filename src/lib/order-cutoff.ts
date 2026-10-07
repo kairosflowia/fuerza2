@@ -1,26 +1,44 @@
+import { shiftIsoDate } from "@/lib/production-date";
+
 export type CutoffConfig = { daysBefore: number; time: string } | null;
 
-/**
- * Fecha de recogida más próxima que todavía admite reserva, dado el mínimo
- * de antelación configurado en availability.cutoff_days_before/cutoff_time
- * (Documento funcional §2: mínimo 48h). Misma fórmula que
- * app_private.variant_availability() en el servidor, invertida: aquí se
- * busca la primera fecha D tal que (D - daysBefore) a las cutoff_time
- * todavía no haya pasado.
- */
-export function earliestBookableDate(config: CutoffConfig, from: Date = new Date()): Date | null {
-  if (!config) return null;
-  const [hours, minutes] = config.time.split(":").map(Number);
-  const todayCutoff = new Date(from);
-  todayCutoff.setHours(hours, minutes, 0, 0);
-  const daysBefore = from < todayCutoff ? config.daysBefore : config.daysBefore + 1;
-  const earliest = new Date(from);
-  earliest.setDate(earliest.getDate() + daysBefore);
-  earliest.setHours(0, 0, 0, 0);
-  return earliest;
+/** Zona horaria operativa del obrador (app_settings.operational.timezone, por defecto en la base de datos). */
+export const OPERATIONAL_TIMEZONE = "Europe/Madrid";
+
+function operationalNow(from: Date) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", { timeZone: OPERATIONAL_TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })
+      .formatToParts(from)
+      .map((part) => [part.type, part.value]),
+  );
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, seconds: Number(parts.hour) * 3600 + Number(parts.minute) * 60 + Number(parts.second) };
 }
 
-export function formatEarliestDate(date: Date | null): string {
+/**
+ * Fecha de recogida más próxima ("aaaa-mm-dd") que todavía admite reserva,
+ * dado el mínimo de antelación de availability.cutoff_days_before /
+ * cutoff_time (Documento funcional §2: mínimo 48h). Es la misma regla que
+ * app_private.variant_availability(), invertida y evaluada en la zona
+ * horaria del obrador: la primera fecha D tal que (D - daysBefore) a las
+ * cutoff_time (hora de Madrid) todavía no haya pasado. Se calcula en Madrid
+ * y no en la zona del servidor o del navegador: si no, en un servidor UTC
+ * la hora de corte se desplazaba 1–2 h, y en uno con zona +02:00 la fecha
+ * salía un día antes al convertirla con toISOString().
+ */
+export function earliestBookableIsoDate(config: CutoffConfig, from: Date = new Date()): string | null {
+  if (!config) return null;
+  const [hours = 0, minutes = 0, seconds = 0] = config.time.split(":").map(Number);
+  const now = operationalNow(from);
+  const beforeCutoff = now.seconds < hours * 3600 + minutes * 60 + seconds;
+  return shiftIsoDate(now.date, beforeCutoff ? config.daysBefore : config.daysBefore + 1);
+}
+
+/** Hoy en la zona horaria del obrador ("aaaa-mm-dd"). */
+export function operationalToday(from: Date = new Date()): string {
+  return operationalNow(from).date;
+}
+
+export function formatEarliestDate(date: string | null): string {
   if (!date) return "Consulta disponibilidad";
   return formatDateEs(date);
 }

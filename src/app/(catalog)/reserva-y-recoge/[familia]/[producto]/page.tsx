@@ -11,7 +11,7 @@ import { CalendarIcon, ClockIcon, PinIcon, WheatIcon } from "@/components/ui/ico
 import { Container, Section } from "@/components/ui/layout";
 import { getNextAvailableDate, getVariantAvailability, getVariantOrderLimit } from "@/lib/availability";
 import { formatPrice, getPublicProduct } from "@/lib/catalog";
-import { earliestBookableDate } from "@/lib/order-cutoff";
+import { earliestBookableIsoDate, operationalToday } from "@/lib/order-cutoff";
 import { getCutoffConfig } from "@/lib/order-cutoff-server";
 import { getPublicPickupPoints } from "@/lib/pickup-points";
 import { PICKUP_DATE_COOKIE, PICKUP_POINT_COOKIE } from "@/lib/pickup-selection";
@@ -50,7 +50,7 @@ export default async function ProductoPage({ params }: { params: Promise<{ famil
   const prices = activeVariants.flatMap((v) => (v.price_cents === null ? [] : [v.price_cents]));
   const jsonLd = { "@context": "https://schema.org", "@type": "Product", name: product.name, description: product.short_description, category: product.family?.name, image: product.images.map((img) => `/api/product-images/${img.storage_path}`) };
 
-  const minDateIso = (earliestBookableDate(cutoffConfig) ?? new Date()).toISOString().slice(0, 10);
+  const minDateIso = earliestBookableIsoDate(cutoffConfig) ?? operationalToday();
   const dateCookie = cookieStore.get(PICKUP_DATE_COOKIE)?.value;
   const collectionDate = dateCookie && dateCookie >= minDateIso ? dateCookie : minDateIso;
   const activePoints = points.filter((point) => point.status === "active");

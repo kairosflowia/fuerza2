@@ -5,7 +5,7 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 
 import { PICKUP_DATE_COOKIE, PICKUP_POINT_COOKIE } from "@/lib/pickup-selection";
 
-export type PickupPointOption = { id: string; name: string };
+export type PickupPointOption = { id: string; name: string; address?: string | null };
 
 type PickupPointState = {
   points: PickupPointOption[];

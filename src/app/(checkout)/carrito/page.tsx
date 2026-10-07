@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { CartPageClient } from "@/components/cart/cart-page";
 import { Container, Section } from "@/components/ui";
 import { getCurrentIdentity } from "@/lib/auth/session";
-import { earliestBookableDate } from "@/lib/order-cutoff";
+import { earliestBookableIsoDate, operationalToday } from "@/lib/order-cutoff";
 import { getCutoffConfig } from "@/lib/order-cutoff-server";
 import { getPublicPickupPoints } from "@/lib/pickup-points";
 import { PICKUP_DATE_COOKIE, PICKUP_POINT_COOKIE } from "@/lib/pickup-selection";
@@ -19,7 +19,7 @@ export default async function CartPage() {
     getCurrentIdentity(),
   ]);
 
-  const minDateIso = (earliestBookableDate(cutoffConfig) ?? new Date()).toISOString().slice(0, 10);
+  const minDateIso = earliestBookableIsoDate(cutoffConfig) ?? operationalToday();
   const activePoints = allPoints.filter((point) => point.status === "active");
   const points = activePoints.map((point) => ({
     id: point.id,

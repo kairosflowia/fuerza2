@@ -10,7 +10,7 @@ import { PlanDePanTeaser } from "@/components/public/home/plan-de-pan-teaser";
 import { ProductGrid } from "@/components/public/product-grid";
 import { getPublicCatalog } from "@/lib/catalog";
 import { getQuickAddProducts } from "@/lib/catalog-quick-add";
-import { earliestBookableDate } from "@/lib/order-cutoff";
+import { earliestBookableIsoDate, operationalToday } from "@/lib/order-cutoff";
 import { getCutoffConfig } from "@/lib/order-cutoff-server";
 import { directionsUrl, getPublicPickupPoints } from "@/lib/pickup-points";
 import { PICKUP_DATE_COOKIE, PICKUP_POINT_COOKIE } from "@/lib/pickup-selection";
@@ -24,8 +24,6 @@ export const metadata: Metadata = createPageMetadata({
   ogDescription: "Reservas el pan antes de que lo horneemos. Nosotros hacemos exactamente el que hace falta.",
 });
 
-const isoDate = (date: Date) => date.toISOString().slice(0, 10);
-
 export default async function Home() {
   const [catalog, { points, closures }, cutoffConfig, cookieStore] = await Promise.all([
     getPublicCatalog(),
@@ -36,7 +34,7 @@ export default async function Home() {
 
   // Misma resolución de punto y fecha que el layout de /reserva-y-recoge: ambos leen y escriben las mismas cookies.
   const activePoints = points.filter((point) => point.status === "active");
-  const minDate = isoDate(earliestBookableDate(cutoffConfig) ?? new Date());
+  const minDate = earliestBookableIsoDate(cutoffConfig) ?? operationalToday();
   const pointCookie = cookieStore.get(PICKUP_POINT_COOKIE)?.value;
   const dateCookie = cookieStore.get(PICKUP_DATE_COOKIE)?.value;
   const pickupPointId = (pointCookie && activePoints.some((p) => p.id === pointCookie) ? pointCookie : activePoints[0]?.id) ?? null;

@@ -5,13 +5,17 @@ import { usePathname } from "next/navigation";
 
 export function CategoryBar({ families }: { families: { slug: string; name: string }[] }) {
   const pathname = usePathname();
+  const items = [{ slug: "", name: "Todas" }, ...families];
 
   return (
-    <nav className="catalog-category-bar" aria-label="Categorías">
-      <Link href="/reserva-y-recoge" aria-current={pathname === "/reserva-y-recoge" ? "page" : undefined}>Todas</Link>
-      {families.map((family) => {
-        const href = `/reserva-y-recoge/${family.slug}`;
-        return <Link href={href} key={family.slug} aria-current={pathname === href ? "page" : undefined}>{family.name}</Link>;
+    <nav className="fz-chips" aria-label="Categorías">
+      {items.map((family) => {
+        const href = family.slug ? `/reserva-y-recoge/${family.slug}` : "/reserva-y-recoge";
+        return (
+          <Link href={href} key={href} className="fz-chip-link" aria-current={pathname === href ? "page" : undefined}>
+            {family.name}
+          </Link>
+        );
       })}
     </nav>
   );

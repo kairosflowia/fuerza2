@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- ilustración vectorial de marca. */
 import Image from "next/image";
 import Link from "next/link";
 
@@ -18,9 +17,6 @@ export function PlanDePanTeaser() {
       </div>
       <div className="fz-plan__media">
         <Image src="/bolsa-fuerza.png" alt="Bolsa de tela FUERZA con hogazas de masa madre" fill sizes="(min-width: 64rem) 30vw, 100vw" />
-      </div>
-      <div className="fz-plan__art" aria-hidden="true">
-        <img src="/illustrations/man-wheat.svg" alt="" width={140} height={170} />
       </div>
     </section>
   );
