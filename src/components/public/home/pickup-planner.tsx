@@ -6,7 +6,8 @@ import { useState } from "react";
 
 import { usePickupPoint } from "@/components/catalog/pickup-point-provider";
 import { ArrowRightIcon, CalendarIcon, ChevronRightIcon, ClockIcon, PinIcon } from "@/components/ui/icons";
-import { formatTime, isoWeekday } from "@/lib/order-cutoff";
+import { isoWeekday } from "@/lib/order-cutoff";
+import { SHORT_DAYS_ES, summarizeCollectionWindows } from "@/lib/pickup-schedule";
 
 type Window = { weekday: number; startsAt: string; endsAt: string };
 
@@ -20,7 +21,6 @@ export type PlannerPoint = {
   exception: { date: string; type: string; startsAt: string | null; endsAt: string | null } | null;
 };
 
-const SHORT_DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const DAYS_VISIBLE = 7;
 
 function addDays(iso: string, days: number) {
@@ -32,7 +32,7 @@ function addDays(iso: string, days: number) {
 function dateParts(iso: string) {
   const date = new Date(`${iso}T00:00:00Z`);
   const month = new Intl.DateTimeFormat("es-ES", { month: "short", timeZone: "UTC" }).format(date).replace(".", "");
-  return { weekday: SHORT_DAYS[isoWeekday(iso) - 1], day: date.getUTCDate(), month };
+  return { weekday: SHORT_DAYS_ES[isoWeekday(iso) - 1], day: date.getUTCDate(), month };
 }
 
 /**
@@ -48,18 +48,6 @@ function windowFor(point: PlannerPoint, date: string, closures: { startsOn: stri
   return point.windows.find((w) => w.weekday === isoWeekday(date)) ?? null;
 }
 
-function scheduleSummary(windows: Window[]) {
-  if (!windows.length) return null;
-  const sorted = [...windows].sort((a, b) => a.weekday - b.weekday);
-  const sameHours = sorted.every((w) => w.startsAt === sorted[0].startsAt && w.endsAt === sorted[0].endsAt);
-  if (!sameHours) return "Horario según el día";
-  const consecutive = sorted.every((w, i) => i === 0 || w.weekday === sorted[i - 1].weekday + 1);
-  const days = consecutive && sorted.length > 2
-    ? `${SHORT_DAYS[sorted[0].weekday - 1]} – ${SHORT_DAYS[sorted.at(-1)!.weekday - 1]}`
-    : sorted.map((w) => SHORT_DAYS[w.weekday - 1]).join(", ");
-  return `${days} · ${formatTime(sorted[0].startsAt)} – ${formatTime(sorted[0].endsAt)}`;
-}
-
 export function PickupPlanner({ details, closures }: { details: PlannerPoint[]; closures: { startsOn: string; endsOn: string }[] }) {
   const { selectedId, select, date, minDate, setDate } = usePickupPoint();
   const [choosing, setChoosing] = useState(false);
@@ -68,7 +56,7 @@ export function PickupPlanner({ details, closures }: { details: PlannerPoint[]; 
 
   const start = date >= minDate && date <= addDays(minDate, DAYS_VISIBLE - 1) ? minDate : date;
   const days = Array.from({ length: DAYS_VISIBLE }, (_, i) => addDays(start, i));
-  const summary = scheduleSummary(point.windows);
+  const summary = summarizeCollectionWindows(point.windows);
   const canSwitch = details.length > 1;
 
   const cardBody = (

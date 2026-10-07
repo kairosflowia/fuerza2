@@ -392,3 +392,23 @@ export function ChevronDownIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function BreadIcon(props: IconProps) {
+  return (
+    <svg {...baseProps} {...props}>
+      <path d="M4 15.5C4 11.4 7.6 9 12 9s8 2.4 8 6.5c0 1.4-1.1 2.5-2.5 2.5h-11C5.1 18 4 16.9 4 15.5Z" />
+      <path d="m9 11.5-1 3M12.5 11l-1 3.5M16 11.5l-1 3" />
+      <path d="M9.5 3.5c-.6.8.6 1.4 0 2.3M12 3c-.6.8.6 1.4 0 2.3M14.5 3.5c-.6.8.6 1.4 0 2.3" />
+    </svg>
+  );
+}
+
+export function LocateIcon(props: IconProps) {
+  return (
+    <svg {...baseProps} {...props}>
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+      <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+    </svg>
+  );
+}

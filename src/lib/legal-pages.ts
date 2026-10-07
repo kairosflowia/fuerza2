@@ -96,6 +96,14 @@ export const legalPages = {
         ],
       },
       {
+        heading: "Mapa de puntos de recogida",
+        paragraphs: [
+          "En la página «Dónde estamos» mostramos al principio una imagen estática del mapa, alojada en nuestros propios servidores, sin conectar con ningún servicio externo.",
+          "Solo si pulsas «Ver mapa interactivo» o los botones del mapa, tu navegador descarga las imágenes del mapa directamente desde los servidores de la Fundación OpenStreetMap (openstreetmap.org). Como en cualquier petición web, OpenStreetMap recibe tu dirección IP y los datos técnicos de tu navegador, que trata según su propia política de privacidad (osmfoundation.org/wiki/Privacy_Policy). FUERZA no recibe ni guarda ningún dato adicional por este motivo y no instala cookies para el mapa.",
+          "La base jurídica es tu consentimiento, que das al activar el mapa. Si prefieres no hacerlo, puedes consultar la dirección y los horarios en la propia página o usar el enlace «Cómo llegar», que abre Google Maps en una pestaña nueva.",
+        ],
+      },
+      {
         heading: "Derechos y conservación",
         paragraphs: [
           `Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a ${CONTACT_EMAIL}. Muchos de estos datos (nombre, teléfono, dirección) también puedes consultarlos y actualizarlos tú mismo desde tu cuenta.`,
@@ -120,6 +128,7 @@ export const legalPages = {
         paragraphs: [
           "Todas las cookies que utiliza FUERZA hoy son necesarias para el funcionamiento del sitio y no requieren consentimiento previo: mantener tu sesión iniciada, recordar el contenido de tu cesta y el punto de recogida que has elegido, aplicar medidas de seguridad (como el límite de intentos de acceso) y recordar tu elección sobre esta política de cookies.",
           "FUERZA no utiliza actualmente cookies de analítica ni de publicidad de terceros. Si en el futuro incorporamos alguna, actualizaremos esta página y volveremos a pedirte tu consentimiento antes de activarla.",
+          "El mapa interactivo de «Dónde estamos» solo se carga si lo activas y no instala cookies de FUERZA; sus imágenes se descargan desde OpenStreetMap, tal como se explica en la política de privacidad.",
         ],
       },
       {

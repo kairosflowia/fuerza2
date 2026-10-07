@@ -4,9 +4,21 @@ interface PageIntroProps {
   title: string;
   description: string;
   eyebrow?: string;
+  /** "editorial": cabecera de la nueva web pública (sin migas, título grande). */
+  variant?: "default" | "editorial";
 }
 
-export function PageIntro({ title, description, eyebrow }: PageIntroProps) {
+export function PageIntro({ title, description, eyebrow, variant = "default" }: PageIntroProps) {
+  if (variant === "editorial") {
+    return (
+      <header className="fz-intro">
+        {eyebrow ? <p className="fz-eyebrow">{eyebrow}</p> : null}
+        <h1 className="fz-display">{title}</h1>
+        <p className="fz-intro__lead">{description}</p>
+      </header>
+    );
+  }
+
   return (
     <header className="institutional-hero">
       <Breadcrumbs items={[{ label: title }]} />

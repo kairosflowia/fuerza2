@@ -1,16 +1,20 @@
+/* eslint-disable @next/next/no-img-element -- ilustración vectorial decorativa. */
+import Image from "next/image";
 import Link from "next/link";
 
-import { Card, EmptyState } from "@/components/ui";
-import { Container, Section } from "@/components/ui/layout";
 import { PageIntro } from "@/components/public/page-intro";
+import { PickupMap } from "@/components/public/pickup-map";
+import { EmptyState } from "@/components/ui";
+import { ArrowRightIcon, BreadIcon, CalendarIcon, CartIcon, ClockIcon, PinIcon } from "@/components/ui/icons";
 import {
   PICKUP_EXCEPTION_TYPE_LABELS_ES,
   PICKUP_POINT_STATUS_LABELS_ES,
-  WEEKDAY_LABELS_ES,
   directionsUrl,
   getPublicPickupPoints,
   mainBakery,
 } from "@/lib/pickup-points";
+import { summarizeCollectionWindows, summarizeOpeningHours } from "@/lib/pickup-schedule";
+import { formatDateEs } from "@/lib/order-cutoff";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -19,10 +23,11 @@ export const metadata = createPageMetadata({
   path: "/donde-estamos",
 });
 
-function timeRange(start: string | null, end: string | null) {
-  if (!start || !end) return null;
-  return `${start.slice(0, 5)}–${end.slice(0, 5)}`;
-}
+const NOTES = [
+  { Icon: CalendarIcon, text: "Cada punto tiene sus propios días y horarios." },
+  { Icon: CartIcon, text: "Tu reserva indicará el punto, día y ventana de recogida disponible." },
+  { Icon: BreadIcon, text: "Solo mostramos puntos y opciones compatibles con tu pan." },
+] as const;
 
 export default async function DondeEstamosPage() {
   const { points } = await getPublicPickupPoints();
@@ -31,104 +36,97 @@ export default async function DondeEstamosPage() {
     if (a.is_main_bakery !== b.is_main_bakery) return a.is_main_bakery ? -1 : 1;
     return a.display_order - b.display_order;
   });
+  const mapPoints = ordered.flatMap((point) =>
+    point.latitude != null && point.longitude != null
+      ? [{ id: point.id, name: point.name, latitude: point.latitude, longitude: point.longitude, isMain: point.is_main_bakery }]
+      : [],
+  );
 
   return (
-    <main id="main-content">
-      <PageIntro
-        eyebrow="Avilés, Asturias"
-        title="Dónde estamos"
-        description={
-          bakery
-            ? "Puedes recoger tu pan en el obrador o en cualquiera de nuestros puntos de recogida. Cada uno tiene sus propios días y horarios."
-            : "Horneamos en Asturias y estamos preparando una red de recogida cercana y fácil de entender."
-        }
-      />
+    <main id="main-content" className="fz-places">
+      <div className="fz-container fz-places__intro">
+        <PageIntro
+          variant="editorial"
+          eyebrow="Avilés, Asturias"
+          title="Dónde estamos"
+          description={
+            bakery
+              ? "Puedes recoger tu pan en el obrador o en cualquiera de nuestros puntos de recogida. Cada uno tiene sus propios días y horarios."
+              : "Horneamos en Asturias y estamos preparando una red de recogida cercana y fácil de entender."
+          }
+        />
+        <img className="fz-places__wheat" src="/illustrations/sprig.svg" alt="" aria-hidden="true" width={107} height={61} />
+      </div>
 
-      {ordered.length ? (
-        <Section>
-          <Container>
-            <div className="editorial-grid editorial-grid--two">
-              {ordered.map((point) => {
-                const link = directionsUrl(point);
-                const address = [point.address_line_1, point.address_line_2].filter(Boolean).join(", ");
-                const windowsByDay = WEEKDAY_LABELS_ES.map((label, i) => {
-                  const weekday = i + 1;
-                  const dayWindows = point.collectionWindows.filter((w) => w.weekday === weekday);
-                  return { label, ranges: dayWindows.map((w) => timeRange(w.starts_at, w.ends_at)).filter(Boolean) };
-                }).filter((day) => day.ranges.length);
-                const generalHours = WEEKDAY_LABELS_ES.map((label, i) => {
-                  const weekday = i + 1;
-                  const row = point.openingHours.find((h) => h.weekday === weekday);
-                  if (!row) return null;
-                  return { label, text: row.is_closed ? "Cerrado" : timeRange(row.opens_at, row.closes_at) };
-                }).filter(Boolean);
+      <div className="fz-container">
+        {mapPoints.length ? <PickupMap points={mapPoints} /> : null}
 
-                return (
-                  <Card key={point.id} className={point.is_main_bakery ? "editorial-card editorial-card--ink" : "editorial-card"}>
-                    <p className="eyebrow">{point.type === "bakery" ? "Obrador principal" : "Punto de recogida"}</p>
-                    <h2>{point.name}</h2>
-                    {point.status === "coming_soon" ? <p><strong>{PICKUP_POINT_STATUS_LABELS_ES.coming_soon}</strong></p> : null}
-                    {address ? <p>{address}{point.city ? `, ${point.city}` : ""}</p> : point.city ? <p>{point.city}</p> : null}
+        {ordered.length ? (
+          <ul className="fz-places__list">
+            {ordered.map((point) => {
+              const link = directionsUrl(point);
+              const address = [point.address_line_1, point.address_line_2, point.city].filter(Boolean).join(", ");
+              const opening = summarizeOpeningHours(point.openingHours.map((h) => ({ weekday: h.weekday, opensAt: h.opens_at, closesAt: h.closes_at, isClosed: h.is_closed })));
+              const collection = summarizeCollectionWindows(point.collectionWindows.map((w) => ({ weekday: w.weekday, startsAt: w.starts_at, endsAt: w.ends_at })));
+              const comingSoon = point.status === "coming_soon";
+              const badge = comingSoon ? PICKUP_POINT_STATUS_LABELS_ES.coming_soon : point.is_main_bakery ? "Obrador principal" : "Punto de recogida";
 
-                    {generalHours.length ? (
-                      <div>
-                        <p><strong>Horario del establecimiento</strong></p>
-                        <ul>{generalHours.map((h) => h && <li key={h.label}>{h.label}: {h.text}</li>)}</ul>
-                      </div>
-                    ) : null}
-
-                    {windowsByDay.length ? (
-                      <div>
-                        <p><strong>Días y franjas de recogida FUERZA</strong></p>
-                        <ul>{windowsByDay.map((day) => <li key={day.label}>{day.label}: {day.ranges.join(", ")}</li>)}</ul>
-                      </div>
+              return (
+                <li key={point.id} className={`fz-place${point.is_main_bakery ? " fz-place--photo" : ""}`}>
+                  {point.is_main_bakery ? (
+                    <div className="fz-place__media">
+                      <Image src="/images/home/obrador-fuerza-fachada.jpg" alt={`Fachada de ${point.name}`} fill sizes="(min-width: 48rem) 220px, 120px" />
+                    </div>
+                  ) : null}
+                  <div className="fz-place__body">
+                    <span className={`fz-place__badge${point.is_main_bakery ? " fz-place__badge--main" : ""}${comingSoon ? " fz-place__badge--soon" : ""}`}>{badge}</span>
+                    <h2 className="fz-place__name">{point.name}</h2>
+                    {address ? <p className="fz-place__line"><PinIcon />{address}</p> : null}
+                    {opening ? <p className="fz-place__line"><ClockIcon />{opening}</p> : null}
+                    {collection ? (
+                      <p className="fz-place__line fz-place__line--muted"><CartIcon />Recogida de pedidos: {collection}</p>
                     ) : (
-                      <p>Todavía no hay franjas de recogida publicadas para este punto.</p>
+                      <p className="fz-place__line fz-place__line--muted">Todavía no hay franjas de recogida publicadas para este punto.</p>
                     )}
-
-                    {point.public_instructions ? <p>{point.public_instructions}</p> : null}
-
                     {point.upcomingException ? (
-                      <p>
-                        <strong>{PICKUP_EXCEPTION_TYPE_LABELS_ES[point.upcomingException.type]}</strong> el {point.upcomingException.exception_date}
+                      <p className="fz-place__note">
+                        <strong>{PICKUP_EXCEPTION_TYPE_LABELS_ES[point.upcomingException.type]}</strong> el {formatDateEs(point.upcomingException.exception_date).toLowerCase()}
                         {point.upcomingException.public_message ? `: ${point.upcomingException.public_message}` : ""}
                       </p>
                     ) : null}
+                    {point.public_instructions ? <p className="fz-place__note">{point.public_instructions}</p> : null}
+                  </div>
+                  {link ? (
+                    <Link className="fz-place__directions" href={link} target="_blank" rel="noopener noreferrer">
+                      Cómo llegar
+                      <ArrowRightIcon />
+                      <span className="sr-only"> a {point.name} (se abre en una pestaña nueva)</span>
+                    </Link>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <EmptyState
+            title="Todavía no hemos publicado ningún punto"
+            description="Estamos confirmando la dirección y los horarios del obrador. En cuanto estén listos, los verás aquí."
+          />
+        )}
 
-                    {link ? <Link className="text-link" href={link} target="_blank" rel="noopener noreferrer">Cómo llegar</Link> : null}
-                  </Card>
-                );
-              })}
-            </div>
-          </Container>
-        </Section>
-      ) : (
-        <Section>
-          <Container>
-            <EmptyState
-              title="Todavía no hemos publicado ningún punto"
-              description="Estamos confirmando la dirección y los horarios del obrador. En cuanto estén listos, los verás aquí."
-            />
-          </Container>
-        </Section>
-      )}
-
-      <Section tone="sunken">
-        <Container className="split-callout">
-          <div>
-            <p className="eyebrow">Antes de venir</p>
-            <h2>Cada punto tiene sus propias reglas</h2>
-          </div>
-          <div className="prose-block">
-            <p>
-              La reserva indicará el lugar, el día y la ventana de recogida disponibles. No mostraremos un punto cerrado ni una opción incompatible con tu pan.
-            </p>
-            <Link className="text-link" href="/reserva-y-recoge">
-              Cómo funcionará la recogida
-            </Link>
-          </div>
-        </Container>
-      </Section>
+        <section className="fz-before" aria-labelledby="before-title">
+          <p className="fz-eyebrow">Antes de venir</p>
+          <h2 id="before-title" className="fz-display">Ten en cuenta</h2>
+          <ul className="fz-before__list">
+            {NOTES.map(({ Icon, text }) => (
+              <li key={text}>
+                <Icon />
+                <span>{text}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
     </main>
   );
 }
