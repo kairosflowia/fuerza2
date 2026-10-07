@@ -2067,3 +2067,6 @@ html:has(.fz), html:has(.fz) body { background: #F5F1E8; }
   .fz-plan-card { grid-template-columns: 140px minmax(0, 1fr); }
   .fz-plan-stats dd { font-size: 13px; }
 }
+.auth-form__consent { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px; font-size: 13px; line-height: 1.45; cursor: pointer; }
+.auth-form__consent input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--terracotta-dark, #C84A25); }
+.auth-form__consent a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }

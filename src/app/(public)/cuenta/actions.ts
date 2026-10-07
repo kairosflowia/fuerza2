@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { safeReturnPath } from "@/lib/auth/redirects";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 
@@ -62,25 +63,58 @@ export async function signInAction(_state: AuthActionState, formData: FormData):
   redirect(next);
 }
 
+const PRIVACY_CONSENT_VERSION = "2026-08";
+
+/**
+ * Alta de cuenta sin fricción: la cuenta se crea ya confirmada y se inicia
+ * sesión al momento, sin esperar al correo de confirmación. El cliente
+ * acepta la política de privacidad en el propio formulario y queda
+ * registrado en customer_consents.
+ */
 export async function signUpAction(_state: AuthActionState, formData: FormData): Promise<AuthActionState> {
   if (!(await enforceRateLimit("auth.signup", 5, 3600)).allowed) return { status:"error",message:"Demasiadas solicitudes. Inténtalo más tarde." };
   if (!isSupabaseConfigured()) return unavailable();
   const fullName = value(formData, "full_name");
-  const email = value(formData, "email");
+  const email = value(formData, "email").toLowerCase();
   const password = value(formData, "password");
   const confirmation = value(formData, "password_confirmation");
+  const phone = value(formData, "phone");
+  const next = safeReturnPath(value(formData, "next"));
   if (fullName.length < 1 || fullName.length > 120 || !validEmail(email) || password.length < 8 || password !== confirmation) {
-    return { status: "error", message: "Revisa los datos. La contraseña debe tener al menos 8 caracteres." };
+    return { status: "error", message: "Revisa los datos. La contraseña debe tener al menos 8 caracteres y coincidir en los dos campos." };
+  }
+  if (!/^\+?[0-9][0-9 ()-]{5,28}$/.test(phone)) {
+    return { status: "error", message: "Revisa el teléfono: solo números, espacios y, si quieres, el prefijo +34." };
+  }
+  if (formData.get("privacy_consent") !== "on") {
+    return { status: "error", message: "Para crear la cuenta necesitas aceptar la política de privacidad." };
+  }
+
+  const { error: createError } = await createAdminClient().auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+  if (createError) {
+    const exists = createError.code === "email_exists" || createError.status === 422 || /already/i.test(createError.message);
+    return {
+      status: "error",
+      message: exists
+        ? "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña."
+        : "No hemos podido crear la cuenta. Inténtalo más tarde.",
+    };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { full_name: fullName }, emailRedirectTo: await callbackUrl("/cuenta") },
-  });
-  if (error) return { status: "error", message: "No hemos podido completar la solicitud. Inténtalo más tarde." };
-  return { status: "success", message: "Revisa tu correo para confirmar la cuenta antes de acceder." };
+  const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  if (signInError || !data.user) {
+    return { status: "error", message: "Tu cuenta está creada, pero no hemos podido iniciar sesión. Accede con tu correo y contraseña." };
+  }
+  // El perfil lo crea el trigger de alta (solo con el nombre): el teléfono se guarda igual que en "Editar perfil".
+  await supabase.from("profiles").update({ phone }).eq("id", data.user.id);
+  await supabase.from("customer_consents").insert({ customer_id: data.user.id, consent_type: "privacy", granted: true, source: "account_signup", version: PRIVACY_CONSENT_VERSION });
+  redirect(next);
 }
 
 export async function requestPasswordResetAction(_state: AuthActionState, formData: FormData): Promise<AuthActionState> {

@@ -28,7 +28,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         <div>
           {query.error ? <Alert variant="error" title="Enlace no válido">No hemos podido confirmar el acceso. Solicita un enlace nuevo o vuelve a intentarlo.</Alert> : null}
           <AuthForm action={signInAction} fields={["email", "password"]} submitLabel="Acceder" next={next} />
-          <div className="auth-links"><Link href="/cuenta/recuperar">He olvidado mi contraseña</Link><Link href="/cuenta/crear">Crear una cuenta</Link></div>
+          <div className="auth-links"><Link href="/cuenta/recuperar">He olvidado mi contraseña</Link><Link href={next === "/cuenta" ? "/cuenta/crear" : `/cuenta/crear?next=${encodeURIComponent(next)}`}>Crear una cuenta</Link></div>
         </div>
       </Container></Section>
     </main>
