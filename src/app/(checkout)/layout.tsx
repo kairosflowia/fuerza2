@@ -7,7 +7,7 @@ export default function CheckoutLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
-      <div className="checkout-shell">
+      <div className="fz checkout-shell">
         <div className="catalog-header">
           <CheckoutTopBar />
         </div>

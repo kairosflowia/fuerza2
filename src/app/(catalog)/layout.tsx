@@ -35,7 +35,7 @@ export default async function CatalogLayout({ children }: { children: ReactNode 
   return (
     <PickupPointProvider points={pickupPoints} initialPointId={initialPointId} initialDate={initialDate} minDate={minDate}>
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
-      <div className="catalog-shell">
+      <div className="fz catalog-shell">
         <div className="catalog-header">
           <CatalogTopBar />
           <CategoryBar families={families} />

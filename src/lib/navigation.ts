@@ -1,11 +1,12 @@
 export const publicNavigation = [
-  { label: "Inicio", href: "/" },
-  { label: "Pan", href: "/pan" },
-  { label: "Reserva y recoge", href: "/reserva-y-recoge" },
-  { label: "Fuerza Habitual", href: "/plan-de-pan" },
-  { label: "Dónde estamos", href: "/donde-estamos" },
-  { label: "Contacto", href: "/contacto" },
+  { label: "Nuestros panes", href: "/reserva-y-recoge" },
+  { label: "Plan de Pan", href: "/plan-de-pan" },
+  { label: "Puntos de recogida", href: "/donde-estamos" },
+  { label: "Sobre nosotros", href: "/nosotros" },
 ] as const;
+
+/** Pie de página: la navegación principal más contacto. */
+export const footerNavigation = [...publicNavigation, { label: "Contacto", href: "/contacto" }] as const;
 
 export const publicRoutes = [
   "/",

@@ -132,10 +132,10 @@ describe("public content safeguards", () => {
 
   it("keeps the homepage editorial free of reservation controls, while the catalogue allows a quick add to cart", () => {
     const home = readFileSync(resolve(projectRoot, "src/app/(public)/page.tsx"), "utf8");
-    const heroCarousel = readFileSync(resolve(projectRoot, "src/components/public/hero-carousel.tsx"), "utf8");
+    const hero = readFileSync(resolve(projectRoot, "src/components/public/home/editorial-hero.tsx"), "utf8");
     const catalogCard = readFileSync(resolve(projectRoot, "src/components/public/catalog-product-card.tsx"), "utf8");
     const editorial = readFileSync(resolve(projectRoot, "src/components/public/editorial.tsx"), "utf8");
-    expect((home + heroCarousel).match(/<h1[ >]/g)).toHaveLength(1);
+    expect((home + hero).match(/<h1[ >]/g)).toHaveLength(1);
     expect(editorial).not.toContain("useCart");
     // El catálogo (/pan) pasó a permitir añadir a la cesta directamente desde
     // la tarjeta (a pedido explícito del usuario), a diferencia de la

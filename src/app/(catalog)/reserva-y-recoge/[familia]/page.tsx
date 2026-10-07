@@ -5,8 +5,8 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/ui/layout";
 import { CatalogProductCard } from "@/components/public/catalog-product-card";
 import { OrderSummarySidebar } from "@/components/catalog/order-summary-sidebar";
-import { getVariantAvailability, getVariantOrderLimit } from "@/lib/availability";
 import { getPublicCatalog } from "@/lib/catalog";
+import { getQuickAddProducts } from "@/lib/catalog-quick-add";
 import { earliestBookableDate } from "@/lib/order-cutoff";
 import { getCutoffConfig } from "@/lib/order-cutoff-server";
 import { getPublicPickupPoints } from "@/lib/pickup-points";
@@ -41,18 +41,7 @@ export default async function CategoriaPage({ params }: { params: Promise<{ fami
   const pointCookie = cookieStore.get(PICKUP_POINT_COOKIE)?.value;
   const pickupPointId = (pointCookie && activePoints.some((p) => p.id === pointCookie) ? pointCookie : activePoints[0]?.id) ?? null;
 
-  const cheapestByProduct = products.map((product) => {
-    const activeVariants = product.variants.filter((v) => v.status === "active" && v.price_cents !== null);
-    const cheapest = activeVariants.length ? activeVariants.reduce((min, v) => (v.price_cents! < min.price_cents! ? v : min)) : null;
-    return { product, cheapest };
-  });
-
-  const [availabilities, orderLimits] = pickupPointId
-    ? await Promise.all([
-        Promise.all(cheapestByProduct.map(({ cheapest }) => (cheapest ? getVariantAvailability(cheapest.id, pickupPointId, collectionDate) : Promise.resolve(null)))),
-        Promise.all(cheapestByProduct.map(({ cheapest }) => (cheapest ? getVariantOrderLimit(cheapest.id, pickupPointId, collectionDate) : Promise.resolve(null)))),
-      ])
-    : [cheapestByProduct.map(() => null), cheapestByProduct.map(() => null)];
+  const cards = await getQuickAddProducts(products, pickupPointId, collectionDate);
 
   return (
     <main id="main-content" className="catalog-layout">
@@ -61,22 +50,20 @@ export default async function CategoriaPage({ params }: { params: Promise<{ fami
           <h1>{family.name}</h1>
           {family.description ? <p>{family.description}</p> : null}
           <div className="category-product-grid">
-            {cheapestByProduct.map(({ product, cheapest }, index) => {
-              const image = product.images.find((i) => i.is_primary) ?? product.images[0];
-              return (
-                <CatalogProductCard
-                  key={product.id}
-                  href={`/reserva-y-recoge/${familia}/${product.slug}`}
-                  name={product.name}
-                  imagePath={image?.storage_path ?? null}
-                  priceCents={cheapest?.price_cents ?? null}
-                  isSeasonal={product.status === "seasonal"}
-                  availability={availabilities[index]}
-                  maxQuantity={orderLimits[index]?.isAvailable ? orderLimits[index]!.maxQuantity : null}
-                  variant={cheapest ? { id: cheapest.id, name: cheapest.name, priceCents: cheapest.price_cents! } : null}
-                />
-              );
-            })}
+            {cards.map(({ product, imagePath, priceCents, availability, maxQuantity, variant }) => (
+              <CatalogProductCard
+                key={product.id}
+                href={`/reserva-y-recoge/${familia}/${product.slug}`}
+                name={product.name}
+                description={product.short_description}
+                imagePath={imagePath}
+                priceCents={priceCents}
+                isSeasonal={product.status === "seasonal"}
+                availability={availability}
+                maxQuantity={maxQuantity}
+                variant={variant}
+              />
+            ))}
           </div>
         </Container>
       </div>

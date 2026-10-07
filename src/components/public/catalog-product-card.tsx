@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { useCart } from "@/components/cart/cart-provider";
-import { Badge } from "@/components/ui/badge";
+import { MinusIcon, PlusIcon } from "@/components/ui/icons";
 import { availabilityReasonLabel, type AvailabilityStatus } from "@/lib/availability-domain";
 import { formatPrice } from "@/lib/catalog-domain";
 
@@ -15,22 +15,26 @@ export function CatalogProductCard({
   href,
   familyName,
   name,
+  description,
   imagePath,
   priceCents,
   isSeasonal,
   availability,
   maxQuantity: realMaxQuantity,
   variant,
+  priority = false,
 }: {
   href: string;
   familyName?: string | null;
   name: string;
+  description?: string | null;
   imagePath: string | null;
   priceCents: number | null;
   isSeasonal?: boolean;
   availability?: Availability | null;
   maxQuantity?: number | null;
   variant: QuickAddVariant | null;
+  priority?: boolean;
 }) {
   const cart = useCart();
   const quantity = variant ? cart.items.find((item) => item.variantId === variant.id)?.quantity ?? 0 : 0;
@@ -39,56 +43,56 @@ export function CatalogProductCard({
   // verdad; availability.quantityAvailable solo se rellena en low_stock (es
   // el aviso de marketing "últimas unidades", no el tope real).
   const maxQuantity = typeof realMaxQuantity === "number" ? realMaxQuantity : 99;
+  const addOne = () =>
+    variant &&
+    cart.add({ variantId: variant.id, productName: name, variantName: variant.name, quantity: 1, priceCents: variant.priceCents, image: imagePath ?? undefined });
+
+  const meta = familyName ?? (isSeasonal ? "De temporada" : null);
+  const status = soldOut
+    ? availabilityReasonLabel(availability!.reason)
+    : availability?.status === "low_stock"
+      ? availability.quantityAvailable === 1 ? "Última unidad" : availability.quantityAvailable !== null ? `Últimas ${availability.quantityAvailable} unidades` : "Últimas unidades"
+      : null;
 
   return (
-    <article className="catalog-product-card" data-selected={quantity > 0 || undefined}>
-      <Link href={href} className="catalog-product-card__media" tabIndex={-1} aria-hidden="true">
+    <article className="fz-product" data-selected={quantity > 0 || undefined}>
+      <div className="fz-product__media">
         {imagePath ? (
           <Image
             src={`/api/product-images/${imagePath}`}
             alt=""
-            width={480}
+            width={640}
             height={480}
-            sizes="(min-width: 64rem) 25vw, (min-width: 48rem) 33vw, 50vw"
+            priority={priority}
+            sizes="(min-width: 64rem) 25vw, 50vw"
           />
-        ) : (
-          <div className="catalog-image-empty" aria-hidden="true" />
-        )}
-      </Link>
-      <div className="catalog-product-card__body">
-        {familyName ? <p className="catalog-product-card__eyebrow">{familyName}</p> : null}
-        {isSeasonal ? <Badge variant="information">De temporada</Badge> : null}
-        {availability?.status === "sold_out" ? <Badge variant="neutral">{availabilityReasonLabel(availability.reason)}</Badge> : null}
-        {availability?.status === "low_stock" ? (
-          <Badge variant="warning">{availability.quantityAvailable !== null ? `Últimas ${availability.quantityAvailable} unidades` : "Últimas unidades"}</Badge>
         ) : null}
-        <Link href={href} className="catalog-product-card__name">{name}</Link>
-        {priceCents !== null ? <p className="catalog-product-card__price">{formatPrice(priceCents)}</p> : null}
-        {variant && !soldOut ? (
-          <div className="stepper stepper--compact catalog-product-card__stepper">
-            <button
-              type="button"
-              className="stepper__button"
-              aria-label={`Quitar ${name}`}
-              onClick={() => cart.setQuantity(variant.id, quantity - 1)}
-              disabled={quantity <= 0}
-            >
-              −
-            </button>
-            <span className="stepper__value" aria-live="polite">{quantity}</span>
-            <button
-              type="button"
-              className="stepper__button"
-              aria-label={`Añadir ${name}`}
-              onClick={() =>
-                cart.add({ variantId: variant.id, productName: name, variantName: variant.name, quantity: 1, priceCents: variant.priceCents, image: imagePath ?? undefined })
-              }
-              disabled={quantity >= maxQuantity}
-            >
-              +
-            </button>
-          </div>
-        ) : null}
+      </div>
+      <div className="fz-product__body">
+        {meta ? <p className="fz-product__meta">{meta}</p> : null}
+        <Link href={href} className="fz-product__name">{name}</Link>
+        {description ? <p className="fz-product__desc">{description}</p> : null}
+        {status ? <p className={`fz-product__status${soldOut ? "" : " fz-product__status--warning"}`}>{status}</p> : null}
+        <div className="fz-product__foot">
+          {priceCents !== null ? <p className="fz-product__price">{formatPrice(priceCents)}</p> : <span />}
+          {variant && !soldOut ? (
+            quantity > 0 ? (
+              <div className="fz-qty" role="group" aria-label={`Cantidad de ${name}`}>
+                <button type="button" aria-label={`Quitar ${name}`} onClick={() => cart.setQuantity(variant.id, quantity - 1)}>
+                  <MinusIcon />
+                </button>
+                <output aria-live="polite">{quantity}</output>
+                <button type="button" aria-label={`Añadir ${name}`} onClick={addOne} disabled={quantity >= maxQuantity}>
+                  <PlusIcon />
+                </button>
+              </div>
+            ) : (
+              <button type="button" className="fz-add" aria-label={`Añadir ${name}`} onClick={addOne} disabled={quantity >= maxQuantity}>
+                <PlusIcon />
+              </button>
+            )
+          ) : null}
+        </div>
       </div>
     </article>
   );

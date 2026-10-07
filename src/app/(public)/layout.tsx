@@ -16,7 +16,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <>
+    <div className="fz">
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <PublicHeader />
       {children}
@@ -27,6 +27,6 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteData) }}
       />
-    </>
+    </div>
   );
 }
