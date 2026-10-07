@@ -1,16 +1,14 @@
-import Link from "next/link";
+import { NotFoundContent } from "@/components/public/not-found-content";
+import { PublicFooter } from "@/components/public/public-footer";
+import { PublicHeader } from "@/components/public/public-header";
 
-import { Container } from "@/components/ui/layout";
-
+/** 404 para direcciones fuera de los grupos públicos: no hay layout de grupo, así que lleva cabecera y pie propios. */
 export default function NotFound() {
   return (
-    <main id="main-content" className="status-page">
-      <Container>
-        <p className="eyebrow">Error 404</p>
-        <h1>Esta página no está en el horno</h1>
-        <p>Puede que la dirección haya cambiado o que el contenido todavía no exista.</p>
-        <Link className="button button--primary" href="/">Volver al inicio</Link>
-      </Container>
-    </main>
+    <div className="fz">
+      <PublicHeader />
+      <NotFoundContent />
+      <PublicFooter />
+    </div>
   );
 }

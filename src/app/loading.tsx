@@ -1,9 +1,10 @@
-import { Loading } from "@/components/ui/loading";
+import { PageLoading } from "@/components/public/page-loading";
 
+/** Respaldo para rutas sin carga propia: mismo fondo y estilo que el resto de la web pública. */
 export default function GlobalLoading() {
   return (
-    <main id="main-content" className="status-page" aria-live="polite">
-      <Loading label="Cargando contenido" />
-    </main>
+    <div className="fz">
+      <PageLoading />
+    </div>
   );
 }

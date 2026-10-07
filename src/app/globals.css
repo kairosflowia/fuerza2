@@ -1549,3 +1549,18 @@ a.fz-contact__value:hover { text-decoration: underline; }
   .fz-chips { margin-inline: 0; padding-inline: 0; }
 }
 @media (max-width: 23rem) { .fz-pickup-bar__item { gap: 6px; padding: 9px 8px; } .fz-pickup-bar__icon { width: 20px; height: 20px; } .fz-pickup-bar__value { gap: 3px; font-size: 12.5px; } .fz-pickup-bar__label { font-size: 10.5px; } }
+
+/* Transiciones entre páginas: carga discreta, sin cambiar el fondo ni ocultar la cabecera. */
+html:has(.fz), html:has(.fz) body { background: #F5F1E8; }
+.fz-page-loading { display: grid; place-items: center; min-height: 60dvh; }
+.fz-page-loading__inner { display: grid; justify-items: center; opacity: 0; animation: fz-fade-in 200ms var(--fz-ease) 300ms forwards; }
+.fz-spinner { width: 26px; height: 26px; border: 1.5px solid var(--border-soft); border-top-color: var(--terracotta-dark); border-radius: 999px; animation: fz-spin 900ms linear infinite; }
+@keyframes fz-spin { to { transform: rotate(360deg); } }
+@keyframes fz-fade-in { to { opacity: 1; } }
+/* Páginas de estado (404 / error) con la misma voz que el resto de la web. */
+.fz-status { display: grid; justify-items: start; align-content: center; gap: 12px; min-height: 60dvh; padding-block: 48px; }
+.fz-status h1 { max-width: 16ch; font-size: clamp(28px, 6vw, 44px); line-height: 1.05; }
+.fz-status p { margin: 0; max-width: 34rem; color: var(--text-soft); }
+.fz-status .fz-btn { margin-top: 8px; }
+.fz-status__ref { font-size: 12px; color: var(--text-muted); }
+.checkout-shell .catalog-topbar__logo img { height: 56px; border-radius: 0; }

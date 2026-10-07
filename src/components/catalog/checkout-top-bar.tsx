@@ -15,7 +15,7 @@ export function CheckoutTopBar() {
         <ArrowLeftIcon />
       </button>
       <Link href="/" className="catalog-topbar__logo" aria-label="FUERZA, volver al inicio">
-        <Image src="/01-fuerza-logo.svg" alt="FUERZA" width={566} height={566} priority />
+        <Image src="/illustrations/fuerza-stacked.svg" alt="FUERZA, obrador de masa madre" width={163} height={80} priority />
       </Link>
       <span className="catalog-topbar__spacer" aria-hidden="true" />
     </header>
