@@ -1,5 +1,5 @@
 begin;
-select plan(53);
+select plan(82);
 
 -- ---------------------------------------------------------------------------
 -- Estructura.
@@ -11,12 +11,21 @@ select has_table('public', 'subscription_cycles', 'cycles table exists');
 select has_table('public', 'subscription_status_history', 'immutable status history exists');
 select has_table('public', 'subscription_change_requests', 'controlled changes exist');
 select has_column('public', 'product_variants', 'subscribable', 'variants can be curated for Fuerza Habitual');
-select col_is_unique('public', 'subscription_cycles', 'stripe_invoice_id', 'one cycle per Stripe invoice');
+select ok(
+  not exists (
+    select 1 from pg_constraint con join pg_attribute att on att.attrelid = con.conrelid and att.attnum = any(con.conkey)
+    where con.conrelid = 'public.subscription_cycles'::regclass and con.contype = 'u' and att.attname = 'stripe_invoice_id' and cardinality(con.conkey) = 1
+  ),
+  'una factura de Stripe cubre todas las entregas de su periodo (stripe_invoice_id ya no es único)'
+);
+select has_column('public', 'subscriptions', 'preferred_weekdays', 'una suscripción guarda varios días de recogida');
 select col_is_unique('public', 'subscriptions', 'stripe_subscription_id', 'Stripe subscription cannot duplicate');
 select col_is_unique('public', 'orders', 'subscription_cycle_id', 'one order per cycle');
 select ok((select relrowsecurity from pg_class where oid = 'public.subscriptions'::regclass), 'subscriptions use RLS');
 select hasnt_table('public', 'subscription_plans', 'fixed plans no longer exist: baskets are built by the customer');
-select has_function('public', 'create_subscription_basket', array['jsonb', 'uuid', 'integer', 'public.subscription_frequency', 'uuid'], 'basket creation function exists');
+select has_function('public', 'create_subscription_basket', array['jsonb', 'uuid', 'smallint[]', 'public.subscription_frequency', 'boolean', 'boolean', 'text'], 'basket creation with several weekdays exists');
+select has_function('public', 'create_subscription_basket', array['jsonb', 'uuid', 'integer', 'public.subscription_frequency', 'uuid'], 'single-day signature kept for compatibility');
+select has_function('public', 'quote_subscription_basket', array['jsonb', 'uuid', 'smallint[]'], 'quote function exists');
 select has_function('public', 'generate_subscription_cycles', array[]::text[], 'recurring cycle generator exists');
 select has_function('public', 'request_subscription_pause', array['uuid', 'date'], 'pause function exists');
 select has_function('public', 'request_subscription_resume', array['uuid'], 'resume function exists');
@@ -322,8 +331,12 @@ select results_eq(
 -- ---------------------------------------------------------------------------
 
 -- Suscripción nueva y sin tocar (customer-habitual-a ya se pausó/reanudó
--- arriba y se quedó sin ciclo pendiente que consumir).
+-- arriba y se quedó sin ciclo pendiente que consumir). Se vuelve al corte
+-- permisivo: con el corte real de 48h, crear una cesta para el viernes
+-- fallaba o no según el día de la semana en que se ejecutara la batería.
 reset role;
+update public.app_settings set value = '"23:59:59"'::jsonb where key = 'availability.cutoff_time';
+update public.app_settings set value = '0'::jsonb where key = 'availability.cutoff_days_before';
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values ('00000000-0000-0000-0000-000000000705', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'customer-habitual-d@example.test', '', now(), '{}', '{}', now(), now());
 set local role authenticated;
@@ -352,6 +365,157 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000701', true);
+
+-- ---------------------------------------------------------------------------
+-- Varios días por plan: "cada semana, lunes y jueves". Un periodo = todas
+-- las entregas de su semana; una factura = un pedido por entrega.
+-- ---------------------------------------------------------------------------
+
+reset role;
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000706', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'customer-habitual-multi@example.test', '', now(), '{}', '{}', now(), now());
+set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000706', true);
+select set_config('test.basket', '[{"variant_id":"70000000-0000-0000-0000-000000000003","quantity":2},{"variant_id":"70000000-0000-0000-0000-000000000005","quantity":2}]', true);
+
+select results_eq(
+  $$ select ok, reason from public.quote_subscription_basket(current_setting('test.basket')::jsonb, '70000000-0000-0000-0000-000000000007', array[]::smallint[]) $$,
+  $$ values (false, 'invalid_weekday'::text) $$,
+  'sin días elegidos la vista previa es rechazada'
+);
+select results_eq(
+  $$ select ok, reason from public.quote_subscription_basket(current_setting('test.basket')::jsonb, '70000000-0000-0000-0000-000000000007', array[1, 8]::smallint[]) $$,
+  $$ values (false, 'invalid_weekday'::text) $$,
+  'un día fuera de 1-7 en la lista es rechazado'
+);
+select results_eq(
+  $$ select ok, deliveries, discount_percent, subtotal_cents, total_cents from public.quote_subscription_basket(current_setting('test.basket')::jsonb, '70000000-0000-0000-0000-000000000007', array[4, 1]::smallint[]) $$,
+  $$ values (true, 2, 5::numeric, 4800, 4560) $$,
+  'lunes y jueves: dos entregas por periodo, 5% por entrega (4 unidades) y precio = cesta × 2'
+);
+select is(
+  (select array(select extract(isodow from x)::integer from unnest(collection_dates) x) from public.quote_subscription_basket(current_setting('test.basket')::jsonb, '70000000-0000-0000-0000-000000000007', array[4, 1]::smallint[])),
+  array[1, 4], 'las fechas de la primera entrega caen en lunes y jueves, ordenadas'
+);
+select is(
+  (select collection_dates[2] - collection_dates[1] from public.quote_subscription_basket(current_setting('test.basket')::jsonb, '70000000-0000-0000-0000-000000000007', array[1, 4]::smallint[])),
+  3, 'las dos entregas pertenecen a la misma semana'
+);
+select is(
+  (select count(*)::integer from public.subscriptions where customer_id = '00000000-0000-0000-0000-000000000706'::uuid),
+  0, 'la vista previa no crea ni reserva nada'
+);
+
+select results_eq(
+  $$ select ok, deliveries from public.create_subscription_basket(current_setting('test.basket')::jsonb, '70000000-0000-0000-0000-000000000007', array[1, 4]::smallint[], 'weekly', true, true, ' Sin semillas, por favor ') $$,
+  $$ values (true, 2) $$,
+  'se crea un plan semanal de lunes y jueves'
+);
+select is(
+  (select preferred_weekdays from public.subscriptions where customer_id = '00000000-0000-0000-0000-000000000706'::uuid),
+  array[1, 4]::smallint[], 'la suscripción guarda los dos días'
+);
+select results_eq(
+  $$ select wants_new_breads, allow_substitution, customer_note from public.subscriptions where customer_id = '00000000-0000-0000-0000-000000000706'::uuid $$,
+  $$ values (true, true, 'Sin semillas, por favor'::text) $$,
+  'las preferencias se guardan (la nota sin espacios sobrantes)'
+);
+select results_eq(
+  $$ select subtotal_cents, total_cents from public.subscriptions where customer_id = '00000000-0000-0000-0000-000000000706'::uuid $$,
+  $$ values (4800, 4560) $$,
+  'el importe guardado es exactamente el de la vista previa'
+);
+select set_config('test.multi_id', (select id::text from public.subscriptions where customer_id = '00000000-0000-0000-0000-000000000706'::uuid), true);
+select is(
+  (select count(*)::integer from public.subscription_cycles where subscription_id = current_setting('test.multi_id')::uuid),
+  2, 'se crea una entrega (ciclo) por día del primer periodo'
+);
+select is(
+  (select count(distinct cycle_start)::integer from public.subscription_cycles where subscription_id = current_setting('test.multi_id')::uuid),
+  1, 'las dos entregas comparten periodo (cycle_start)'
+);
+select is(
+  (select next_collection_date from public.subscriptions where id = current_setting('test.multi_id')::uuid),
+  (select min(collection_date) from public.subscription_cycles where subscription_id = current_setting('test.multi_id')::uuid),
+  'la próxima recogida es la primera entrega del periodo'
+);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000701', true);
+select is(
+  (select count(*)::integer from public.subscription_capacity_allocations where source_reference = current_setting('test.multi_id')),
+  4, 'se reserva capacidad por artículo y por día (2 × 2)'
+);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000706', true);
+select results_eq(
+  $$ select ok, reason from public.create_subscription_basket(current_setting('test.basket')::jsonb, '70000000-0000-0000-0000-000000000007', array[2]::smallint[], 'weekly', false, false, repeat('x', 501)) $$,
+  $$ values (false, 'note_too_long'::text) $$,
+  'una nota de más de 500 caracteres es rechazada'
+);
+select results_eq(
+  $$ select ok, reason from public.create_subscription_basket(current_setting('test.basket')::jsonb, '70000000-0000-0000-0000-000000000007', array[]::smallint[], 'weekly') $$,
+  $$ values (false, 'invalid_weekday'::text) $$,
+  'crear sin días es rechazado'
+);
+
+reset role;
+update public.subscriptions set stripe_subscription_id = 'sub_test_multi' where id = current_setting('test.multi_id')::uuid;
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
+select results_eq(
+  $$ select ok, reason from public.process_subscription_invoice('evt_multi_1','in_multi_1','sub_test_multi','pi_multi_1',4561,'eur','hash_multi') $$,
+  $$ values (true, 'order_created'::text) $$,
+  'la factura del periodo se procesa'
+);
+reset role;
+select is(
+  (select count(*)::integer from public.orders where subscription_id = current_setting('test.multi_id')::uuid),
+  2, 'una factura pagada crea un pedido por cada entrega del periodo'
+);
+select is(
+  (select sum(total_cents)::integer from public.orders where subscription_id = current_setting('test.multi_id')::uuid),
+  4561, 'los pedidos suman exactamente lo que cobró Stripe'
+);
+select is(
+  (select array_agg(total_cents order by collection_date) from public.orders where subscription_id = current_setting('test.multi_id')::uuid),
+  array[2281, 2280], 'el importe se reparte entre las entregas (el céntimo sobrante va a la primera)'
+);
+select ok(
+  (select bool_and(internal_note like '%Permite sustitución%' and internal_note like '%Quiere probar panes nuevos%' and internal_note like '%Sin semillas, por favor%') from public.orders where subscription_id = current_setting('test.multi_id')::uuid),
+  'las preferencias del cliente llegan a la nota interna de cada pedido'
+);
+select is(
+  (select count(*)::integer from public.subscription_cycles where subscription_id = current_setting('test.multi_id')::uuid and stripe_invoice_id = 'in_multi_1' and status = 'order_created'),
+  2, 'las dos entregas quedan vinculadas a la misma factura'
+);
+
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
+select public.generate_subscription_cycles();
+reset role;
+select is(
+  (select count(*)::integer from public.subscription_cycles where subscription_id = current_setting('test.multi_id')::uuid),
+  4, 'el periodo siguiente genera de nuevo una entrega por día'
+);
+select is(
+  (select max(cycle_start) - min(cycle_start) from public.subscription_cycles where subscription_id = current_setting('test.multi_id')::uuid),
+  7, 'con frecuencia semanal, el periodo siguiente empieza 7 días después'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000706', true);
+select results_eq(
+  $$ select ok, effective from public.request_subscription_pause(current_setting('test.multi_id')::uuid, null) $$,
+  $$ values (true, 'immediate'::text) $$,
+  'pausar con antelación suficiente es inmediato'
+);
+reset role;
+select is(
+  (select count(*)::integer from public.subscription_cycles where subscription_id = current_setting('test.multi_id')::uuid and status = 'skipped'),
+  2, 'al pausar se liberan las dos entregas pendientes del periodo, no solo la primera'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
 
 select * from finish();
 rollback;

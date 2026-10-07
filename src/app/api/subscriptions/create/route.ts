@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
-import { stripeRecurringInterval, type SubscriptionFrequency } from "@/lib/subscriptions-domain";
+import { parsePlanRequest } from "@/lib/subscription-request";
+import { stripeRecurringInterval } from "@/lib/subscriptions-domain";
 
 const HABITUAL_COUPON_ID = "fuerza-habitual-5pct";
 
@@ -19,14 +20,17 @@ export async function POST(req: Request) {
   const user = (await (await createClient()).auth.getUser()).data.user;
   if (!user?.email) return NextResponse.json({ error: "authentication_required" }, { status: 401 });
 
-  const body = await req.json();
+  const plan = parsePlanRequest(await req.json().catch(() => null));
+  if (!plan) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   const client = (await createClient()) as any;
   const { data, error } = await client.rpc("create_subscription_basket", {
-    p_items: body.items,
-    p_pickup_point_id: body.pickupPointId,
-    p_weekday: body.weekday,
-    p_frequency: body.frequency as SubscriptionFrequency,
-    p_window_id: null,
+    p_items: plan.items,
+    p_pickup_point_id: plan.pickupPointId,
+    p_weekdays: plan.weekdays,
+    p_frequency: plan.frequency,
+    p_wants_new_breads: plan.preferences.wantsNewBreads,
+    p_allow_substitution: plan.preferences.allowSubstitution,
+    p_customer_note: plan.preferences.note,
   });
   const candidate = data?.[0];
   if (error || !candidate?.ok) return NextResponse.json({ error: candidate?.reason ?? "capacity_unavailable" }, { status: 400 });
@@ -43,7 +47,7 @@ export async function POST(req: Request) {
     const { data: local } = await db.from("subscriptions").select("stripe_customer_id").eq("customer_id", user.id).not("stripe_customer_id", "is", null).limit(1).maybeSingle();
     const customer = local?.stripe_customer_id ?? (await stripe.customers.create({ email: user.email, metadata: { fuerza_customer_id: user.id } })).id;
 
-    const recurring = stripeRecurringInterval(body.frequency as SubscriptionFrequency);
+    const recurring = stripeRecurringInterval(plan.frequency);
     const discounts = candidate.discount_percent > 0 ? [{ coupon: (await ensureDiscountCoupon()).id }] : undefined;
 
     const subscription = await stripe.subscriptions.create({
@@ -55,7 +59,8 @@ export async function POST(req: Request) {
           unit_amount: item.unit_price_cents_snapshot,
           recurring,
         },
-        quantity: item.quantity,
+        // Un periodo de facturación incluye una entrega por día elegido.
+        quantity: item.quantity * candidate.deliveries,
       })),
       discounts,
       payment_behavior: "default_incomplete",

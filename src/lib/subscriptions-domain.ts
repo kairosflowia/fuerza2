@@ -1,10 +1,10 @@
 export type SubscriptionFrequency = "weekly" | "biweekly" | "every_3_weeks" | "monthly";
 
 export const FREQUENCY_LABELS_ES: Record<SubscriptionFrequency, string> = {
-  weekly: "1 vez por semana",
+  weekly: "Cada semana",
   biweekly: "Cada 2 semanas",
   every_3_weeks: "Cada 3 semanas",
-  monthly: "1 vez al mes",
+  monthly: "Cada mes",
 };
 
 export const FREQUENCY_DESCRIPTIONS_ES: Record<SubscriptionFrequency, string> = {
@@ -63,3 +63,44 @@ export const SUBSCRIPTION_DISCOUNT_PERCENT = 5;
 export function basketDiscountPercent(totalQuantity: number): number {
   return totalQuantity >= SUBSCRIPTION_DISCOUNT_THRESHOLD_UNITS ? SUBSCRIPTION_DISCOUNT_PERCENT : 0;
 }
+
+/** Días que se ofrecen en el Plan de Pan (lunes=1 … sábado=6, ISO 8601). */
+export const PLAN_WEEKDAYS = [1, 2, 3, 4, 5, 6] as const;
+export const WEEKDAY_NAMES_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+const WEEKDAY_PLURALS_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábados", "domingos"];
+
+function joinEs(parts: string[]): string {
+  if (parts.length <= 1) return parts.join("");
+  return `${parts.slice(0, -1).join(", ")} y ${parts.at(-1)}`;
+}
+
+/** "los lunes y jueves", "los lunes, miércoles y sábados". */
+export function weekdaysPhraseEs(weekdays: readonly number[]): string {
+  const days = [...new Set(weekdays)].filter((d) => d >= 1 && d <= 7).sort((a, b) => a - b);
+  return days.length ? `los ${joinEs(days.map((d) => WEEKDAY_PLURALS_ES[d - 1]))}` : "";
+}
+
+/** Frase de resumen del ritmo elegido: "Recibirás tu pan los lunes y jueves." */
+export function receiveSentenceEs(weekdays: readonly number[], frequency: SubscriptionFrequency): string {
+  const phrase = weekdaysPhraseEs(weekdays);
+  if (!phrase) return "";
+  switch (frequency) {
+    case "weekly":
+      return `Recibirás tu pan ${phrase}.`;
+    case "biweekly":
+      return `Recibirás tu pan ${phrase}, una semana sí y otra no.`;
+    case "every_3_weeks":
+      return `Recibirás tu pan ${phrase}, una semana de cada tres.`;
+    case "monthly":
+      return `Recibirás tu pan ${phrase} de una semana cada mes.`;
+  }
+}
+
+/** Unidad del precio por periodo: "18,40 € / semana". */
+export const FREQUENCY_PERIOD_ES: Record<SubscriptionFrequency, string> = {
+  weekly: "semana",
+  biweekly: "2 semanas",
+  every_3_weeks: "3 semanas",
+  monthly: "mes",
+};
+

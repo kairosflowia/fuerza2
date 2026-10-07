@@ -4,7 +4,7 @@ import { SubscriptionActions } from "@/components/subscriptions/customer-actions
 import { Badge, Card, Container, Section } from "@/components/ui";
 import { formatPrice } from "@/lib/catalog-domain";
 import { formatDateEs } from "@/lib/order-cutoff";
-import { FREQUENCY_LABELS_ES, SUBSCRIPTION_STATUS_BADGE_VARIANT, subscriptionStatusLabel, type SubscriptionFrequency } from "@/lib/subscriptions-domain";
+import { FREQUENCY_LABELS_ES, FREQUENCY_PERIOD_ES, SUBSCRIPTION_STATUS_BADGE_VARIANT, receiveSentenceEs, subscriptionStatusLabel, type SubscriptionFrequency } from "@/lib/subscriptions-domain";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,7 +33,7 @@ export default async function CustomerSubscription({ params }: { params: Promise
       <Section>
         <Container>
           <div className="admin-action-group">
-            <h1>Fuerza Habitual</h1>
+            <h1>Mi Plan de Pan</h1>
             <Badge variant={SUBSCRIPTION_STATUS_BADGE_VARIANT[s.status] ?? "neutral"}>{subscriptionStatusLabel(s.status)}</Badge>
           </div>
           <p>
@@ -41,6 +41,7 @@ export default async function CustomerSubscription({ params }: { params: Promise
             {" · próxima recogida: "}
             {nextDate ? formatDateEs(nextDate) : "pendiente"}
           </p>
+          {s.preferred_weekdays?.length ? <p>{receiveSentenceEs(s.preferred_weekdays, s.frequency as SubscriptionFrequency)}</p> : null}
           <Card>
             <h2>Cesta</h2>
             {s.subscription_items?.map((i: any) => (
@@ -48,7 +49,7 @@ export default async function CustomerSubscription({ params }: { params: Promise
             ))}
             <p>
               Subtotal {formatPrice(s.subtotal_cents)}
-              {s.discount_percent > 0 ? ` · ${s.discount_percent}% de descuento` : ""} · Total por ciclo {formatPrice(s.total_cents)}
+              {s.discount_percent > 0 ? ` · ${s.discount_percent}% de descuento` : ""} · Total {formatPrice(s.total_cents)} / {FREQUENCY_PERIOD_ES[s.frequency as SubscriptionFrequency] ?? "periodo"}
             </p>
           </Card>
           <SubscriptionActions id={id} status={s.status} />

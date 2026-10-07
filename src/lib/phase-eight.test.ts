@@ -13,7 +13,7 @@ describe("Fuerza Habitual contracts", () => {
   });
 
   it("uses Stripe Payment Element and webhook authority", () => {
-    expect(read("src/components/subscriptions/basket-configurator.tsx")).toContain("<PaymentElement");
+    expect(read("src/components/subscriptions/subscription-payment.tsx")).toContain("<PaymentElement");
     const confirmation = read("src/app/(public)/plan-de-pan/confirmacion/page.tsx");
     expect(confirmation).toContain("customer_id");
     expect(confirmation).not.toContain("update(");

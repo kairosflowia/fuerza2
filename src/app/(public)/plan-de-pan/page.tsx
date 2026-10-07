@@ -3,20 +3,19 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { PageIntro } from "@/components/public/page-intro";
-import { PlanFrequencyPicker } from "@/components/subscriptions/plan-frequency-picker";
 import { ArrowRightIcon, CalendarIcon, PackageIcon, WheatIcon } from "@/components/ui/icons";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Plan de Pan",
-  description: "Suscríbete y recibe tu pan de masa madre con la frecuencia que elijas, sin tener que reservar cada vez.",
+  description: "Elige tus panes, cuándo quieres recogerlos y nosotros nos encargamos del resto.",
   path: "/plan-de-pan",
 });
 
-const STEPS = [
-  { Icon: WheatIcon, title: "Elige tu pan", description: "Monta tu cesta con el pan de masa madre que quieras recibir." },
-  { Icon: CalendarIcon, title: "Define tu frecuencia", description: "Escoge la frecuencia que mejor se adapte a tu rutina: semanal, quincenal, cada 3 semanas o mensual." },
-  { Icon: PackageIcon, title: "Recíbelo sin volver a pedir", description: "Tu pan queda reservado automáticamente según tu suscripción. Lo recoges en tu punto habitual, sin complicaciones." },
+const BENEFITS = [
+  { Icon: WheatIcon, title: "Elige tus panes", description: "Combina los panes de masa madre que quieras recibir y en qué cantidad." },
+  { Icon: CalendarIcon, title: "Decide tu ritmo", description: "Cada semana, cada 2 o 3 semanas o cada mes, en uno o varios días." },
+  { Icon: PackageIcon, title: "Nosotros los reservamos", description: "Tu pan queda reservado automáticamente y lo recoges en tu punto habitual." },
 ] as const;
 
 export default function PlanDePanPage() {
@@ -31,21 +30,21 @@ export default function PlanDePanPage() {
             variant="editorial"
             eyebrow="Plan de Pan"
             title={"Tu pan,\na tu ritmo."}
-            description="Suscríbete a la calidad artesanal. Recibe tu pan favorito con la frecuencia que decidas, sin complicaciones ni pedidos de último minuto."
+            description="Elige tus panes, cuándo quieres recogerlos y nosotros nos encargamos del resto."
           />
           <Link className="fz-btn" href="/plan-de-pan/membresias">
-            Configurar suscripción
+            Crear mi Plan de Pan
             <ArrowRightIcon />
           </Link>
         </div>
       </section>
 
       <div className="fz-container">
-        <section className="fz-plan-section" aria-labelledby="steps-title">
+        <section className="fz-plan-section" aria-labelledby="benefits-title">
           <p className="fz-eyebrow">Así de simple</p>
-          <h2 id="steps-title" className="fz-display">El proceso artesanal</h2>
+          <h2 id="benefits-title" className="fz-display">Tu pan, sin pensarlo</h2>
           <ol className="fz-plan-steps">
-            {STEPS.map(({ Icon, title, description }, index) => (
+            {BENEFITS.map(({ Icon, title, description }, index) => (
               <li key={title} className="fz-plan-step">
                 <span className="fz-plan-step__icon" aria-hidden="true"><Icon /></span>
                 <div>
@@ -55,9 +54,11 @@ export default function PlanDePanPage() {
               </li>
             ))}
           </ol>
+          <Link className="fz-btn fz-plan-section__cta" href="/plan-de-pan/membresias">
+            Crear mi Plan de Pan
+            <ArrowRightIcon />
+          </Link>
         </section>
-
-        <PlanFrequencyPicker />
       </div>
     </main>
   );

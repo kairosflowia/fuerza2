@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge, Card } from "@/components/ui";
 import { formatPrice } from "@/lib/catalog-domain";
-import { FREQUENCY_LABELS_ES, SUBSCRIPTION_STATUS_BADGE_VARIANT, subscriptionStatusLabel } from "@/lib/subscriptions-domain";
+import { FREQUENCY_LABELS_ES, SUBSCRIPTION_STATUS_BADGE_VARIANT, receiveSentenceEs, subscriptionStatusLabel } from "@/lib/subscriptions-domain";
 import { createClient } from "@/lib/supabase/server";
 
 const CYCLE_STATUS: Record<string, { label: string; variant: "neutral" | "warning" | "success" | "error" | "information" }> = {
@@ -45,7 +45,7 @@ export default async function AdminSubscription({ params }: { params: Promise<{ 
     <>
       <AdminPageHeader
         title={(FREQUENCY_LABELS_ES as Record<string, string>)[s.frequency] ?? s.frequency}
-        description={s.pickup_points?.name}
+        description={[s.pickup_points?.name, s.preferred_weekdays?.length ? receiveSentenceEs(s.preferred_weekdays, s.frequency) : null].filter(Boolean).join(" · ")}
         actions={<Badge variant={SUBSCRIPTION_STATUS_BADGE_VARIANT[s.status] ?? "neutral"}>{subscriptionStatusLabel(s.status)}</Badge>}
       />
       <Card>
@@ -57,6 +57,18 @@ export default async function AdminSubscription({ params }: { params: Promise<{ 
           Subtotal {formatPrice(s.subtotal_cents)}
           {s.discount_percent > 0 ? ` · ${s.discount_percent}% descuento` : ""} · Total {formatPrice(s.total_cents)}
         </p>
+      </Card>
+      <Card>
+        <h2>Preferencias del cliente</h2>
+        {s.allow_substitution || s.wants_new_breads || s.customer_note ? (
+          <>
+            {s.allow_substitution ? <p>Permite sustitución si un pan no está disponible.</p> : null}
+            {s.wants_new_breads ? <p>Quiere probar panes nuevos.</p> : null}
+            {s.customer_note ? <p>Observaciones: {s.customer_note}</p> : null}
+          </>
+        ) : (
+          <p>Sin preferencias indicadas.</p>
+        )}
       </Card>
       <Card>
         <h2>Stripe</h2>
