@@ -32,10 +32,6 @@ export default function PlanDePanPage() {
             title={"Tu pan,\na tu ritmo."}
             description="Elige tus panes, cuándo quieres recogerlos y nosotros nos encargamos del resto."
           />
-          <Link className="fz-btn" href="/plan-de-pan/membresias">
-            Crear mi Plan de Pan
-            <ArrowRightIcon />
-          </Link>
         </div>
       </section>
 
