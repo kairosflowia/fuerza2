@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -118,6 +119,7 @@ export async function updateProfileAction(_state: AuthActionState, formData: For
   if (!user) return { status: "error", message: "Tu sesión ha caducado. Vuelve a acceder." };
   const { error } = await supabase.from("profiles").update({ full_name: fullName, phone: phone || null }).eq("id", user.id);
   if (error) return { status: "error", message: "No hemos podido guardar los cambios." };
+  revalidatePath("/cuenta", "layout");
   return { status: "success", message: "Perfil actualizado." };
 }
 
@@ -136,7 +138,7 @@ export async function updateNotificationPreferences(formData: FormData) {
   for (const category of ["subscription", "reminder", "marketing"] as const) {
     await supabase.from("notification_preferences").upsert({ customer_id: user.id, channel: "email", category, enabled: formData.get(category) === "on", consent_version: "2026-08" }, { onConflict: "customer_id,channel,category" });
   }
-  redirect("/cuenta");
+  revalidatePath("/cuenta/perfil");
 }
 
 export async function updatePushPreferences(formData: FormData) {
@@ -152,5 +154,5 @@ export async function updatePushPreferences(formData: FormData) {
       consent_version: "2026-08",
     }, { onConflict: "customer_id,channel,category" });
   }
-  redirect("/cuenta");
+  revalidatePath("/cuenta/perfil");
 }

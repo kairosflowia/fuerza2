@@ -22,7 +22,10 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const pathname = request.nextUrl.pathname;
-  const requiresSession = pathname === "/cuenta" || pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/modo-produccion";
+  // Zona privada de la cuenta: resumen, pedidos, perfil y Plan de Pan. /cuenta/acceder,
+  // /cuenta/crear, /cuenta/recuperar, etc. siguen siendo públicas.
+  const accountArea = pathname === "/cuenta" || ["/cuenta/pedidos", "/cuenta/perfil", "/cuenta/plan-de-pan"].some((base) => pathname === base || pathname.startsWith(`${base}/`));
+  const requiresSession = accountArea || pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/modo-produccion";
   if (requiresSession && !data?.claims) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/cuenta/acceder";

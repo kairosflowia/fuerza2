@@ -29,6 +29,8 @@ export const publicRoutes = [
 
 export const accountRoutes = [
   "/cuenta",
+  "/cuenta/pedidos",
+  "/cuenta/perfil",
   "/cuenta/acceder",
   "/cuenta/crear",
   "/cuenta/recuperar",

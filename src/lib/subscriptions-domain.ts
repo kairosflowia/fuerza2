@@ -104,3 +104,11 @@ export const FREQUENCY_PERIOD_ES: Record<SubscriptionFrequency, string> = {
   monthly: "mes",
 };
 
+
+/** Nombre corto del plan según su frecuencia: "Plan semanal". */
+export const PLAN_TITLE_ES: Record<SubscriptionFrequency, string> = {
+  weekly: "Plan semanal",
+  biweekly: "Plan quincenal",
+  every_3_weeks: "Plan cada 3 semanas",
+  monthly: "Plan mensual",
+};
